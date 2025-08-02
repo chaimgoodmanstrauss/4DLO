@@ -130,6 +130,7 @@ function revisemeshFromS3surface(
   var vertArray = [], faceArray = []
   var iNMax, jNMax
   var vcounter = 0
+  var  positionAttribute = amesh.geometry.getAttribute( 'position' )
   
   //work out the verts in first pass
   for(var inn = 0; inn<iN; inn++)
@@ -140,7 +141,7 @@ function revisemeshFromS3surface(
 
       var p = mapQToWorld(surface(inn*di+imin,jn*dj+jmin))
 
-      amesh.geometry.attributes.position.setXYZ(vcounter, p[0],p[1],p[2]);
+      positionAttribute.setXYZ(vcounter, p[0],p[1],p[2]);
       vcounter++;
     }
   }

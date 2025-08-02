@@ -355,7 +355,7 @@ function theModelChanged(){
 }
 
 
-
+var mastercount=0;
 
 
 function updatethedrawing(){
@@ -367,6 +367,8 @@ function updatethedrawing(){
 		oursphereregistry[i].visible = false;//only matters when the number of verts changes
 
 	}
+
+	mastercount++
 
 
 
@@ -423,21 +425,29 @@ motions.forEach((m)=>{
 ourmodeldata.edges.forEach((e)=>
 {
 
+//console.log('another edge',e,m,ourguiparams['the offset'])
 // an edge has precomputed end points and a color:
 	var ends=[];
 	if(ourguiparams['Multiply the motion on the']=='left'){
-		ends[0] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
-		ends[1] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
+		ends[0] =new quat(.2,.2,1,1).normalize()
+			// ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
+		ends[1] = new quat(3,.2,1,1).normalize()
+			//ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
 	}
 	else {
-		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
+		ends[0] =new quat(Math.random(),.2,1,1).normalize()
+		
+		if(edgeindexcount==1){console.log(ends[0])}
+
+		//ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
 		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
 	}
 	var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
 	var mat =mats[e[2]]
-	var tube = rejiggertubeArc(ourmeshregistry[edgeindexcount],
-		ends[0], ends[1],.03,false,mat)
-	tube.visible = true;
+	if(mastercount>3){
+	ourmeshregistry[edgeindexcount] =// rejiggertubeArc(ourmeshregistry[edgeindexcount],
+		tubeArc(ends[0], ends[1],.03,false,mat)}
+	ourmeshregistry[edgeindexcount].visible = true;
 	
 	edgeindexcount++;
 
@@ -447,17 +457,9 @@ ourmodeldata.edges.forEach((e)=>
 
 }
 
-/*var amaterial = materials.grayMat.clone(); 
-amaterial.transparent=false;//change this
-	amaterial.opacity = 1;
-	var temp = new THREE.Mesh(geometries.sphere, amaterial); 
-	temp.visible = true;
-	//temp.geometry.scale(1.5)
-
-*/
 
 
-const geometry1 = new THREE.SphereGeometry(.2, 32, 16 ); 
+const geometry1 = new THREE.SphereGeometry(.1, 32, 16 ); 
 const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
 const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
 
