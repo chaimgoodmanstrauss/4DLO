@@ -248,11 +248,12 @@ for(var i = 0; i<numourspheres; i++){
 	var amaterial = materials.grayMat.clone(); 
 	amaterial.transparent=false;//change this
 	amaterial.opacity = 1;
-	var center = (new quat(Math.random(),Math.random(),Math.random(),.4*Math.random())).normalize()
+	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
 	oursphereregistry[i] = qSphereInWorld(center)
 	//new THREE.Mesh(geometries.sphere, amaterial); 
 	ourspherescaleregistry[i]=1; //to keep track of size changes
-	oursphereregistry[i].visible = true;
+	oursphereregistry[i].visible = false;
+	oursphereregistry[i].name = 'sphere'+i.toString()
 	scene.add(oursphereregistry[i])
 }
 
@@ -269,25 +270,33 @@ for(var i = 0; i<numourmeshes; i++){
 	var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
 	ourmeshregistry[i] = tubeArc(
 		q1 ,q2,.03,false,amaterial)
-	ourmeshregistry[i].visible = true;
+	ourmeshregistry[i].visible = false;
+	ourmeshregistry[i].name = 'mesh'+i.toString()
 	
 }
 }
 
 
+
+// DO NOT USE
+
 //  Keeping track of what's in the scene
 //  Each time the objects are added or deleted, update this registry.
-
-
 
 var thescencesobjects =[];
 var temporarymaterials = []
 
+
+/*** WARNING: MEMORY LEAK!! ***/
 function deletescenesobjects(){
 	thescencesobjects.map(y=>{scene.remove(y)})
 	thescencesobjects=[]
 	temporarymaterials.map(y=>y.dispose())
 }
+
+
+
+
 
 
 ///////////////////////////////////////
@@ -353,13 +362,12 @@ function updatethedrawing(){
 	/* */
 	//deletescenesobjects(); // we are no longer deleting our objects, but are updating them. 
 	
-	return;
+	
 	for(var i = 0; i<numourspheres; i++){
-		oursphereregistry[i].visible = true;
+		oursphereregistry[i].visible = false;//only matters when the number of verts changes
+
 	}
-	for(var i = 0; i<numourmeshes; i++){
-		ourmeshregistry[i].visible = false;
-	}
+
 
 
 
@@ -384,21 +392,23 @@ function updatethedrawing(){
 		//if(center.r<0){
 		//	itsmat.opacity=1+center.r*ourguiparams['transparency with height'];}
 		
-		var oldmat = oursphereregistry[counter].material
-	/*	ourspherescaleregistry[counter]=
-			copyqSphereInWorld(
-				oursphereregistry[counter], 
-				ourspherescaleregistry[counter],
-				center,ourguiparams['sphere radius'],itsmat)
-		qSphereInWorld(
-				center,ourguiparams['sphere radius'],itsmat)*/
-		oursphereregistry[counter].visible = true;
-		oldmat.dispose();
+		var oldmat = oursphereregistry[counter].material;
+		var dat=qSphereToWorld(center,.1,false);
+
+		var d = dat.center
+		
+		//ourspherescaleregistry[counter].geometry.attributes.position = dat.center
+		oursphereregistry[counter].position.set(d[0],d[1],d[2]);
+  		oursphereregistry[counter].scale.setScalar(dat.radius);
+  		
+  		oursphereregistry[counter].visible = true;
+  		oursphereregistry[counter].name = 'sphere'+counter.toString()
+
+	
+
 		counter++;
 		});
-	// end of the sphere stuff
-
-
+	
 
 // draw some edges
 
@@ -427,7 +437,7 @@ ourmodeldata.edges.forEach((e)=>
 	var mat =mats[e[2]]
 	var tube = rejiggertubeArc(ourmeshregistry[edgeindexcount],
 		ends[0], ends[1],.03,false,mat)
-	tube.visible = false;
+	tube.visible = true;
 	
 	edgeindexcount++;
 
@@ -445,6 +455,11 @@ amaterial.transparent=false;//change this
 	//temp.geometry.scale(1.5)
 
 */
+
+
+const geometry1 = new THREE.SphereGeometry(.2, 32, 16 ); 
+const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
+const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
 
 setupthemeshes();
 

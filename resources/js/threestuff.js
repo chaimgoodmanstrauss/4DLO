@@ -15,8 +15,9 @@
  // let geometricObjects=[]; //NEED handling/removing/disposing of three js objects
   //currently, everything is being dumped into geometricObjects and somethings into
   //special bins, such as qAxes, CayleyGraph
-  //Garbage removal is poor
 
+
+  //Garbage removal is poor
   //BIG MEMORY LEAK!!!
   
   
