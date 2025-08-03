@@ -77,6 +77,7 @@
       100, // far clipping plane
     );
 
+   // camera.position.set(1, 1, 10);
     camera.add(mainlight);
     mainlight.position.set( .5,2.,1. );
     scene.add( camera );
@@ -417,7 +418,7 @@ const ourmeshheight= 50;
 
 function createGeometries() {
 
-    const sphere = new THREE.SphereBufferGeometry(1,40,40);
+    const sphere = new THREE.SphereBufferGeometry(1,40,40); 
 
     const cylinder = new THREE.CylinderBufferGeometry(.2,.2, 20, 32);
 

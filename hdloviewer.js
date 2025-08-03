@@ -218,6 +218,11 @@ var redpuzzlenodes = ["0110","01-0","0-10","0--0","11-1","1001","1-11","1---","1
 var bitstodraw=[yellowpuzzlenodes,greenpuzzlenodes,redpuzzlenodes]
 
 
+
+
+
+
+
 ///////////////////////////////////////
 // 
 // SCENE AND MESH MANAGMENT
@@ -238,13 +243,22 @@ var ourmeshregistry = [];// these are all of the
 var ourspherescaleregistry=[];// to keep track of size changes
 
 var spherematerials = []
+
+
+
 ////////////////////////
-/* set up the messhes */
+/* set up the meshes */
+
+
+
 
 function setupthemeshes(){
 
 
 
+var defaultspherecolors = Array(40*40).fill(.75);
+	//note the size of the array, geared to the defaults
+	// in makesphereAt in threestuff
 
 
 for(var i = 0; i<numourspheres; i++){
@@ -252,11 +266,13 @@ for(var i = 0; i<numourspheres; i++){
 	amaterial.transparent=false;//change this
 	amaterial.opacity = 1;
 	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
-	oursphereregistry[i] = qSphereInWorld(center)
+	oursphereregistry[i] = qSphereInWorld(center) // new THREE.mesh line 498 threestuff
 	//new THREE.Mesh(geometries.sphere, amaterial); 
 	ourspherescaleregistry[i]=1; //to keep track of size changes
 	oursphereregistry[i].visible = false;
 	oursphereregistry[i].name = 'sphere'+i.toString()
+	oursphereregistry[i].setAttribute('color', new THREE.Float32BufferAttribute(defaultspherecolors, 4)); // 4 components for RGBA
+
 	scene.add(oursphereregistry[i])
 }
 
