@@ -312,23 +312,19 @@ var defaultspherecolors = Array(4*40*40).fill(.75);
 
 
 
-var defaultmeshcolors = Array(4*10*50).fill(.75);
+var defaultmeshcolors = Array(4*10*50).fill(.5);
 	//note the size of the array, geared to the defaults
 	// in tubeArc in quaternionicdisplay
 
 
 for(var i = 0; i<numourspheres; i++){
-	var amaterial = materials.grayMat.clone(); 
-	amaterial.transparent=false;//change this
-	amaterial.opacity = 1;
 	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
-	oursphereregistry[i] = qSphereInWorld(center);//,.1,colorableMaterial.clone()) // new THREE.mesh line 498 threestuff
+	oursphereregistry[i] = qSphereInWorld(center,.1);//, colorableMaterial) // new THREE.mesh line 498 threestuff
 	//new THREE.Mesh(geometries.sphere, amaterial); 
 	ourspherescaleregistry[i]=1; //to keep track of size changes
 	oursphereregistry[i].visible = false;
 	oursphereregistry[i].name = 'sphere'+i.toString()
-	oursphereregistry[i].setAttribute('color', new THREE.Float32BufferAttribute(defaultspherecolors, 4)); // 4 components for RGBA
-
+	oursphereregistry[i].geometry.attributes['color']=new THREE.Float32BufferAttribute(defaultspherecolors, 4); // 4 components for RGBA
 	scene.add(oursphereregistry[i])
 }
 
@@ -340,10 +336,10 @@ for(var i = 0; i<numourmeshes; i++){
 	var q1 = new quat(s+Math.random(),s,c,c-Math.random());
 	var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
 	ourmeshregistry[i] = tubeArc(
-		q1 ,q2,.03,false,colorableMaterial.clone())
+		q1 ,q2,.03,false,colorableMaterial)
 	ourmeshregistry[i].visible = false;
 	ourmeshregistry[i].name = 'mesh'+i.toString()
-	ourmeshregistry[i].setAttribute('color', new THREE.Float32BufferAttribute(defaultmeshcolors, 4)); // 4 components for RGBA
+	ourmeshregistry[i].geometry.attributes['color']=new THREE.Float32BufferAttribute(defaultmeshcolors, 4); // 4 components for RGBA
 
 }
 }
@@ -443,7 +439,7 @@ var mastercount=0;
 function updatethedrawing(){
 	/* */
 	//deletescenesobjects(); // we are no longer deleting our objects, but are updating them. 
-	return;
+	
 	
 	for(var i = 0; i<numourspheres; i++){
 		oursphereregistry[i].visible = false;//only matters when the number of verts changes
@@ -488,9 +484,9 @@ function updatethedrawing(){
 
 		/* next check to see if behind the camera, other color effects, etc*/
 
-		oursphereregistry[counter].attributes.position.needsUpdate = true;
-        oursphereregistry[counter].attributes.color.needsUpdate = true;
-        oursphereregistry[counter].computeVertexNormals(); // Recalculate normals for proper lighting
+		oursphereregistry[counter].geometry.attributes.position.needsUpdate = true;
+        oursphereregistry[counter].geometry.attributes.color.needsUpdate = true;
+        oursphereregistry[counter].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
 
 
 		counter++;
@@ -531,8 +527,8 @@ ourmodeldata.edges.forEach((e)=>
 	ourmeshregistry[edgeindexcount].visible = true;
 	
 	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
-	ourmeshregistry[counter].attributes.color.needsUpdate = true;
-    ourmeshregistry[counter].computeVertexNormals(); // Recalculate normals for proper lighting
+	ourmeshregistry[counter].geometry.attributes.color.needsUpdate = true;
+    ourmeshregistry[counter].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
 
 
 

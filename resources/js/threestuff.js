@@ -77,10 +77,12 @@
       100, // far clipping plane
     );
 
-   // camera.position.set(1, 1, 10);
+    camera.position.set(1, 4, 10);
     camera.add(mainlight);
-    mainlight.position.set( .5,2.,1. );
+    mainlight.position.set( 1,4,2 );
+    camera.lookAt(new THREE.Vector3(0,0,0));
     scene.add( camera );
+    
 
   }
   
