@@ -237,11 +237,14 @@ var ourmeshregistry = [];// these are all of the
 
 var ourspherescaleregistry=[];// to keep track of size changes
 
-
+var spherematerials = []
 ////////////////////////
 /* set up the messhes */
 
 function setupthemeshes(){
+
+
+
 
 
 for(var i = 0; i<numourspheres; i++){
@@ -412,6 +415,9 @@ function updatethedrawing(){
 		var oldmat = oursphereregistry[counter].material;
 		var dat=qSphereToWorld(center,.1,false);
 
+		if(ourmodeldata.vertexbasepoints.length>1){
+		oursphereregistry[counter].material = [materials.mat0,materials.mat9,materials.mat15,materials.mat22][i];
+	}
 		var d = dat.center
 		
 		//ourspherescaleregistry[counter].geometry.attributes.position = dat.center
