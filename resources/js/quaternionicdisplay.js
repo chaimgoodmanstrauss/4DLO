@@ -498,10 +498,12 @@ function tubeArc(pp,qq,rad =.08, fullQ= false ,material=materials.mat0, imin=0,i
 }
 
 
-function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=materials.mat0, imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
+function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=0, imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
   clipQ=false,clippingbound = 1,vertexmaterialfunction = 1){
     var ff= tubeFunctionFrom(pp,qq,rad,fullQ)
-    var amesh =  revisemeshFromS3surface(amesh, tubeFunctionFrom(pp,qq,rad,fullQ),imin,imax,iN,jmin,jmax,jN,material,
+    var thematerial=amesh.material;
+    if(material !=0){thematerial=material;}
+    var amesh =  revisemeshFromS3surface(amesh, tubeFunctionFrom(pp,qq,rad,fullQ),imin,imax,iN,jmin,jmax,jN,thematerial,
       vertexmaterialfunction)
     amesh.visible = true;
     return amesh

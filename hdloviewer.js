@@ -221,6 +221,50 @@ var bitstodraw=[yellowpuzzlenodes,greenpuzzlenodes,redpuzzlenodes]
 
 
 
+/////////////////////
+
+//
+//	
+//
+
+
+function transparentbehindcamera(amesh, cameraposition, camerafocus){
+ for (let i = 0; i < gridPositions.length; i++) {
+                const x = gridPositions[i].x;
+                const y = gridPositions[i].y;
+                
+                // Update height using sine wave
+                const z = Math.sin(time + x + y) * 0.2;
+                positions[i * 3 + 2] = z;
+                
+                // Update color: interpolate between red and blue based on time and x
+                const colorFactor = (Math.sin(time * 2 + x * 4) + 1) * 0.5; // 0 to 1
+                const red = 1 - colorFactor;   // Red component
+                const blue = colorFactor;      // Blue component
+                const green = 0;               // Keep green at 0
+                
+                // Update transparency: vary with time and y direction (more dramatic range)
+                const alpha = (Math.sin(time * 1.5 + y * 3) + 1) * 0.35 + 0.3; // 0.3 to 1.0 (more visible variation)
+                
+                colors[i * 4] = red;      // R
+                colors[i * 4 + 1] = green; // G
+                colors[i * 4 + 2] = blue;  // B
+                colors[i * 4 + 3] = alpha; // A (transparency)
+            }
+            
+            // Mark geometry as needing update
+            amesh.attributes.position.needsUpdate = true;
+            amesh.attributes.color.needsUpdate = true;
+            amesh.computeVertexNormals(); // Recalculate normals for proper lighting
+}
+
+
+
+
+
+
+
+
 
 
 ///////////////////////////////////////
@@ -254,11 +298,23 @@ var spherematerials = []
 
 function setupthemeshes(){
 
+const colorableMaterial = new THREE.MeshLambertMaterial({ 
+            vertexColors: true,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1 // Helps with rendering transparent surfaces
+        });
 
 
-var defaultspherecolors = Array(40*40).fill(.75);
+var defaultspherecolors = Array(4*40*40).fill(.75);
 	//note the size of the array, geared to the defaults
 	// in makesphereAt in threestuff
+
+
+
+var defaultmeshcolors = Array(4*10*50).fill(.75);
+	//note the size of the array, geared to the defaults
+	// in tubeArc in quaternionicdisplay
 
 
 for(var i = 0; i<numourspheres; i++){
@@ -266,7 +322,7 @@ for(var i = 0; i<numourspheres; i++){
 	amaterial.transparent=false;//change this
 	amaterial.opacity = 1;
 	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
-	oursphereregistry[i] = qSphereInWorld(center) // new THREE.mesh line 498 threestuff
+	oursphereregistry[i] = qSphereInWorld(center);//,.1,colorableMaterial.clone()) // new THREE.mesh line 498 threestuff
 	//new THREE.Mesh(geometries.sphere, amaterial); 
 	ourspherescaleregistry[i]=1; //to keep track of size changes
 	oursphereregistry[i].visible = false;
@@ -278,20 +334,17 @@ for(var i = 0; i<numourspheres; i++){
 
 
 for(var i = 0; i<numourmeshes; i++){
-	var amaterial = materials.grayMat.clone(); 
-	amaterial.transparent=true;
-	amaterial.opacity = 1;
-	amaterial.side = THREE.DoubleSide;
 	var a = 3.141/2*i/numourmeshes;
 	var s = Math.sin(a);
 	var c = Math.cos(a);
 	var q1 = new quat(s+Math.random(),s,c,c-Math.random());
 	var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
 	ourmeshregistry[i] = tubeArc(
-		q1 ,q2,.03,false,amaterial)
+		q1 ,q2,.03,false,colorableMaterial.clone())
 	ourmeshregistry[i].visible = false;
 	ourmeshregistry[i].name = 'mesh'+i.toString()
-	
+	ourmeshregistry[i].setAttribute('color', new THREE.Float32BufferAttribute(defaultmeshcolors, 4)); // 4 components for RGBA
+
 }
 }
 
@@ -390,7 +443,7 @@ var mastercount=0;
 function updatethedrawing(){
 	/* */
 	//deletescenesobjects(); // we are no longer deleting our objects, but are updating them. 
-	
+	return;
 	
 	for(var i = 0; i<numourspheres; i++){
 		oursphereregistry[i].visible = false;//only matters when the number of verts changes
@@ -421,22 +474,10 @@ function updatethedrawing(){
 			}	
 	
 		
-		var itsmat = materials.grayMat.clone(); //This can be a registry if it is a problem.
-		temporarymaterials.push(itsmat);
-		//itsmat.transparent=true;
-		itsmat.transparent=false;
-		//if(center.r<0){
-		//	itsmat.opacity=1+center.r*ourguiparams['transparency with height'];}
-		
-		var oldmat = oursphereregistry[counter].material;
 		var dat=qSphereToWorld(center,.1,false);
 
-		if(ourmodeldata.vertexbasepoints.length>1){
-		oursphereregistry[counter].material = [materials.mat0,materials.mat9,materials.mat15,materials.mat22][i];
-	}
 		var d = dat.center
 		
-		//ourspherescaleregistry[counter].geometry.attributes.position = dat.center
 		oursphereregistry[counter].position.set(d[0],d[1],d[2]);
   		oursphereregistry[counter].scale.setScalar(ourguiparams['sphere radius']*30*dat.radius);
 
@@ -444,7 +485,13 @@ function updatethedrawing(){
   		oursphereregistry[counter].visible = true;
   		oursphereregistry[counter].name = 'sphere'+counter.toString()
 
-	
+
+		/* next check to see if behind the camera, other color effects, etc*/
+
+		oursphereregistry[counter].attributes.position.needsUpdate = true;
+        oursphereregistry[counter].attributes.color.needsUpdate = true;
+        oursphereregistry[counter].computeVertexNormals(); // Recalculate normals for proper lighting
+
 
 		counter++;
 		}});
@@ -474,15 +521,21 @@ ourmodeldata.edges.forEach((e)=>
 		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
 		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
 	}
-	var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
-	var mat =mats[e[2]]
-	//if(mastercount>3)
-	{
+	//var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
+	//var mat =mats[e[2]]
+	
+
 	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
-		ends[0], ends[1],.03,false,mat)}
+		ends[0], ends[1],.03,false)
+
 	ourmeshregistry[edgeindexcount].visible = true;
 	
 	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
+	ourmeshregistry[counter].attributes.color.needsUpdate = true;
+    ourmeshregistry[counter].computeVertexNormals(); // Recalculate normals for proper lighting
+
+
+
 	edgeindexcount++;
 
 })
