@@ -48,6 +48,14 @@ function inboundsQ(pt){return true;}// (pt[0]*pt[0]+pt[1]*pt[1]+pt[2]*pt[2]<BOUN
 // for the moment, turning off all clipping
 
 
+//for some reason the one from the box is giving trouble. 
+// in time, this can be an octacubical mesh.
+const defaultSphereCircumN = 20,
+  defaultSphereLatN =20
+
+
+
+
 
 function meshFromS3surface(
     surface,// a function inputting i and j returning a quat
@@ -80,9 +88,10 @@ function meshFromS3surface(
         //
         //
                 inn*jN+jn,inn*jN+jp,ip*jN+jp, //lower right ccwise
-                inn*jN+jp,inn*jN+jn,ip*jN+jp, //lower right cwise
+              // inn*jN+jp,inn*jN+jn,ip*jN+jp, //lower right cwise
                 ip*jN+jp,ip*jN+jn,inn*jN+jn,  // upper left ccwise
-               ip*jN+jn,ip*jN+jp, inn*jN+jn) // upper left cwise
+              // ip*jN+jn,ip*jN+jp, inn*jN+jn, // upper left cwise
+            )
         }
       }
       // hence there should be 4*iN*jN faces
@@ -479,6 +488,23 @@ function makeCayleyGraph(basept=basepoint,
 }
 
 
+function sphereFunction(rad = .2){
+  return function(u,v){return new quat(rad,
+        Math.cos(6.28312*u)*Math.sin(3.14159*v),
+        Math.sin(6.28312*u)*Math.sin(3.14159*v),
+        Math.cos(3.14159*v)).normalize()}
+}
+
+function basicsphere(rad =.2,material = mats['grayMat']){
+  return meshFromS3surface(sphereFunction(rad),0,1,defaultSphereCircumN, 
+      0,1,defaultSphereLatN,
+      material,1)
+}
+
+function movebasicsphere(asphere, position, radius){
+  positions = asphere.geometry.attributes.positions.array
+  
+}
 
 function tubeFunctionFrom(p,q,rad=.2, fullTorus=false){
   var frame = framingFrom(p,q)

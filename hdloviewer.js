@@ -293,18 +293,17 @@ var spherematerials = []
 ////////////////////////
 /* set up the meshes */
 
-
-
-
-function setupthemeshes(){
-
-const colorableMaterial = new THREE.MeshLambertMaterial({ 
+const colorableMaterial = new THREE.MeshPhongMaterial({ 
             vertexColors: true,
             transparent: true,
             side: THREE.DoubleSide,
             alphaTest: 0.1 // Helps with rendering transparent surfaces
+
         });
 
+
+
+basicsphere()
 
 var defaultspherecolors = Array(4*40*40).fill(.75);
 	//note the size of the array, geared to the defaults
@@ -317,14 +316,35 @@ var defaultmeshcolors = Array(4*10*50).fill(.5);
 	// in tubeArc in quaternionicdisplay
 
 
+function fillarraywithrgba(r,g,b,a,n){
+	var arr = []
+	for(var i=0;i<n;i++){
+		arr.push(r,g,b,a)
+	}
+	return arr
+}
+
+var redmeshcolor = fillarraywithrgba(1,0,0,1,10*50)
+var greenmeshcolor = fillarraywithrgba(0,1,0,1,10*50)
+var bluemeshcolor = fillarraywithrgba(0,0,1,1,10*50)
+var graymeshcolor = fillarraywithrgba(.5,.5,.5,1,10*50)
+
+
+
+
+
+function setupthemeshes(){
+
 for(var i = 0; i<numourspheres; i++){
 	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
 	oursphereregistry[i] = qSphereInWorld(center,.1);//, colorableMaterial) // new THREE.mesh line 498 threestuff
 	//new THREE.Mesh(geometries.sphere, amaterial); 
+	oursphereregistry[i].material=colorableMaterial;
 	ourspherescaleregistry[i]=1; //to keep track of size changes
 	oursphereregistry[i].visible = false;
 	oursphereregistry[i].name = 'sphere'+i.toString()
-	oursphereregistry[i].geometry.attributes['color']=new THREE.Float32BufferAttribute(defaultspherecolors, 4); // 4 components for RGBA
+	oursphereregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(defaultmeshcolors, 4)); // 4 components for RGBA
+	//oursphereregistry[i].geometry.attributes.color.array=fillarraywithrgba(1,0,0,1,1600)
 	scene.add(oursphereregistry[i])
 }
 
@@ -339,8 +359,10 @@ for(var i = 0; i<numourmeshes; i++){
 		q1 ,q2,.03,false,colorableMaterial)
 	ourmeshregistry[i].visible = false;
 	ourmeshregistry[i].name = 'mesh'+i.toString()
-	ourmeshregistry[i].geometry.attributes['color']=new THREE.Float32BufferAttribute(defaultmeshcolors, 4); // 4 components for RGBA
+	ourmeshregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(redmeshcolor, 4)); // 4 components for RGBA
 
+
+	scene.add(ourmeshregistry[i])
 }
 }
 
@@ -517,18 +539,22 @@ ourmodeldata.edges.forEach((e)=>
 		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
 		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
 	}
-	//var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
+	var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
 	//var mat =mats[e[2]]
 	
 
 	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
-		ends[0], ends[1],.03,false)
+		ends[0], ends[1],.03,false,colorableMaterial);
+	//ourmeshregistry[edgeindexcount].geometry.attributes.color.array=redmeshcolor;
+	//[redmeshcolor,bluemeshcolor,greenmeshcolor][edgeindexcount%4]
+
+		//mats[edgeindexcount%4])
 
 	ourmeshregistry[edgeindexcount].visible = true;
 	
 	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
-	ourmeshregistry[counter].geometry.attributes.color.needsUpdate = true;
-    ourmeshregistry[counter].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+	ourmeshregistry[edgeindexcount].geometry.attributes.color.needsUpdate = true;
+    ourmeshregistry[edgeindexcount].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
 
 
 
