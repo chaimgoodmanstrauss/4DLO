@@ -323,7 +323,7 @@ const allmodeldata = {'332 cayley graph':
 			//makegroup(
 			//	[new qAction(qI,qOne),new qAction(qOne,qI),new qAction(qW,qOne),new qAction(qOne,qW)],"Oxone"),
 		makeGroupFromName("Oxone").groupElements,
-	vertexbasepoint:qOne,
+	vertexbasepoints:[qOne],
 	edges://each coset gets one; the motions flip these around
 		[["1000","1111",1],["1000","111-",0],,["1000","11-1",2],,["1000","1-11",3]]
 		},//end of '332 cayley graph'
@@ -334,10 +334,20 @@ const allmodeldata = {'332 cayley graph':
 			//makegroup(
 			//	[new qAction(qI,qOne),new qAction(qOne,qI),new qAction(qW,qOne),new qAction(qOne,qW)],"Oxone"),
 		makeGroupFromName("Oxone").groupElements,
-	vertexbasepoint:qOne,
+	vertexbasepoints:[qOne],
 	edges://each coset gets one; the motions flip these around
 		[["1000","1111",1],["1000","111-",1],,["1000","11-1",1],,["1000","1-11",1]]
 	},//end of '24-cell'
+'16-cell':
+{
+	vertmotions: makegroup([
+		new qAction(qI,qOne), new qAction(qJ,qOne)]).groupElements, 
+	edgemotions: makegroup([
+		new qAction(qI,qOne),new qAction(qW,qW)]).groupElements,
+	vertexbasepoints:[qOne,qW],
+	edges:[["1000","0100"]]
+
+},//end of 16-cell
 	
 
 }
@@ -368,6 +378,11 @@ function updatethedrawing(){
 
 	}
 
+	for(var i = 0; i<numourmeshes; i++){
+		ourmeshregistry[i].visible = false;//only matters when the number of verts changes
+
+	}
+
 	mastercount++
 
 
@@ -377,13 +392,13 @@ function updatethedrawing(){
 
 	var counter = 0;
 	(ourmodeldata.vertmotions).forEach((m)=>{
-		
+		for(var i=0; i<ourmodeldata.vertexbasepoints.length;i++){
 		var center;
 		if(ourguiparams['Multiply the motion on the']=='left'){
-			center = ourguiparams['the offset'].mult(m.acton(ourmodeldata.vertexbasepoint))
+			center = ourguiparams['the offset'].mult(m.acton(ourmodeldata.vertexbasepoints[i]))
 			}
 		else {
-			center = (m.acton(ourmodeldata.vertexbasepoint)).mult(ourguiparams['the offset']);
+			center = (m.acton(ourmodeldata.vertexbasepoints[i])).mult(ourguiparams['the offset']);
 			}	
 	
 		
@@ -401,7 +416,8 @@ function updatethedrawing(){
 		
 		//ourspherescaleregistry[counter].geometry.attributes.position = dat.center
 		oursphereregistry[counter].position.set(d[0],d[1],d[2]);
-  		oursphereregistry[counter].scale.setScalar(dat.radius);
+  		oursphereregistry[counter].scale.setScalar(ourguiparams['sphere radius']*30*dat.radius);
+
   		
   		oursphereregistry[counter].visible = true;
   		oursphereregistry[counter].name = 'sphere'+counter.toString()
@@ -409,7 +425,7 @@ function updatethedrawing(){
 	
 
 		counter++;
-		});
+		}});
 	
 
 // draw some edges
@@ -429,26 +445,22 @@ ourmodeldata.edges.forEach((e)=>
 // an edge has precomputed end points and a color:
 	var ends=[];
 	if(ourguiparams['Multiply the motion on the']=='left'){
-		ends[0] =new quat(.2,.2,1,1).normalize()
-			// ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
-		ends[1] = new quat(3,.2,1,1).normalize()
-			//ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
+		ends[0] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
+		ends[1] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
 	}
 	else {
-		ends[0] =new quat(Math.random(),.2,1,1).normalize()
-		
-		if(edgeindexcount==1){console.log(ends[0])}
-
-		//ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
+		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
 		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
 	}
 	var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
 	var mat =mats[e[2]]
-	if(mastercount>3){
-	ourmeshregistry[edgeindexcount] =// rejiggertubeArc(ourmeshregistry[edgeindexcount],
-		tubeArc(ends[0], ends[1],.03,false,mat)}
+	//if(mastercount>3)
+	{
+	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
+		ends[0], ends[1],.03,false,mat)}
 	ourmeshregistry[edgeindexcount].visible = true;
 	
+	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
 	edgeindexcount++;
 
 })
