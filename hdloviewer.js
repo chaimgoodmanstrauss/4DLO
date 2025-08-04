@@ -475,10 +475,10 @@ function edgecolorfunction(x,coset){
 	var color
 	switch(coset)
 	{
-		case 0: color = [1,0,0,1]; break
+		case 0: color = [x,0,0,1]; break
 		case 1: color = [0,x,1-x,1]; break
-		case 2: color = [0,0,0,1]; break
-		case 3: color = [(Date.now() * 0.001)%1,0,0,1]; break
+		case 2: color = [0,.5+.5*Math.sin(6.14*x+(Date.now() * 0.001)),0,1]; break
+		case 3: color = [.5+.5*Math.cos(6.14*x+(Date.now() * 0.001)),0,0,1]; break
 	}
 	return color
 }
@@ -501,10 +501,6 @@ function updatethedrawing(){
 		ourmeshregistry[i].visible = false;//only matters when the number of verts changes
 
 	}
-
-	
-
-
 
 		//draw spheres the vertices using modeldata: 
 
@@ -614,5 +610,10 @@ setupthemeshes();
 	// now draw the drawing for the first time
 theModelChanged();
 
+function animate() {
+            requestAnimationFrame(animate);
+            console.log('h');
+            updatethedrawing();}
 
-console.log("hi")
+animate();
+
