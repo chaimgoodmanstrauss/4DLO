@@ -102,9 +102,19 @@ function meshFromS3surface(
     var vertices = new Float32Array(vertArray);
    // var indices = new Uint16Array(faceArray); //presumes no looping
     var geometry = new THREE.BufferGeometry()
-  
+
+    // Create vertex colors array with alpha channel (RGBA)
+        const colors = [];
+        for (let i = 0; i < iN*jN; i++) {
+            colors.push(1, 0, 0, 1); // Start with red, full opacity, will be updated in animation
+        }
    // stuff.push(vertices,indices)
     geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3))
+    geometry.addAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); // 4 components for RGBA
+    geometry.computeVertexNormals();
+
+    
+
     geometry.setIndex(faceArray);
 
     var mmesh = new THREE.Mesh(geometry, material)

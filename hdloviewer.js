@@ -305,6 +305,8 @@ const colorableMaterial = new THREE.MeshLambertMaterial({
 
 
 
+
+
 var defaultspherecolors = Array(4*40*40).fill(.75);
 	//note the size of the array, geared to the defaults
 	// in makesphereAt in threestuff
@@ -337,18 +339,13 @@ var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
 var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
 var bluemeshcolor = new Float32Array(fillarraywithrgba(0,0,1,1,10*50))
 var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))
-/*
-var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
-var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
-var bluemeshcolor = new Float32Array(fillarraywithrgba(0,0,1,1,10*50))
-var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))
-*/
 
-var redmeshcolor = new Float32Array(fillarraywithrgb(1,0,0,10*50))
+
+/*var redmeshcolor = new Float32Array(fillarraywithrgb(1,0,0,10*50))
 var greenmeshcolor = new Float32Array(fillarraywithrgb(0,1,0,10*50))
 var bluemeshcolor = new Float32Array(fillarraywithrgb(0,0,1,10*50))
 var graymeshcolor = new Float32Array(fillarraywithrgb(.5,.5,1,10*50))
-
+*/
 
 
 
@@ -379,8 +376,7 @@ for(var i = 0; i<numourmeshes; i++){
 		q1 ,q2,.03,false,colorableMaterial)
 	ourmeshregistry[i].visible = false;
 	ourmeshregistry[i].name = 'mesh'+i.toString()
-	ourmeshregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(redmeshcolor, 3)); // 4 components for RGBA
-
+	
 	scene.add(ourmeshregistry[i])
 }
 }
@@ -474,7 +470,21 @@ function theModelChanged(){
 }
 
 
-var mastercount=0;
+
+function edgecolorfunction(x,coset){
+	var color
+	switch(coset)
+	{
+		case 0: color = [1,0,0,1]; break
+		case 1: color = [0,x,1-x,1]; break
+		case 2: color = [0,0,0,1]; break
+		case 3: color = [(Date.now() * 0.001)%1,0,0,1]; break
+	}
+	return color
+}
+
+
+
 
 
 function updatethedrawing(){
@@ -492,8 +502,7 @@ function updatethedrawing(){
 
 	}
 
-	mastercount++
-
+	
 
 
 
@@ -543,9 +552,9 @@ if(ourguiparams['show all edges']){motions = ourmodeldata.edgemotions}
 var edgeindexcount=0;
 
 motions.forEach((m)=>{
-
+//	var whichcoset = 0;
 ourmodeldata.edges.forEach((e)=>
-{
+{	
 
 //console.log('another edge',e,m,ourguiparams['the offset'])
 // an edge has precomputed end points and a color:
@@ -558,21 +567,13 @@ ourmodeldata.edges.forEach((e)=>
 		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
 		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
 	}
-	var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
+	//var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
 	//var mat =mats[e[2]]
 	
 
 	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
 		ends[0], ends[1],.03,false,colorableMaterial);
-	if(Math.random()<.5)
-	{
-	ourmeshregistry[edgeindexcount].geometry.attributes.color.array=bluemeshcolor;
-	}
-	else
-	{
-		ourmeshregistry[edgeindexcount].geometry.attributes.color.array=redmeshcolor;
 	
-	}
 	//[redmeshcolor,bluemeshcolor,greenmeshcolor][edgeindexcount%4]
 
 		//mats[edgeindexcount%4])
@@ -584,8 +585,8 @@ ourmodeldata.edges.forEach((e)=>
 
 	for(var i = 0; i<500; i++)
 		{	var s = Math.random();
-			ourmeshregistry[edgeindexcount].geometry.attributes.color.array.set([s,1-s,.5],
-			i*3)}
+			ourmeshregistry[edgeindexcount].geometry.attributes.color.array.set(edgecolorfunction((i%50)/50,e[2]),
+			i*4)}
 	
 	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
 	ourmeshregistry[edgeindexcount].geometry.attributes.color.needsUpdate = true;
@@ -594,6 +595,7 @@ ourmodeldata.edges.forEach((e)=>
 
 
 	edgeindexcount++;
+
 
 })
 })
