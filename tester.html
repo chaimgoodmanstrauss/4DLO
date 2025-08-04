@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js 5x5 Grid Mesh</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #228B22; /* Forest green to match renderer */
+            font-family: Arial, sans-serif;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8); /* Darker background for better contrast */
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        10x50 Dynamic Wave Mesh<br>
+        Height = sin(time + x + y)<br>
+        Color = Red to Blue by time & x<br>
+        Transparency varies with time & y<br>
+        Mouse: Rotate | Scroll: Zoom
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x228B22); // Forest green background
+        renderer.sortObjects = true; // Better transparency sorting
+        document.body.appendChild(renderer.domElement);
+
+        // Create 10x50 grid geometry
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        const indices = [];
+
+        // Generate vertices for 10x50 grid (500 vertices)
+        const gridPositions = []; // Store x,y positions for animation
+        for (let y = 0; y < 50; y++) {
+            for (let x = 0; x < 10; x++) {
+                // Map from grid coordinates to 0-1 range
+                const xPos = x / 9; // 0 to 1 (9 intervals for 10 points)
+                const yPos = y / 49; // 0 to 1 (49 intervals for 50 points)
+                const zPos = 0;     // Will be animated
+                
+                vertices.push(xPos, yPos, zPos);
+                gridPositions.push({ x: xPos, y: yPos });
+            }
+        }
+
+        // Generate indices for triangular faces
+        for (let y = 0; y < 49; y++) {
+            for (let x = 0; x < 9; x++) {
+                // Each square becomes 2 triangles
+                const topLeft = y * 10 + x;
+                const topRight = y * 10 + x + 1;
+                const bottomLeft = (y + 1) * 10 + x;
+                const bottomRight = (y + 1) * 10 + x + 1;
+
+                // First triangle (top-left, bottom-left, top-right)
+                indices.push(topLeft, bottomLeft, topRight);
+                
+                // Second triangle (top-right, bottom-left, bottom-right)
+                indices.push(topRight, bottomLeft, bottomRight);
+            }
+        }
+
+        // Create vertex colors array with alpha channel (RGBA)
+        const colors = [];
+        for (let i = 0; i < gridPositions.length; i++) {
+            colors.push(1, 0, 0, 1); // Start with red, full opacity, will be updated in animation
+        }
+
+        // Set geometry attributes
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); // 4 components for RGBA
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+
+        // Create material that uses vertex colors with transparency
+        const coloredMaterial = new THREE.MeshLambertMaterial({ 
+            vertexColors: true,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1 // Helps with rendering transparent surfaces
+        });
+
+        // Create mesh
+        const coloredMesh = new THREE.Mesh(geometry, coloredMaterial);
+        scene.add(coloredMesh);
+
+        // Add brighter lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Much brighter ambient light
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); // Brighter directional light
+        directionalLight.position.set(1, 1, 0.5);
+        scene.add(directionalLight);
+
+        // Add a second light from the opposite side
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight2.position.set(-1, -1, 0.5);
+        scene.add(directionalLight2);
+
+        // Position camera to view the elongated mesh
+        camera.position.set(0.5, 0.5, 2);
+        camera.lookAt(0.5, 0.5, 0);
+
+        // Mouse controls
+        let mouseDown = false;
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotationX = 0;
+        let targetRotationY = 0;
+        let rotationX = 0;
+        let rotationY = 0;
+
+        function onMouseDown(event) {
+            mouseDown = true;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+
+        function onMouseUp() {
+            mouseDown = false;
+        }
+
+        function onMouseMove(event) {
+            if (!mouseDown) return;
+
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+
+            targetRotationY += deltaX * 0.01;
+            targetRotationX += deltaY * 0.01;
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+
+        function onWheel(event) {
+            camera.position.z += event.deltaY * 0.002;
+            camera.position.z = Math.max(1, Math.min(5, camera.position.z));
+        }
+
+        // Event listeners
+        renderer.domElement.addEventListener('mousedown', onMouseDown);
+        renderer.domElement.addEventListener('mouseup', onMouseUp);
+        renderer.domElement.addEventListener('mousemove', onMouseMove);
+        renderer.domElement.addEventListener('wheel', onWheel);
+
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Get current time in seconds
+            const time = Date.now() * 0.001;
+
+            // Update vertex heights, colors, and transparency
+            const positions = geometry.attributes.position.array;
+            const colors = geometry.attributes.color.array;
+            
+            for (let i = 0; i < gridPositions.length; i++) {
+                const x = gridPositions[i].x;
+                const y = gridPositions[i].y;
+                
+                // Update height using sine wave
+                const z = Math.sin(time + x + y) * 0.2;
+                positions[i * 3 + 2] = z;
+                
+                // Update color: interpolate between red and blue based on time and x
+                const colorFactor = (Math.sin(time * 2 + x * 4) + 1) * 0.5; // 0 to 1
+                const red = 1 - colorFactor;   // Red component
+                const blue = colorFactor;      // Blue component
+                const green = 0;               // Keep green at 0
+                
+                // Update transparency: vary with time and y direction (more dramatic range)
+                const alpha = (Math.sin(time * 1.5 + y * 3) + 1)* .5 ; // 0.3 to 1.0 (more visible variation)
+                
+                colors[i * 4] = red;      // R
+                colors[i * 4 + 1] = green; // G
+                colors[i * 4 + 2] = blue;  // B
+                colors[i * 4 + 3] = alpha; // A (transparency)
+            }
+            
+            // Mark geometry as needing update
+            geometry.attributes.position.needsUpdate = true;
+            geometry.attributes.color.needsUpdate = true;
+            geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+
+            // Smooth rotation
+            rotationX += (targetRotationX - rotationX) * 0.1;
+            rotationY += (targetRotationY - rotationY) * 0.1;
+            
+            // Rotate the mesh
+            coloredMesh.rotation.x = rotationX;
+            coloredMesh.rotation.y = rotationY;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

@@ -80,7 +80,7 @@ function meshFromS3surface(
   {
     for(var jn=0;jn<jN-1;jn++){
       var ip=inn+1,jp=jn+1 
-      faceArray.push(//note both orientations; Really do need both
+      faceArray.push(//
         //
         //  ---
         //  |/|  // labeled w inn*Jn+jn in lower left, in usual orientation
@@ -88,29 +88,24 @@ function meshFromS3surface(
         //
         //
                 inn*jN+jn,inn*jN+jp,ip*jN+jp, //lower right ccwise
-              // inn*jN+jp,inn*jN+jn,ip*jN+jp, //lower right cwise
                 ip*jN+jp,ip*jN+jn,inn*jN+jn,  // upper left ccwise
-              // ip*jN+jn,ip*jN+jp, inn*jN+jn, // upper left cwise
             )
         }
       }
       // hence there should be 4*iN*jN faces
   
  
- if(faceArray.length>0) //TO DO: Check that there are some faces!
+ 
   {
     var stuff=[vertArray,faceArray]
 
     var vertices = new Float32Array(vertArray);
-    var indices = new Uint16Array(faceArray); //presumes no looping
+   // var indices = new Uint16Array(faceArray); //presumes no looping
     var geometry = new THREE.BufferGeometry()
   
-    stuff.push(vertices,indices)
+   // stuff.push(vertices,indices)
     geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3))
-    //geometry.addAttribute('index', new THREE.BufferAttribute(indices, 3));
-    //geometry.setIndex(new THREE.BufferAttribute(indices, 4));
-    geometry.setIndex(new THREE.BufferAttribute(indices, 1))
-
+    geometry.setIndex(faceArray);
 
     var mmesh = new THREE.Mesh(geometry, material)
     scene.add(mmesh)

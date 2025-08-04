@@ -293,7 +293,7 @@ var spherematerials = []
 ////////////////////////
 /* set up the meshes */
 
-const colorableMaterial = new THREE.MeshPhongMaterial({ 
+const colorableMaterial = new THREE.MeshLambertMaterial({ 
             vertexColors: true,
             transparent: true,
             side: THREE.DoubleSide,
@@ -303,7 +303,7 @@ const colorableMaterial = new THREE.MeshPhongMaterial({
 
 
 
-basicsphere()
+
 
 var defaultspherecolors = Array(4*40*40).fill(.75);
 	//note the size of the array, geared to the defaults
@@ -324,10 +324,30 @@ function fillarraywithrgba(r,g,b,a,n){
 	return arr
 }
 
-var redmeshcolor = fillarraywithrgba(1,0,0,1,10*50)
-var greenmeshcolor = fillarraywithrgba(0,1,0,1,10*50)
-var bluemeshcolor = fillarraywithrgba(0,0,1,1,10*50)
-var graymeshcolor = fillarraywithrgba(.5,.5,.5,1,10*50)
+function fillarraywithrgb(r,g,b,n){
+	var arr = []
+	for(var i=0;i<n;i++){
+		arr.push(r,g,b)
+	}
+	return arr
+}
+
+
+var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
+var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
+var bluemeshcolor = new Float32Array(fillarraywithrgba(0,0,1,1,10*50))
+var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))
+/*
+var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
+var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
+var bluemeshcolor = new Float32Array(fillarraywithrgba(0,0,1,1,10*50))
+var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))
+*/
+
+var redmeshcolor = new Float32Array(fillarraywithrgb(1,0,0,10*50))
+var greenmeshcolor = new Float32Array(fillarraywithrgb(0,1,0,10*50))
+var bluemeshcolor = new Float32Array(fillarraywithrgb(0,0,1,10*50))
+var graymeshcolor = new Float32Array(fillarraywithrgb(.5,.5,1,10*50))
 
 
 
@@ -335,7 +355,7 @@ var graymeshcolor = fillarraywithrgba(.5,.5,.5,1,10*50)
 
 function setupthemeshes(){
 
-for(var i = 0; i<numourspheres; i++){
+/*for(var i = 0; i<numourspheres; i++){
 	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
 	oursphereregistry[i] = qSphereInWorld(center,.1);//, colorableMaterial) // new THREE.mesh line 498 threestuff
 	//new THREE.Mesh(geometries.sphere, amaterial); 
@@ -347,7 +367,7 @@ for(var i = 0; i<numourspheres; i++){
 	//oursphereregistry[i].geometry.attributes.color.array=fillarraywithrgba(1,0,0,1,1600)
 	scene.add(oursphereregistry[i])
 }
-
+*/
 
 for(var i = 0; i<numourmeshes; i++){
 	var a = 3.141/2*i/numourmeshes;
@@ -359,8 +379,7 @@ for(var i = 0; i<numourmeshes; i++){
 		q1 ,q2,.03,false,colorableMaterial)
 	ourmeshregistry[i].visible = false;
 	ourmeshregistry[i].name = 'mesh'+i.toString()
-	ourmeshregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(redmeshcolor, 4)); // 4 components for RGBA
-
+	ourmeshregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(redmeshcolor, 3)); // 4 components for RGBA
 
 	scene.add(ourmeshregistry[i])
 }
@@ -463,10 +482,10 @@ function updatethedrawing(){
 	//deletescenesobjects(); // we are no longer deleting our objects, but are updating them. 
 	
 	
-	for(var i = 0; i<numourspheres; i++){
+	/*for(var i = 0; i<numourspheres; i++){
 		oursphereregistry[i].visible = false;//only matters when the number of verts changes
 
-	}
+	}*/
 
 	for(var i = 0; i<numourmeshes; i++){
 		ourmeshregistry[i].visible = false;//only matters when the number of verts changes
@@ -480,7 +499,7 @@ function updatethedrawing(){
 
 		//draw spheres the vertices using modeldata: 
 
-	var counter = 0;
+	/*var counter = 0;
 	(ourmodeldata.vertmotions).forEach((m)=>{
 		for(var i=0; i<ourmodeldata.vertexbasepoints.length;i++){
 		var center;
@@ -504,7 +523,7 @@ function updatethedrawing(){
   		oursphereregistry[counter].name = 'sphere'+counter.toString()
 
 
-		/* next check to see if behind the camera, other color effects, etc*/
+		// next check to see if behind the camera, other color effects, etc
 
 		oursphereregistry[counter].geometry.attributes.position.needsUpdate = true;
         oursphereregistry[counter].geometry.attributes.color.needsUpdate = true;
@@ -512,7 +531,7 @@ function updatethedrawing(){
 
 
 		counter++;
-		}});
+		}});*/
 	
 
 // draw some edges
@@ -545,12 +564,28 @@ ourmodeldata.edges.forEach((e)=>
 
 	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
 		ends[0], ends[1],.03,false,colorableMaterial);
-	//ourmeshregistry[edgeindexcount].geometry.attributes.color.array=redmeshcolor;
+	if(Math.random()<.5)
+	{
+	ourmeshregistry[edgeindexcount].geometry.attributes.color.array=bluemeshcolor;
+	}
+	else
+	{
+		ourmeshregistry[edgeindexcount].geometry.attributes.color.array=redmeshcolor;
+	
+	}
 	//[redmeshcolor,bluemeshcolor,greenmeshcolor][edgeindexcount%4]
 
 		//mats[edgeindexcount%4])
 
 	ourmeshregistry[edgeindexcount].visible = true;
+
+	//transparentlayerize(ourmeshregistry[edgeindexcount],camera.position)
+	//ourmeshregistry[edgeindexcount].geometry.attributes.color.array=bluemeshcolor;
+
+	for(var i = 0; i<500; i++)
+		{	var s = Math.random();
+			ourmeshregistry[edgeindexcount].geometry.attributes.color.array.set([s,1-s,.5],
+			i*3)}
 	
 	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
 	ourmeshregistry[edgeindexcount].geometry.attributes.color.needsUpdate = true;
@@ -568,9 +603,9 @@ ourmodeldata.edges.forEach((e)=>
 
 
 
-const geometry1 = new THREE.SphereGeometry(.1, 32, 16 ); 
-const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
-const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
+//const geometry1 = new THREE.SphereGeometry(.1, 32, 16 ); 
+//const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
+//const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
 
 setupthemeshes();
 
