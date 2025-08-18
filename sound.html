@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microphone Frequency Band Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="number"], input[type="range"] {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+        
+        input[type="number"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        button {
+            grid-column: 1 / -1;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            background: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .level-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .level-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #FFC107, #FF5722);
+            border-radius: 15px;
+            transition: width 0.1s ease;
+            width: 0%;
+        }
+        
+        .level-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .frequency-display {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Microphone Frequency Band Analyzer</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="minFreq">Min Frequency (Hz):</label>
+                <input type="number" id="minFreq" value="300" min="0" max="22000">
+            </div>
+            
+            <div class="control-group">
+                <label for="maxFreq">Max Frequency (Hz):</label>
+                <input type="number" id="maxFreq" value="3000" min="0" max="22000">
+            </div>
+            
+            <div class="control-group">
+                <label for="smoothing">Smoothing (0-1):</label>
+                <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.8">
+            </div>
+            
+            <div class="control-group">
+                <label for="sensitivity">Sensitivity:</label>
+                <input type="range" id="sensitivity" min="0.1" max="3" step="0.1" value="1">
+            </div>
+            
+            <button id="startBtn">Start Analysis</button>
+        </div>
+        
+        <div class="status" id="status">Click "Start Analysis" to begin</div>
+        
+        <div id="errorDiv"></div>
+        
+        <div class="level-display" id="levelDisplay" style="display: none;">
+            <div class="frequency-display" id="freqDisplay"></div>
+            <div class="level-bar">
+                <div class="level-fill" id="levelFill"></div>
+            </div>
+            <div class="level-text" id="levelText">0 dB</div>
+        </div>
+    </div>
+
+    <script>
+        class FrequencyAnalyzer {
+            constructor() {
+                this.audioContext = null;
+                this.analyser = null;
+                this.microphone = null;
+                this.dataArray = null;
+                this.isRunning = false;
+                this.animationFrame = null;
+                
+                // UI elements
+                this.startBtn = document.getElementById('startBtn');
+                this.status = document.getElementById('status');
+                this.levelDisplay = document.getElementById('levelDisplay');
+                this.levelFill = document.getElementById('levelFill');
+                this.levelText = document.getElementById('levelText');
+                this.freqDisplay = document.getElementById('freqDisplay');
+                this.errorDiv = document.getElementById('errorDiv');
+                
+                // Controls
+                this.minFreqInput = document.getElementById('minFreq');
+                this.maxFreqInput = document.getElementById('maxFreq');
+                this.smoothingInput = document.getElementById('smoothing');
+                this.sensitivityInput = document.getElementById('sensitivity');
+                
+                this.bindEvents();
+            }
+            
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => {
+                    if (this.isRunning) {
+                        this.stop();
+                    } else {
+                        this.start();
+                    }
+                });
+            }
+            
+            async start() {
+                try {
+                    this.clearError();
+                    this.status.textContent = 'Requesting microphone access...';
+                    
+                    // Get microphone access
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Create audio context
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Create analyser node
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 2048;
+                    this.analyser.smoothingTimeConstant = parseFloat(this.smoothingInput.value);
+                    
+                    // Connect microphone to analyser
+                    this.microphone = this.audioContext.createMediaStreamSource(stream);
+                    this.microphone.connect(this.analyser);
+                    
+                    // Create data array for frequency data
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    
+                    this.isRunning = true;
+                    this.startBtn.textContent = 'Stop Analysis';
+                    this.status.textContent = 'Analyzing microphone input...';
+                    this.levelDisplay.style.display = 'block';
+                    
+                    this.analyze();
+                    
+                } catch (error) {
+                    this.showError('Error accessing microphone: ' + error.message);
+                    this.status.textContent = 'Failed to start analysis';
+                }
+            }
+            
+            stop() {
+                this.isRunning = false;
+                
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+                
+                if (this.microphone) {
+                    this.microphone.disconnect();
+                }
+                
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                
+                this.startBtn.textContent = 'Start Analysis';
+                this.status.textContent = 'Analysis stopped';
+                this.levelDisplay.style.display = 'none';
+                this.clearError();
+            }
+            
+            analyze() {
+                if (!this.isRunning) return;
+                
+                // Update analyser settings
+                this.analyser.smoothingTimeConstant = parseFloat(this.smoothingInput.value);
+                
+                // Get frequency data
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                // Calculate frequency band
+                const minFreq = parseInt(this.minFreqInput.value);
+                const maxFreq = parseInt(this.maxFreqInput.value);
+                const sensitivity = parseFloat(this.sensitivityInput.value);
+                
+                // Convert frequency to bin indices
+                const sampleRate = this.audioContext.sampleRate;
+                const binCount = this.analyser.frequencyBinCount;
+                const binWidth = sampleRate / (2 * binCount);
+                
+                const minBin = Math.floor(minFreq / binWidth);
+                const maxBin = Math.floor(maxFreq / binWidth);
+                
+                // Calculate average level in frequency band
+                let sum = 0;
+                let count = 0;
+                
+                for (let i = minBin; i <= maxBin && i < this.dataArray.length; i++) {
+                    sum += this.dataArray[i];
+                    count++;
+                }
+                
+                const averageLevel = count > 0 ? sum / count : 0;
+                
+                // Convert to decibels (approximate)
+                const dbLevel = averageLevel > 0 ? 20 * Math.log10(averageLevel / 255) * sensitivity : -60;
+                const normalizedLevel = Math.max(0, Math.min(100, (dbLevel + 60) / 60 * 100));
+                
+                // Update UI
+                this.updateDisplay(dbLevel, normalizedLevel, minFreq, maxFreq);
+                
+                // Continue analyzing
+                this.animationFrame = requestAnimationFrame(() => this.analyze());
+            }
+            
+            updateDisplay(dbLevel, normalizedLevel, minFreq, maxFreq) {
+                this.levelFill.style.width = normalizedLevel + '%';
+                this.levelText.textContent = dbLevel.toFixed(1) + ' dB';
+                this.freqDisplay.textContent = `Analyzing ${minFreq} - ${maxFreq} Hz`;
+                
+                // Color coding based on level
+                if (normalizedLevel < 30) {
+                    this.levelFill.style.background = '#4CAF50';
+                } else if (normalizedLevel < 70) {
+                    this.levelFill.style.background = '#FFC107';
+                } else {
+                    this.levelFill.style.background = '#FF5722';
+                }
+            }
+            
+            showError(message) {
+                this.errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            }
+            
+            clearError() {
+                this.errorDiv.innerHTML = '';
+            }
+        }
+        
+        // Initialize analyzer when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FrequencyAnalyzer();
+        });
+    </script>
+</body>
+</html>

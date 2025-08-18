@@ -73,8 +73,8 @@
       15, // FOV
       container.clientWidth / container.clientHeight, // aspect
 
-      .001, // near clipping plane
-      100, // far clipping plane
+      5, // near clipping plane
+      40, // far clipping plane
     );
 
     camera.position.set(1, 4, 10);

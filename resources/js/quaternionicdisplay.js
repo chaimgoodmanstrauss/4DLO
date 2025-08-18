@@ -6,7 +6,7 @@
 
 
 
-// the World is cartesian, with the usual unit framing
+// the world is Cartesian, with the usual unit framing
 // Q coords are in S^3 ~ unit quaternions
 // We wish to map back and forth by 
 // 1 <-> 000,  i<->100, j<->010, k<->001
