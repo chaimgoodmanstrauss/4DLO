@@ -1,6 +1,6 @@
 //////////////////////
 //
-//  Quaternionic display
+//  Quaternionic display tools
 //
 // This relies on three.js
 
@@ -12,9 +12,6 @@
 // 1 <-> 000,  i<->100, j<->010, k<->001
 // consequently, we are stereographically projecting from the south pole, 000(-1)
 
-/*function mapQToWorld(r,i,j,k){
-  return [i/(r+1),j/(r+1),k/(r+1)] 
-}*/
 
 function mapQToWorld(q){
   return [q.i/(q.r+1),q.j/(q.r+1),q.k/(q.r+1)] 
@@ -24,6 +21,76 @@ function mapWorldToQ(x,y,z){
   const D = 2/(x*x+y*y+z*z+1)
   return new quat ( D-1,x*D, y*D, z*D,)
 }
+
+
+
+///////////////////////////////////
+//////////////////////////////////
+//
+// Framing S3
+//
+// Given p and q in S3, given coords uvw, 
+// locate the point w between 
+// the point o on pq measured v from the closest point to 1
+// the point r on pq which is perp to o, measured in the p to q direction
+// the point s on o1 perp to pq, measured in the o to 1 direction
+// the point t perp to o, r, s
+// The coords are then 
+
+function orstuvwCoords(o,r,s,t,u,v,w){
+  return ((o.scalarmult(cos(v)).add(r.scalarmult(sin(v)))).scalarmult(cos(w))).add(
+    (s.scalarmult(cos(u)).add(t.scalarmult(sin(u)))).scalarmult(sin(w)))
+}
+
+//v is along the p,q,o,r great circle, with o at v=0 and p at v = -d ; r is from o,r to s,t 
+// and u is along s,t starting at s.
+function orstCoords(frame){
+  var o = frame.o, r= frame.r, s=frame.s, t=frame.t,d=frame.d
+  //var uu = 1, vv=.2, ww = .3
+//  console.log(frame, o,r,s,t,d,o.scalarmult(cos(vv-d)))
+ // console.log(((o.mult(cos(vv-d)).add(r.mult(sin(vv-d)))).mult(
+ //   cos(ww))).add(
+ //    (s.mult(cos(uu)).add(t.mult(cos(uu)))).mult(sin(ww))))
+
+  var g=function(u,v,w){
+    return ((o.scalarmult(cos(v)).add(r.scalarmult(sin(v)))).scalarmult(cos(w))).add(
+     (s.scalarmult(cos(u)).add(t.scalarmult(sin(u)))).scalarmult(sin(w)))
+  }
+  return g
+}
+
+//the points o,r are on the geodesic pq: o is closest to 1 (*this is not stable, and hence wrong*), 
+// r is pi/2 around 
+//the point s is pi/2 from o on the geodesic o1 and t is pi/2 from each of o,r,s
+//oriented consistently (but not known which way that is!)
+//d is the offset, the cosine of angle from p to o;  orientation is always in this order
+
+
+// the right way to do this is to pull the point back to the origin; handedness shouldn't ?? matter
+// From the origin, the pts are qOne, qI, qJ and qK.
+// Hence: let m = the motion on the left (say?) that brings  (p.inverse()) q onto the 1 - I axis. 
+// Then the points are then  m.inverse applied to the left of qOne, qI, qJ and qK. 
+
+// So only need to work this out. 
+function framingFrom(p,q){ // assume p and q are unit length quats
+  qq = (p.inverse()).mult(q)
+  var a = qq.i, b = qq.j, c = qq.k 
+  var nn = sqrt(a*a+b*b+c*c);
+  a = a/nn; b = b/nn; c = c/nn;
+  var aa = sqrt(1+a)
+  var sq2 = sqrt(2)
+  var vv= new quat(aa/sq2,0,c/aa/sq2,-b/aa/sq2)
+  var vc = new quat(aa/sq2,0,-c/aa/sq2,b/aa/sq2)
+  var o,r,s,t,l // measuring from o; offset to p is included in return
+  o = p.copy()
+  r = p.mult(vc).mult(qI).mult(vv)
+  s = p.mult(vc).mult(qJ).mult(vv)
+  t = p.mult(vc).mult(qK).mult(vv)
+  l = Math.acos(p.dot(q))
+ return {"o":o,"r":r,"s":s,"t":t,"d":0,"l":l}//d is some legacy something
+}
+
+
 
 
 
@@ -54,7 +121,18 @@ const defaultSphereCircumN = 20,
   defaultSphereLatN =20
 
 
-
+// A work in progress:
+// This does not work.
+function meshFromS3surfaceAlt(
+    surface,// a function inputting i and j returning a quat
+    imin=0,imax=1, iN=10, //simply connected with iN, jN verts
+    jmin=0,jmax=1,jN=10,
+    material = materials.mat0,
+    vertexmaterialfunction=1){
+      var qsurface= function(i,j){return mapQToWorld(surface(i,j))};
+    return meshFromsurfacefunction(
+        qsurface,imin,imax,iN,jmin,jmax,jN,material,vertexmaterialfunction)
+    }
 
 
 function meshFromS3surface(
@@ -120,17 +198,11 @@ function meshFromS3surface(
     var mmesh = new THREE.Mesh(geometry, material)
     scene.add(mmesh)
     meshes.push(mmesh)
-/*
-    for(i = 0; i< faceArray.length; i++){
-      mmesh.faces[ i ].vertexColors[ 0 ].setHSL( Math.random(), 0.5, 0.5 );
-
-    }
-    */mmesh.geometry.colorsNeedUpdate = true;
+    mmesh.geometry.colorsNeedUpdate = true;
     return mmesh
   }
 
 }
-
 
 
 function revisemeshFromS3surface(
@@ -255,64 +327,13 @@ function getOrbitListOf(q,groupname){
 }
 
 
-/*function createOrbitOf(q,groupname,size=.2,material=materials.mat1){
-  let gp = makeGroupFromName(groupname);
-  let orbit = gp.groupElements.map(x=>mapQToWorld(q.actby(x)));
-  orbit.map(x=>{let sp = makesphereAt(x,size,material);scene.add(sp);})
-
-  return orbit
-}*/
-
-function makeSphereData(basept=qOne,numSph=3,randomOffset = .2, startMatIndex=2, matStepIndex=4){
-  let sphereData = [];
-  let n = 0;
-  let i = basept.i, j = basept.j,k=basept.k,r=basept.r;
-  for(n=0;n<numSph;n++){
-    let pos = new quat(
-      r+(n/numSph)*randomOffset*(.5-random()),i+(n/numSph)*randomOffset*(.5-random()),
-      j+(n/numSph)*randomOffset*(.5-random()),k+(n/numSph)*randomOffset*(.5-random())).normalize()
-    sphereData.push({"size":.6/180*PI*((numSph-n-1)%numSph)+1/180*PI,"mat":materials["mat"+((n*matStepIndex+startMatIndex)%NUMMATS)],
-    "pos":pos})
-  }
-  return sphereData}
-
-// creates spheres at all pts in orbit of q, within 2 of origin in projection
-function createOrbitOf(q,groupname,size=.2,material=materials.mat1){
-  var gp = ourGroup
-  let spheres =[];
-  let orbit = gp.groupElements.map(x=>(q.actby(x)));
-  orbit.map(x=>{
-    let spdata = qSphereToWorld(x,size);
-    if(spdata.center!=NaN && spdata.radius!=NaN){
-      if(spdata.center[0]*spdata.center[0]+
-        spdata.center[1]*spdata.center[1]+
-        spdata.center[2]*spdata.center[2]<4 && spdata.radius<1){
-      let sp = makesphereAt(spdata.center,spdata.radius,material);
-      spheres.push(sp);
-      scene.add(sp);}}})
-  return spheres
-}
 
 
-///// Called from basicUI.js 
-//    The spheres are placed into the scene at makesphereAt
-sphereLists={};
 
-function createOrbits(groupname,basept=basepoint, sphData=[1,0],newSphereData=false,){
-  //sphData is options for makeSphereData
-  var sdat;
-  sdat = makeSphereData(basept,...sphData)
- var orbitSpheres = sdat.map(x=>createOrbitOf(x.pos,groupname,x.size,x.mat));
-  if(sphereLists[basept]==undefined)
-  {
-    sphereLists[basept]=orbitSpheres;
-  }
-  else sphereLists[basept]=[...sphereLists[basept],...orbitSpheres]
-}
 
-function clearOrbits(){
-  Object.keys(sphereLists).map(x=>(sphereLists[x].forEach(function(z){z.map(y=>{scene.remove(y)})})))
-}
+
+/////
+// Axes
 
 function addAxes(){
   var axesHelper = new THREE.AxesHelper( 5 );
@@ -320,20 +341,7 @@ function addAxes(){
   return axesHelper}
 
 var qAxes=[];
-/*
 
-
-function addQAxes(){
-  if(addQAxes.children.length=0){ 
-    
-  }
-  // else do nothing
-  
-}*/
-
-
-/////
-// Axes
 
 function setUpQAxes(){
   qAxes.push(qSphereInWorld(qOne,.4,materials.mat7))
@@ -366,72 +374,6 @@ function removeQAxes(){
 
 
 
-///////////////////////////////////
-//////////////////////////////////
-//
-// Framing S3
-//
-// Given p and q in S3, given coords uvw, 
-// locate the point w between 
-// the point o on pq measured v from the closest point to 1
-// the point r on pq which is perp to o, measured in the p to q direction
-// the point s on o1 perp to pq, measured in the o to 1 direction
-// the point t perp to o, r, s
-// The coords are then 
-
-function orstuvwCoords(o,r,s,t,u,v,w){
-  return ((o.scalarmult(cos(v)).add(r.scalarmult(sin(v)))).scalarmult(cos(w))).add(
-    (s.scalarmult(cos(u)).add(t.scalarmult(sin(u)))).scalarmult(sin(w)))
-}
-
-//v is along the p,q,o,r great circle, with o at v=0 and p at v = -d ; r is from o,r to s,t 
-// and u is along s,t starting at s.
-function orstCoords(frame){
-  var o = frame.o, r= frame.r, s=frame.s, t=frame.t,d=frame.d
-  //var uu = 1, vv=.2, ww = .3
-//  console.log(frame, o,r,s,t,d,o.scalarmult(cos(vv-d)))
- // console.log(((o.mult(cos(vv-d)).add(r.mult(sin(vv-d)))).mult(
- //   cos(ww))).add(
- //    (s.mult(cos(uu)).add(t.mult(cos(uu)))).mult(sin(ww))))
-
-  var g=function(u,v,w){
-    return ((o.scalarmult(cos(v)).add(r.scalarmult(sin(v)))).scalarmult(cos(w))).add(
-     (s.scalarmult(cos(u)).add(t.scalarmult(sin(u)))).scalarmult(sin(w)))
-  }
-  return g
-}
-
-//the points o,r are on the geodesic pq: o is closest to 1 (*this is not stable, and hence wrong*), 
-// r is pi/2 around 
-//the point s is pi/2 from o on the geodesic o1 and t is pi/2 from each of o,r,s
-//oriented consistently (but not known which way that is!)
-//d is the offset, the cosine of angle from p to o;  orientation is always in this order
-
-
-// the right way to do this is to pull the point back to the origin; handedness shouldn't ?? matter
-// From the origin, the pts are qOne, qI, qJ and qK.
-// Hence: let m = the motion on the left (say?) that brings  (p.inverse()) q onto the 1 - I axis. 
-// Then the points are then  m.inverse applied to the left of qOne, qI, qJ and qK. 
-
-// So only need to work this out. 
-function framingFrom(p,q){ // assume p and q are unit length quats
-  qq = (p.inverse()).mult(q)
-  var a = qq.i, b = qq.j, c = qq.k 
-  var nn = sqrt(a*a+b*b+c*c);
-  a = a/nn; b = b/nn; c = c/nn;
-  var aa = sqrt(1+a)
-  var sq2 = sqrt(2)
-  var vv= new quat(aa/sq2,0,c/aa/sq2,-b/aa/sq2)
-  var vc = new quat(aa/sq2,0,-c/aa/sq2,b/aa/sq2)
-  var o,r,s,t,l // measuring from o; offset to p is included in return
-  o = p.copy()
-  r = p.mult(vc).mult(qI).mult(vv)
-  s = p.mult(vc).mult(qJ).mult(vv)
-  t = p.mult(vc).mult(qK).mult(vv)
-  l = Math.acos(p.dot(q))
- return {"o":o,"r":r,"s":s,"t":t,"d":0,"l":l}//d is some legacy something
-}
-
 
 
 
@@ -461,37 +403,8 @@ function arrowTube(pp,qq,mat = materials.mat17, radP =.02, radQ = .003,  iN=10,j
       0,1,iN,jmin,jmax,jN,mat)
 }
 
-/////
-// Cayley Graph
 
-var ourCayleyGraph=[]
-
-function removeCayleyGraph(){
-  ourCayleyGraph.map(x=>{scene.remove(x);x.geometry.dispose();})
-  // MEMORY ISSUE 
-  ourCayleyGraph=[]
-
-}
-
-function makeCayleyGraph(basept=basepoint,
-  groupelts=ourGroupElts,
-  groupgens=getGroupGensFromNames(ourGroup.name),usecolorsQ=true){
-
-  removeCayleyGraph();
-  
-  i=0
-  groupgens.map(y=>
-    {
-    if(!y.l.equalTo(qOne))
-    {var matt = "mat"+((7*(i++))%30).toString()
-    ourGroupElts.map(x=>{
-      var bb = x.acton(basept), cc = x.acton(y.acton(basept));
-      var tube = arrowTube(bb,cc,materials[matt])
-      ourCayleyGraph.push(tube)
-   //   geometricObjects.push(tube)
-          })}})
-}
-
+///// some spheres 
 
 function sphereFunction(rad = .2){
   return function(u,v){return new quat(rad,
@@ -511,10 +424,13 @@ function movebasicsphere(asphere, position, radius){
   
 }
 
-function tubeFunctionFrom(p,q,rad=.2, fullTorus=false){
+// a tube 
+
+function qtubeFunctionFrom(p,q,rad=.2, fullTorus=false, showthreed = false){
   var frame = framingFrom(p,q)
  // console.log("ho", frame)
   var orsts = orstCoords(frame)
+  
   if(!fullTorus)
     return function(i,j){return orsts(i*2*PI,j*(frame.l)+frame.d,rad)}
   else
@@ -523,18 +439,19 @@ function tubeFunctionFrom(p,q,rad=.2, fullTorus=false){
 
 function tubeArc(pp,qq,rad =.08, fullQ= false ,material=materials.mat0, imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
   clipQ=false,clippingbound = 1,vertexmaterialfunction = 1){
-    var ff= tubeFunctionFrom(pp,qq,rad,fullQ)
-    return meshFromS3surface(tubeFunctionFrom(pp,qq,rad,fullQ),imin,imax,iN,jmin,jmax,jN,material,
-      vertexmaterialfunction)
+    var tubef = qtubeFunctionFrom(pp,qq,rad,fullQ);
+    var mmesh = meshFromS3surface(tubef,imin,imax,iN,jmin,jmax,jN,material,
+      vertexmaterialfunction);
+    return mmesh
 }
 
 
-function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=0, imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
-  clipQ=false,clippingbound = 1,vertexmaterialfunction = 1){
-    var ff= tubeFunctionFrom(pp,qq,rad,fullQ)
+function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=0, showthreed=false,imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
+  clipQ=false,vertexmaterialfunction = 1, clippingbound = 1,){
+    var ff = qtubeFunctionFrom(pp,qq,rad,fullQ,showthreed)
     var thematerial=amesh.material;
     if(material !=0){thematerial=material;}
-    var amesh =  revisemeshFromS3surface(amesh, tubeFunctionFrom(pp,qq,rad,fullQ),imin,imax,iN,jmin,jmax,jN,thematerial,
+    var amesh =  revisemeshFromS3surface(amesh, ff,imin,imax,iN,jmin,jmax,jN,thematerial,
       vertexmaterialfunction)
     amesh.visible = true;
     return amesh
@@ -542,10 +459,5 @@ function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=0, imin=0
 
 
 
-
-function initQuatDisplay(){
-  setUpQAxes()
-
-}
 
 

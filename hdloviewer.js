@@ -24,7 +24,7 @@
 //////////////////////////////
 //////////////////////////////
 //
-// init the gui
+// init the gui for the HDLO viwer
 //
 // This comes from the lil-gui library
 
@@ -49,6 +49,12 @@ ourgui.add(ourguiparams,'sphere radius',.01,.2).onChange(theModelChanged);
 ourguiparams['transparency with height']=.2;
 ourgui.add(ourguiparams,'transparency with height',0,1).onChange(theModelChanged);
 */
+
+ourguiparams['show as'] = 'four-d';
+ourgui.add(ourguiparams,'show as',
+	['four-d','three-d']).onChange(thecamerachanged);
+
+
 
 ourguiparams['the model'] = '332 cayley graph';
 ourgui.add(ourguiparams,'the model',
@@ -130,97 +136,6 @@ ourgui.add(ourguiparams,'show all edges').onChange(theModelChanged);
 
 
 
-//////////////////////////////
-//////////////////////////////
-//
-// Init the quaternions etc needed 
-// (move into so4subgroups etc.)
-//
-
-///////////////////////////////
-// 
-
-// recall from so4subgroups.js :
-
-/*
-
-const qOne = new quat(1,0,0,0)
-const qW = new quat(-.5,.5,.5,.5) // note normalized
-const qI = new quat(0,1,0,0)
-const qJ = new quat(0,0,1,0)
-const qK = new quat(0,0,0,1)
-const qIco = new quat(0,.5,(sqrt(5)-1)/4, (sqrt(5)+1)/4)
-const qO = new quat(0,0,sqrt(.5),sqrt(.5))
-*/
-
-
-
-
-const usefulPoints = {
-	"1000":[1,0,0,0],"0100":[0,1,0,0],"0010":[0,0,1,0],"0001":[0,0,0,1],
-	"0-00":[0,-1,0,0],"00-0":[0,0,-1,0],"000-":[0,0,0,-1],
-
-	"1111":[1,1,1,1],  "111-":[1,1,1,-1], "11-1":[1,1,-1,1], "11--":[1,1,-1,-1],
-	"1-11":[1,-1,1,1],"1-1-":[1,-1,1,-1],"1--1":[1,-1,-1,1],"1---":[1,-1,-1,-1],
-
-	"-111":[-1,1,1,1],  "-11-":[-1,1,1,-1], "-1-1":[-1,1,-1,1], "-1--":[-1,1,-1,-1],
-	"--11":[-1,-1,1,1],"--1-":[-1,-1,1,-1],"---1":[-1,-1,-1,1],"----":[-1,-1,-1,-1],
-
-	"1100":[1,1,0,0],  "1010":[1,0,1,0],  "1001":[1,0,0,1],  "0110":[0,1,1,0],  "0101":[0,1,0,1],  "0011":[0,0,1,1],
-	"1-00":[1,-1,0,0], "10-0":[1,0,-1,0], "100-":[1,0,0,-1], "01-0":[0,1,-1,0], "010-":[0,1,0,-1], "001-":[0,0,1,-1],
-	"-100":[-1,1,0,0], "-010":[-1,0,1,0], "-001":[-1,0,0,1], "0-10":[0,-1,1,0], "0-01":[0,-1,0,1], "00-1":[0,0,-1,1],
-	"--00":[-1,-1,0,0],"-0-0":[-1,0,-1,0],"-00-":[-1,0,0,-1],"0--0":[0,-1,-1,0],"0-0-":[0,-1,0,-1],"00--":[0,0,-1,-1],
-
-}
-
-
-var usefulQuats={};
-
-(Object.keys(usefulPoints)).map(x=>{
-	usefulQuats[x]=(new quat(...usefulPoints[x])).normalize()})
-
-
-
-var cubekeys =[
-	"1111","111-","11-1","11--","1-11","1-1-","1--1","1---",
-	"-111","-11-","-1-1","-1--","--11","--1-","---1","----"]
-
-var orthokeys = ["1000","0100","0010","0001","0-00","00-0","000-"]
-
-var counterkeys = [
-	"1100","1010","1001","0110","0101","0011",
-	"-100","-010","-001","0-10","0-01","00-1",
-	"1-00","10-0","100-","01-0","010-","001-",
-	"--00","-0-0","-00-","0--0","0-0-","00--"]
-
-var halfcubekeys = [
-	"1111","111-","11-1","11--","1-11","1-1-","1--1","1---"]
-
-
-var halforthokeys = ["1000","0100","0010","0001","0-00","00-0"]
-
-var halfcounterkeys=[
-	"1100","1010","1001","0110","0101","0011",
-	                     "0-10","0-01","00-1",
-	"1-00","10-0","100-","01-0","010-","001-",
-	                     "0--0","0-0-","00--"]
-
-var tetkeys = ["1111","11--","1-1-","1--1","-11-","-1-1","--11","----"]
-
-
-var yellowpuzzlenodes=
-["1000","0100","0010","0001","0-00","00-0","000-","0101","010-","0-01","0-0-","1010","10-0"]
-
-var greenpuzzlenodes = ["0011","001-","00-1","00--","1111","1100","11--","1--1","1-00","1-1-"]
-
-var redpuzzlenodes = ["0110","01-0","0-10","0--0","11-1","1001","1-11","1---","100-","111-"]
-   
-//bitstodraw=[halfcubekeys,halforthokeys,halfcounterkeys]
-
-var bitstodraw=[yellowpuzzlenodes,greenpuzzlenodes,redpuzzlenodes]
-
-
-
 
 
 /////////////////////
@@ -265,14 +180,9 @@ function transparentbehindcamera(amesh, cameraposition, camerafocus){
 
 
 
-
-
-
-
-
 ///////////////////////////////////////
 // 
-// SCENE AND MESH MANAGMENT
+// SCENE AND MESH MANAGMENT FOR HDLO
 //
 
 // Because of improper memory management in the particular version
@@ -280,63 +190,16 @@ function transparentbehindcamera(amesh, cameraposition, camerafocus){
 // them into place as needed. 
 // Different models will use different parts of the array.
 
-const numourspheres = 50; // 0-47 reserved for the special vertices
-const numourmeshes = 100; // each model takes its own
+const numourmeshes = 96; // The 1IJK 24-cell takes 96 edges in one 24-cell. 
+	// as we need to, let's just update this.
 
+var ourmeshregistry = [];// these are all of the meshes
 
-var oursphereregistry =[];// these are all of the spheres
-var ourmeshregistry = [];// these are all of the 
-
-var ourspherescaleregistry=[];// to keep track of size changes
-
-var spherematerials = []
-
-
-
-////////////////////////
-/* set up the meshes */
-
-const colorableMaterial = new THREE.MeshLambertMaterial({ 
-            vertexColors: true,
-            transparent: true,
-            side: THREE.DoubleSide,
-            alphaTest: 0.1 // Helps with rendering transparent surfaces
-
-        });
-
-
-
-
-
-
-
-var defaultspherecolors = Array(4*40*40).fill(.75);
-	//note the size of the array, geared to the defaults
-	// in makesphereAt in threestuff
-
-
+//// colors for HDLO 
 
 var defaultmeshcolors = Array(4*10*50).fill(.5);
 	//note the size of the array, geared to the defaults
 	// in tubeArc in quaternionicdisplay
-
-
-function fillarraywithrgba(r,g,b,a,n){
-	var arr = []
-	for(var i=0;i<n;i++){
-		arr.push(r,g,b,a)
-	}
-	return arr
-}
-
-function fillarraywithrgb(r,g,b,n){
-	var arr = []
-	for(var i=0;i<n;i++){
-		arr.push(r,g,b)
-	}
-	return arr
-}
-
 
 var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
 var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
@@ -345,60 +208,60 @@ var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))
 
 
 
+/////////////////////////////////////////
+////////////////////////
+/* set up the meshes */
+
+
+
+
+
 function setupthemeshes(){
 
-/*for(var i = 0; i<numourspheres; i++){
-	var center = (new quat(Math.random(),Math.random(),0*Math.random(),0*Math.random())).normalize()
-	oursphereregistry[i] = qSphereInWorld(center,.1);//, colorableMaterial) // new THREE.mesh line 498 threestuff
-	//new THREE.Mesh(geometries.sphere, amaterial); 
-	oursphereregistry[i].material=colorableMaterial;
-	ourspherescaleregistry[i]=1; //to keep track of size changes
-	oursphereregistry[i].visible = false;
-	oursphereregistry[i].name = 'sphere'+i.toString()
-	oursphereregistry[i].geometry.addAttribute('color',new THREE.Float32BufferAttribute(defaultmeshcolors, 4)); // 4 components for RGBA
-	//oursphereregistry[i].geometry.attributes.color.array=fillarraywithrgba(1,0,0,1,1600)
-	scene.add(oursphereregistry[i])
+
+// set up some generic meshes
+
+	for(var i = 0; i<numourmeshes; i++){
+		var a = 3.141/2*i/numourmeshes;
+		var s = Math.sin(a);
+		var c = Math.cos(a);
+		var q1 = new quat(s+Math.random(),s,c,c-Math.random());
+		var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
+		ourmeshregistry[i] = tubeArc(
+			q1 ,q2,.03,false,colorableMaterial)
+		ourmeshregistry[i].visible = false;
+		ourmeshregistry[i].name = 'mesh'+i.toString()
+		
+		scene.add(ourmeshregistry[i])
+	}
+
 }
-*/
-
-for(var i = 0; i<numourmeshes; i++){
-	var a = 3.141/2*i/numourmeshes;
-	var s = Math.sin(a);
-	var c = Math.cos(a);
-	var q1 = new quat(s+Math.random(),s,c,c-Math.random());
-	var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
-	ourmeshregistry[i] = tubeArc(
-		q1 ,q2,.03,false,colorableMaterial)
-	ourmeshregistry[i].visible = false;
-	ourmeshregistry[i].name = 'mesh'+i.toString()
-	
-	scene.add(ourmeshregistry[i])
-}
-}
-
-
-
 
 
 
 ///////////////////////////////////////
 ///////////////////////////////////////
 //
-// Good drawing commands 
+//  Various Color Models of the 24-cell. 
 //
+//
+//
+// Each "model" consists of a list of 24 mesh coloring functions, f:([0,1]x(R^+))-> RGB
+// taking a position x, 0≤x≤1 and a time t>0, and returning a color value. 
+// 
+// These models are generated using the modeldata that we outline 
+// 
+// These functions are parametrized by: 
+// 		* some canonical function F:[0,1]xR->RBG, taking position and time to RBG. 
+//			These may be further parametrized, eg in cosets by some color shift or style change.
+//		* a value +1, -1, 0: If +1, f = F; if -1, f(x)=F(1-x); else f(x)=F(2|1/2-x|) 
+// 			(or if there's any value to it, can add an option for F(1-2|1/2-x|))
+//	
+//  	
 
-/*
-var cubeCornerSphs = cubeCorners.map(x=>{qSphereInWorld(x,.1,materials.mat7)})
-var orthoCornerSphs = orthoCorners.map(x=>{qSphereInWorld(x,.1,materials.mat10)})
-var counterCornerSphs = counterCorners.map(x=>{qSphereInWorld(x,.03,materials.mat30)})
-*/
 
 
-
-
-
-
-const allmodeldata = {'332 cayley graph':
+const CosetModelData = {'332 cayley graph':
 	{vertmotions:makegroup([new qAction(qI,qOne),
 			new qAction(qW,qOne)],"Oxone").groupElements,
 	edgemotions:
@@ -434,141 +297,10 @@ const allmodeldata = {'332 cayley graph':
 }
 
 
-
-
-/////////////////
-//
-//
-//  Our color function
-//  All this needs to be is a function that
-// 	takes in a time, a value in [0,1], a small index, and whether to reflect
-//
-
-// replace these as we wish.
-
-
-/*
-function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
-	var color
-	var xx = x
-	if(reflectQ){
-		xx=1-Math.abs(1-2*x)
-	}
-	switch(index)
-	{
-		case 0: color = [ourFrequencyAnalyzer.analyze(300,500).dbLevel/60,
-		ourFrequencyAnalyzer.analyze(500,900).dbLevel/60,
-		ourFrequencyAnalyzer.analyze(900,3000).dbLevel/60,1]; break
-		case 1: color = [0,xx,1-x,1]; break
-		case 2: color = [0,.5+.5*Math.sin(6.14*5*xx+time),0,1]; break
-		case 3: color = [0,.5+.5*Math.cos(6.14*5*xx+6*time),.5+.5*Math.cos(6.14*5*xx+7*time),1]; break
-	}
-	return color
-}
-*/
-
-function hsbToRgba(h, s, b,a=1) {
-  // Handle grayscale case (no saturation)
-  if (s === 0) {
-    return [b, b, b,a];
-  }
-  
-  // Convert hue to 0-6 range and find which sector we're in
-  const hue = (h%1) * 6;
-  const sector = Math.floor(hue);
-  const fractional = hue - sector;
-  
-  // Calculate intermediate values
-  const p = b * (1 - s);
-  const q = b * (1 - s * fractional);
-  const t = b * (1 - s * (1 - fractional));
-  
-  // Determine RGB based on which sector of the color wheel
-  switch (sector % 6) {
-    case 0: return [b, t, p,a]; // Red to Yellow
-    case 1: return [q, b, p,a]; // Yellow to Green
-    case 2: return [p, b, t,a]; // Green to Cyan
-    case 3: return [p, q, b,a]; // Cyan to Blue
-    case 4: return [t, p, b,a]; // Blue to Magenta
-    case 5: return [b, p, q,a]; // Magenta to Red
-  }
-}
-
-
-
-function hsbToRgb(h, s, b) {
-  // Handle grayscale case (no saturation)
-  if (s === 0) {
-    return [b, b, b];
-  }
-  
-  if (h>0){h=h%1}else
-  {h=1+(h%1)}
-  // Convert hue to 0-6 range and find which sector we're in
-  const hue = (h) * 6;
-  const sector = Math.floor(hue);
-  const fractional = hue - sector;
-  
-  // Calculate intermediate values
-  const p = b * (1 - s);
-  const q = b * (1 - s * fractional);
-  const t = b * (1 - s * (1 - fractional));
-  
-  // Determine RGB based on which sector of the color wheel
-  switch (sector % 6) {
-    case 0: return [b, t, p]; // Red to Yellow
-    case 1: return [q, b, p]; // Yellow to Green
-    case 2: return [p, b, t]; // Green to Cyan
-    case 3: return [p, q, b]; // Cyan to Blue
-    case 4: return [t, p, b]; // Blue to Magenta
-    case 5: return [b, p, q]; // Magenta to Red
-  }
-}
-
-
-
-function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
-	var color
-	var xx = x
-	if(reflectQ){
-		xx=1-Math.abs(1-2*x)
-
-	}
-
-	var rgb;
-	switch(index)
-	{
-		case 0:  
-			color = hsbToRgb(.5+.06*Math.sin(time+xx*3.141),1,1); break
-		case 1: color = hsbToRgb(.7+.06*Math.sin(time+xx*3.141),1,1); break
-		case 2: color = hsbToRgb((.95+.06*Math.sin(1*time+xx*3.141)),1,1);break//.25+.5*Math.sin(1*time+(xx+.5)*3.141)); break;
-		case 3: color = hsbToRgb(.25+.06*Math.sin(time+xx*3.141),1,.5+.5*
-			(.6+.4*Math.sin(2*time))*
-			(Math.sqrt(1+Math.sin(20*time+xx*3.141*10)))); break
-	}
-	return color
-}
-
-
-
-
-function edgecolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001){
-		return testcolorfunction(x,index,reflectQ,time)
-	}
-
-
-
-
-
-
-
 var ourmodeldata
 
 function theModelChanged(){
-	 ourmodeldata =  allmodeldata[ourguiparams['the model']]// for the moment nothing happens here, but this is where the
-	// group and other data is to be assembled
-	
-	/* */
+	ourmodeldata =  CosetModelData[ourguiparams['the model']]
 	updatethedrawing() // all the actual three.js object handling
 }
 
@@ -578,116 +310,90 @@ function theModelChanged(){
 
 
 function updatethedrawing(){
-	/* */
-	//deletescenesobjects(); // we are no longer deleting our objects, but are updating them. 
 	
-	
-	/*for(var i = 0; i<numourspheres; i++){
-		oursphereregistry[i].visible = false;//only matters when the number of verts changes
 
-	}*/
 
+
+	// hide all of the meshes in case they're showing. 
 	for(var i = 0; i<numourmeshes; i++){
-		ourmeshregistry[i].visible = false;//only matters when the number of verts changes
-
+		ourmeshregistry[i].visible = false;
 	}
 
-		//draw spheres the vertices using modeldata: 
 
-	/*var counter = 0;
-	(ourmodeldata.vertmotions).forEach((m)=>{
-		for(var i=0; i<ourmodeldata.vertexbasepoints.length;i++){
-		var center;
+	// first update the positions of all of the tube meshes, based on how they
+	// are placed by the UI
+
+	// We compute the model data the first time a model is called, from a list
+	// 
+	// and then store this as an array of {indices to the color functions, 0/-/+ for flipping the color function around.
+	// Initially, these indices are just from the cosets; soon we will be sculpting. 
+
+	// then we update the colors
+
+
+	var motions
+	if(ourguiparams['show all edges']){motions = ourmodeldata.edgemotions}
+		else {motions = [qIdentity];}
+
+	var edgeindexcount=0;
+
+	motions.forEach((m)=>{
+	//	var whichcoset = 0;
+	ourmodeldata.edges.forEach((e)=>
+	{	
+
+	//console.log('another edge',e,m,ourguiparams['the offset'])
+	// an edge has precomputed end points and a color:
+		var ends=[];
 		if(ourguiparams['Multiply the motion on the']=='left'){
-			center = ourguiparams['the offset'].mult(m.acton(ourmodeldata.vertexbasepoints[i]))
-			}
+			ends[0] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
+			ends[1] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
+		}
 		else {
-			center = (m.acton(ourmodeldata.vertexbasepoints[i])).mult(ourguiparams['the offset']);
-			}	
-	
+			ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
+			ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
+		}
+		//var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
+		//var mat =mats[e[2]]
 		
-		var dat=qSphereToWorld(center,.1,false);
-
-		var d = dat.center
+		if(ourguiparams['show as']=='four-d'){
+		ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
+			ends[0], ends[1],.03,false,colorableMaterial,true);
+		}
+		else{
+			ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
+			ends[0], ends[1],.03,false,colorableMaterial,false);
+		}
 		
-		oursphereregistry[counter].position.set(d[0],d[1],d[2]);
-  		oursphereregistry[counter].scale.setScalar(ourguiparams['sphere radius']*30*dat.radius);
+		//[redmeshcolor,bluemeshcolor,greenmeshcolor][edgeindexcount%4]
 
-  		
-  		oursphereregistry[counter].visible = true;
-  		oursphereregistry[counter].name = 'sphere'+counter.toString()
+			//mats[edgeindexcount%4])
 
+		ourmeshregistry[edgeindexcount].visible = true;
 
-		// next check to see if behind the camera, other color effects, etc
+		//transparentlayerize(ourmeshregistry[edgeindexcount],camera.position)
+		//ourmeshregistry[edgeindexcount].geometry.attributes.color.array=bluemeshcolor;
 
-		oursphereregistry[counter].geometry.attributes.position.needsUpdate = true;
-        oursphereregistry[counter].geometry.attributes.color.needsUpdate = true;
-        oursphereregistry[counter].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
-
-
-		counter++;
-		}});*/
-	
-
-// draw some edges
-
-var motions
-if(ourguiparams['show all edges']){motions = ourmodeldata.edgemotions}
-	else {motions = [qIdentity];}
-
-var edgeindexcount=0;
-
-motions.forEach((m)=>{
-//	var whichcoset = 0;
-ourmodeldata.edges.forEach((e)=>
-{	
-
-//console.log('another edge',e,m,ourguiparams['the offset'])
-// an edge has precomputed end points and a color:
-	var ends=[];
-	if(ourguiparams['Multiply the motion on the']=='left'){
-		ends[0] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[0]]));
-		ends[1] = ourguiparams['the offset'].mult(m.acton(usefulQuats[e[1]]));
-	}
-	else {
-		ends[0] = (m.acton(usefulQuats[e[0]])).mult(ourguiparams['the offset']);
-		ends[1] = (m.acton(usefulQuats[e[1]])).mult(ourguiparams['the offset']);
-	}
-	//var mats = [materials.mat0,materials.mat9,materials.mat15,materials.mat22]
-	//var mat =mats[e[2]]
-	
-
-	ourmeshregistry[edgeindexcount] = rejiggertubeArc(ourmeshregistry[edgeindexcount],
-		ends[0], ends[1],.03,false,colorableMaterial);
-	
-	//[redmeshcolor,bluemeshcolor,greenmeshcolor][edgeindexcount%4]
-
-		//mats[edgeindexcount%4])
-
-	ourmeshregistry[edgeindexcount].visible = true;
-
-	//transparentlayerize(ourmeshregistry[edgeindexcount],camera.position)
-	//ourmeshregistry[edgeindexcount].geometry.attributes.color.array=bluemeshcolor;
-
-	for(var i = 0; i<500; i++)
-		{	var s = Math.random();
-			ourmeshregistry[edgeindexcount].geometry.attributes.color.array.set(edgecolorfunction((i%50)/50,e[2]),
-			i*4)}
-	
-	ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
-	ourmeshregistry[edgeindexcount].geometry.attributes.color.needsUpdate = true;
-    ourmeshregistry[edgeindexcount].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+		for(var i = 0; i<500; i++)
+			{	var s = Math.random();
+				ourmeshregistry[edgeindexcount].geometry.attributes.color.array.set(edgecolorfunction((i%50)/50,e[2]),
+				i*4)}
+		
+		ourmeshregistry[edgeindexcount].geometry.attributes.position.needsUpdate = true;
+		ourmeshregistry[edgeindexcount].geometry.attributes.color.needsUpdate = true;
+		ourmeshregistry[edgeindexcount].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
 
 
 
-	edgeindexcount++;
+		edgeindexcount++;
 
 
-})
-})
+	})
+	})
 
 
 }
+
 
 
 
@@ -695,6 +401,12 @@ ourmodeldata.edges.forEach((e)=>
 //const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
 //const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
 
+// Somewhere, there needs to be an init();
+
+
+initthethreejsscene()
+let  materials = createMaterials()
+    
 setupthemeshes();
 
 	// now draw the drawing for the first time
