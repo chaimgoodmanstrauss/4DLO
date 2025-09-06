@@ -238,3 +238,46 @@ function revisemeshfromsurfacefunction(
 
 
 
+
+
+
+
+
+/////////////////////
+
+//
+//	
+//
+
+
+/*
+function transparentbehindcamera(amesh, cameraposition, camerafocus){
+ for (let i = 0; i < gridPositions.length; i++) {
+                const x = gridPositions[i].x;
+                const y = gridPositions[i].y;
+                
+                // Update height using sine wave
+                const z = Math.sin(time + x + y) * 0.2;
+                positions[i * 3 + 2] = z;
+                
+                // Update color: interpolate between red and blue based on time and x
+                const colorFactor = (Math.sin(time * 2 + x * 4) + 1) * 0.5; // 0 to 1
+                const red = 1 - colorFactor;   // Red component
+                const blue = colorFactor;      // Blue component
+                const green = 0;               // Keep green at 0
+                
+                // Update transparency: vary with time and y direction (more dramatic range)
+                const alpha = (Math.sin(time * 1.5 + y * 3) + 1) * 0.35 + 0.3; // 0.3 to 1.0 (more visible variation)
+                
+                colors[i * 4] = red;      // R
+                colors[i * 4 + 1] = green; // G
+                colors[i * 4 + 2] = blue;  // B
+                colors[i * 4 + 3] = alpha; // A (transparency)
+            }
+            
+            // Mark geometry as needing update
+            amesh.attributes.position.needsUpdate = true;
+            amesh.attributes.color.needsUpdate = true;
+            amesh.computeVertexNormals(); // Recalculate normals for proper lighting
+}
+*/
