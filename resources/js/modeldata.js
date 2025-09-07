@@ -19,12 +19,13 @@
 //	
 //  	
 
-var edgebase0 = qOne, edgebase1=  new quat(-.5,.5,.5,.5);
+var edgebase0 = qOne.positivize(), edgebase1=  new quat(.5,.5,.5,.5);
 
 // positioning the edges in a canonical way:
 
 const edgegroup = 
 /*[new qAction(qOne,qOne),
+ 
     new qAction(
         new quat(sqrt(.5),-sqrt(.5),0,0),
         new quat(sqrt(.5),-sqrt(.5),0,0)),
@@ -34,13 +35,54 @@ const edgegroup =
     new qAction(
         new quat(sqrt(.5),sqrt(.5),0,0),
         new quat(sqrt(.5),sqrt(.5),0,0)),
+
 ]*/
+        
+
 
 makegroup([
     new qAction(qI, qOne), 
     new qAction(qW,qOne),
-   // new qAction(new quat(sqrt(.5),0,-sqrt(.5),0),new quat(sqrt(.5),0,-sqrt(.5),0))
+    new qAction(new quat(sqrt(.5),0,-sqrt(.5),0),new quat(sqrt(.5),0,sqrt(.5),0)),
+    
 ]).groupElements
+
+const vertgroup =makegroup([new qAction(qI,qOne),
+			new qAction(qW,qOne)],"Oxone").groupElements;
+
+const vertices = vertgroup.map(m=>{return (m.acton(qOne))})
+
+const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
+/*[
+0 +0i +0j –1k     // -K
+0 +0i +0j +1k     // K
+0 +0i –1j +0k     // -J
+0 +0i +1j +0k      // J
+0 –1i +0j +0k      // -I
+0 +1i +0j +0k      // I
+.5 +.5i +.5j +.5k
+–.5 –.5i –.5j –.5k
+.5 +.5i +.5j –.5k
+–.5 –.5i –.5j +.5k
+.5 +.5i –.5j +.5k
+–.5 –.5i +.5j –.5k
+.5 +.5i –.5j –.5k
+–.5 –.5i +.5j +.5k
+.5 –.5i +.5j +.5k
+–.5 +.5i –.5j –.5k
+.5 –.5i +.5j –.5k
+–.5 +.5i –.5j +.5k
+.5 –.5i –.5j +.5k
+–.5 +.5i +.5j –.5k
+.5 –.5i –.5j –.5k
+–.5 +.5i +.5j +.5k
+1 +0i +0j +0k         // 1
+–1 +0i +0j +0k       // -1
+]*/
+
+
+
+
 
 // makeGroupFromName("Oxone").groupElements; 
 
@@ -63,15 +105,28 @@ var ourmodeldata
 
 
 var ourmodels =  {twentyfourcell:{edgedata:[
-        [3,1],[0,1],[0,1],[0,1],[0,1],[0,1],
+        [0,1],[0,1],[0,1],[0,1],[0,1],[0,1],
+        [1,1],[1,1],[1,1],[1,1],[1,1],[1,1],
+        [2,1],[2,1],[3,1],[2,1],[2,1],[2,1],
+        [3,1],[3,1],[3,1],[3,1],[3,1],[3,1],
+        [0,1],[0,1],[0,1],[0,1],[0,1],[0,1],
+        [1,1],[1,1],[1,1],[1,1],[1,1],[1,1],
+        [2,1],[2,1],[3,1],[2,1],[2,1],[2,1],
+        [3,1],[3,1],[3,1],[3,1],[3,1],[3,1],
+        [0,1],[0,1],[0,1],[0,1],[0,1],[0,1],
+        [1,1],[1,1],[1,1],[1,1],[1,1],[1,1],
+        [2,1],[2,1],[3,1],[2,1],[2,1],[2,1],
+        [3,1],[3,1],[3,1],[3,1],[3,1],[3,1],
+        [0,1],[0,1],[0,1],[0,1],[0,1],[0,1],
         [1,1],[1,1],[1,1],[1,1],[1,1],[1,1],
         [2,1],[2,1],[3,1],[2,1],[2,1],[2,1],
         [3,1],[3,1],[3,1],[3,1],[3,1],[3,1]
-    ]},
+    ],vertdata:[[22,0],[1,2],[3,4],[5,6],
+              //  [23,1],[0,3],[2,5],[4,7]
+            ]},
     testing:{edgedata:[[1,1],[2,-1]]},
     sixcycle:{edgedata:[[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]]}
 
 };
-
 
 

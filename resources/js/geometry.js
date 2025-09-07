@@ -223,7 +223,7 @@ function revisemeshfromsurfacefunction(
       var ip=inn+1,jp=jn+1
       //vertArray.push(...mapQToWorld(surface(inn*di+imin,jn*dj+jmin))) // at in*jN+jn 
 
-      var p = mapQToWorld(surface(inn*di+imin,jn*dj+jmin))
+      var p = surface(inn*di+imin,jn*dj+jmin)
 
       positionAttribute.setXYZ(vcounter, p[0],p[1],p[2]);
       vcounter++;
@@ -281,3 +281,29 @@ function transparentbehindcamera(amesh, cameraposition, camerafocus){
             amesh.computeVertexNormals(); // Recalculate normals for proper lighting
 }
 */
+
+
+function sphereFunctionFrom(center, rad,imin=0,imax=1)
+{ /* the function runs from 0 to 1 but the surface is a wedge*/
+  
+  return function(i,j){
+    return [
+        rad*Math.cos(6.2918*(i*(imax-imin)+imin))*Math.sin(3.1459*j)+center[0],
+        rad*Math.sin(6.2918*(i*(imax-imin)+imin))*Math.sin(3.1459*j)+center[1],
+        rad*Math.cos(3.1459*j)+center[2]]
+  }
+
+}
+
+
+
+function rejiggersphere(amesh, center,rad =.08, fullQ= false ,material=0, showthreed=false,imin=0,imax=1, iN=10, jmin=0,jmax=1,jN=50,
+  clipQ=false,vertexmaterialfunction = 1, clippingbound = 1){
+    var ff = sphereFunctionFrom(center,rad) // later make this a true quaternionic qsphere. 
+    var thematerial=amesh.material;
+    if(material !=0){thematerial=material;}
+    var amesh =  revisemeshfromsurfacefunction(amesh, ff,imin,imax,iN,jmin,jmax,jN,thematerial,
+      vertexmaterialfunction)
+    amesh.visible = true;
+    return amesh
+}

@@ -114,3 +114,20 @@ function fillarraywithrgb(r,g,b,n){
 	}
 	return arr
 }
+
+
+var defaultspherecolors = Array(4*40*40).fill(.75);
+	//note the size of the array, geared to the defaults
+	// in makesphereAt in threestuff
+
+
+
+var defaultmeshcolors = Array(4*10*50).fill(.5);
+	//note the size of the array, geared to the defaults
+	// in tubeArc in quaternionicdisplay
+
+
+var redmeshcolor = new Float32Array(fillarraywithrgba(1,0,0,1,10*50))
+var greenmeshcolor = new Float32Array(fillarraywithrgba(0,1,0,1,10*50))
+var bluemeshcolor = new Float32Array(fillarraywithrgba(0,0,1,1,10*50))
+var graymeshcolor = new Float32Array(fillarraywithrgba(.5,.5,.5,1,10*50))

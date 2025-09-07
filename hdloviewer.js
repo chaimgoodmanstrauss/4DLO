@@ -157,11 +157,16 @@ function theModelChanged(){
 
 const numedgemeshes = 96;// The 1IJK 24-cell takes 96 edges in one 24-cell. 
 const numvertmeshes = 24;
-const numourmeshes = numedgemeshes;//+numvertmeshes;
-	// 0-95 are edges of the 24 cell. 
+
+
+const numourmeshes = numedgemeshes + numvertmeshes;//+numvertmeshes;
+	// 0-95 are edges of the 24 cell.
+	// for the moment, just a test sphere; will add the  
 	// 96-119 are vertices of the 24 cell. 
 
 var ourmeshregistry = [];
+
+
 
 function setupthemeshes(){
 // set up some generic meshes, to be run at initialization. 
@@ -192,7 +197,9 @@ function setupthemeshes(){
 
 
 function updatethedrawing(){
-	
+	var offset = ourguiparams['the offset']
+	offset =qOne.positivize();
+
 	ourmodeldata = ourmodels[ourguiparams['the model']];
 
 	// hide all of the meshes in case they're showing. 
@@ -200,9 +207,8 @@ function updatethedrawing(){
 		ourmeshregistry[meshindex].visible = false;
 	}
 
-	var numedges = Math.min(ourmodeldata.edgedata.length,numedgemeshes)
-	
-
+	var numedges = Math.min(ourmodeldata.edgedata.length,numedgemeshes,edgegroup.length) 
+	var numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
 
 	var kindofmesh = 'edge'
 	
@@ -210,17 +216,18 @@ function updatethedrawing(){
 	for(var meshindex = 0; meshindex<numourmeshes;meshindex++)
 	{	
 		if(meshindex<numedges){
+			ourmeshregistry[meshindex].visible= true;
 			kindofmesh = 'edge'
 			var edgeindex= meshindex
 			var m = edgegroup[edgeindex]
 			
 			if(ourguiparams['Multiply the motion on the']=='left'){
-				e0 = ourguiparams['the offset'].mult(m.acton(edgebase0));
-				e1 = ourguiparams['the offset'].mult(m.acton(edgebase1));
+				e0 = offset.mult(m.acton(edgebase0));
+				e1 = offset.mult(m.acton(edgebase1));
 			}
 			else {
-				e0 = (m.acton(edgebase0)).mult(ourguiparams['the offset']);
-				e1 = (m.acton(edgebase1)).mult(ourguiparams['the offset']);
+				e0 = (m.acton(edgebase0)).mult(offset);
+				e1 = (m.acton(edgebase1)).mult(offset);
 			}
 		
 
@@ -234,27 +241,60 @@ function updatethedrawing(){
 				e0, e1,.03,false,colorableMaterial,false);
 			}
 			
-			ourmeshregistry[edgeindex].visible = true;
-
+			// now color all of the vertices on the edge. 
 			for(var i = 0; i<500; i++)
-				{	var s = Math.random();
-					ourmeshregistry[edgeindex].geometry.attributes.color.array.set(edgecolorfunction((i%50)/50,ourmodeldata.edgedata[edgeindex]),
-					i*4)}
+				{	//var s = Math.random();
+					ourmeshregistry[edgeindex].geometry.attributes.color.array.set(
+						edgecolorfunction((i%50)/50,ourmodeldata.edgedata[edgeindex]),i*4)}
 		
+
+			ourmeshregistry[meshindex].geometry.attributes.position.needsUpdate = true;
+			ourmeshregistry[meshindex].geometry.attributes.color.needsUpdate = true;
+			ourmeshregistry[meshindex].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+		
+
+
+
 		}
-		else // we are dealing with a vertex
-		{ ; }	
+		// and that's the edges
 
-		ourmeshregistry[meshindex].geometry.attributes.position.needsUpdate = true;
-		ourmeshregistry[meshindex].geometry.attributes.color.needsUpdate = true;
-		ourmeshregistry[meshindex].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
 
-		// we might want to turn things on and off:
+		else if(meshindex>=numedgemeshes && meshindex<numedgemeshes+numverts) // The vertices:
+		{ 	ourmeshregistry[meshindex].visible = true;
+			kindofmesh = 'vertex';
+			var vindex = meshindex - numedgemeshes;
+			var vertdataindex = ourmodeldata.vertdata[vindex][0] ;
+			var vert =vertices[vertdataindex];
+			if(ourguiparams['Multiply the motion on the']=='left'){
+				vert = offset.mult(vert);
+			}
+			else {
+				vert = (vert).mult(offset);
+			}
 
-		if(kindofmesh == 'edge' && !ourguiparams['show all edges'] && meshindex>0)
-		{
-			ourmeshregistry[meshindex].visible = false;
+			ourmeshregistry[meshindex]=rejiggersphere(ourmeshregistry[meshindex],
+				mapQToWorld(vert),.1,false,mats[0],false)
+
+			// now color all of the vertices on the vertex 
+			for(var i = 0; i<500; i++)
+				{	ourmeshregistry[meshindex].geometry.attributes.color.array.set(
+						[[0,0,0,1],[1,0,0,1],[0,1,0,1],[0,0,1,1]][vindex],
+					// hsbToRgb((meshindex%4)/4,1,1),
+						  i*4)}
+		
+
+
+
+			ourmeshregistry[meshindex].geometry.attributes.position.needsUpdate = true;
+			ourmeshregistry[meshindex].geometry.attributes.color.needsUpdate = true;
+			ourmeshregistry[meshindex].geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+		
+		
+			
 		}
+
+
+
 	}
 
 

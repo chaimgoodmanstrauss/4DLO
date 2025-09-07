@@ -424,6 +424,14 @@ function movebasicsphere(asphere, position, radius){
   
 }
 
+
+/*function qSphereFunctionFrom(center, rad=.2){
+  return function(i,j){
+    return // a quaternion. 
+  }
+}*/
+
+
 // a tube 
 
 function qtubeFunctionFrom(p,q,rad=.2, fullTorus=false, showthreed = false){
@@ -456,7 +464,6 @@ function rejiggertubeArc(amesh, pp,qq,rad =.08, fullQ= false ,material=0, showth
     amesh.visible = true;
     return amesh
 }
-
 
 
 
