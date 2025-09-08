@@ -275,7 +275,7 @@ class qAction{
   
   //  returns a new action, this followed by action a (a on outside)
   mult(a){
-    if(!this.star && !a.star){
+    if(!this.star && !a.star){// remember that the left will ne inverted when the action is performed
       return new qAction(this.l.mult(a.l), this.r.mult(a.r), false,this.name+"."+a.name);
     }
     else if(this.star && !a.star){
@@ -378,7 +378,7 @@ class group{
 
 /////////////////////////////
 //
-//
+// makegroup
 //
 
 function makegroup(ugens, name ="", noneedtogenerategeroupQ=false)
@@ -535,7 +535,7 @@ function makegroup(ugens, name ="", noneedtogenerategeroupQ=false)
 
 
 
-function toString(forMathematica=false, prec = 4){
+function toString(forMathematica=false, prec = 1){
   let tf;
   if(forMathematica){
     if(this.star){
@@ -552,5 +552,6 @@ function toString(forMathematica=false, prec = 4){
     return "["+this.l.toString(forMathematica,prec)+", "+this.r.toString(forMathematica,prec)+", "+tf+"]"
   }
 }
+
 
 

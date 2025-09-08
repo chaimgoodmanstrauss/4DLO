@@ -113,8 +113,8 @@ function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
 }
 
 
-function cyclecolorfunction(position,time,  hue0=0,speed=1/*cycle per second*/, inneramp=.1){
-    return hsbToRgb(hue0+inneramp*Math.sin(speed*time+position*3.141),1,1);
+function cyclecolorfunction(position,time,  hue0=0,speed=1/*cycle per second*/, inneramp=.1, saturation=1, brightness = 1){
+    return hsbToRgb(hue0+inneramp*Math.sin(speed*time+position*3.141),saturation,brightness);
 }
 
 
@@ -135,16 +135,20 @@ function edgecolorfunction(x,modeldata,time=Date.now()* 0.001){
         // here we just hard code some named functions
         switch(modeldata[0]){
             case 0: 
-                rgb = cyclecolorfunction(position, time,.2,5,.03)
+                // this is irrelevant now
+                // rgb = cyclecolorfunction(position, time,.2,5,.03,.1,.1)
+                rgb = [0,0,0,1]
                 break;
             case 1:
-                rgb = cyclecolorfunction(position, time,.6,1,.03)
+                rgb = cyclecolorfunction(position, time,.4,1,.5,.7)
                 break;
             case 2:
-                rgb = cyclecolorfunction(position, time)
+                rgb = [0,1,0]
+               // rgb = cyclecolorfunction(position, time)
                 break;
             case 3:
-                rgb = cyclecolorfunction(position, time,.9,10,.03)
+                rgb = [0,0,1]
+            //rgb = cyclecolorfunction(position, time,.9,10,.03)
                 break;
         }
 

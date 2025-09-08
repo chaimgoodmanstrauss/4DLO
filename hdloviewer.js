@@ -56,9 +56,9 @@ ourgui.add(ourguiparams,'show as',
 
 
 
-ourguiparams['the model'] = Object.keys(ourmodels)[0];
+ourguiparams['the model'] = ourmodels.map(x=>x.name)[0];
 ourgui.add(ourguiparams,'the model',
-	Object.keys(ourmodels)).onChange(theModelChanged);
+	ourmodels.map(x=>x.name)).onChange(theModelChanged);
 
 
 ourguiparams['Reset the camera position'] = 'scrolling';
@@ -166,7 +166,7 @@ const numourmeshes = numedgemeshes + numvertmeshes;//+numvertmeshes;
 
 var ourmeshregistry = [];
 
-
+const materialregistry=[]
 
 function setupthemeshes(){
 // set up some generic meshes, to be run at initialization. 
@@ -179,11 +179,16 @@ function setupthemeshes(){
 		var q1 = new quat(s+Math.random(),s,c,c-Math.random());
 		var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
 		ourmeshregistry[i] = tubeArc(
-			q1 ,q2,.03,false,colorableMaterial)
+			q1 ,q2,.03,false,colorablematerial)
 		ourmeshregistry[i].visible = false;
 		ourmeshregistry[i].name = 'mesh'+i.toString()
-		
+
 		scene.add(ourmeshregistry[i])
+
+		// let's keep track of the meshes so that we don't have a memory leak swapping in and out
+		materialregistry[i]=ourmeshregistry[i].material
+		
+		
 	}
 
 }
@@ -191,24 +196,27 @@ function setupthemeshes(){
 
 
 
-
-
-
-
-
 function updatethedrawing(){
 	var offset = ourguiparams['the offset']
-	offset =qOne.positivize();
+	//offset =qOne.positivize();
 
-	ourmodeldata = ourmodels[ourguiparams['the model']];
+	//ourmodeldata = ourmodels[ourguiparams['the model']];
+
+	// Use the find() method to get the dictionary where foo is 'fee'
+	ourmodeldata = ourmodels.find(dict => dict.name === ourguiparams['the model']);
+
 
 	// hide all of the meshes in case they're showing. 
 	for(var meshindex = 0; meshindex<numourmeshes; meshindex++){
 		ourmeshregistry[meshindex].visible = false;
 	}
 
-	var numedges = Math.min(ourmodeldata.edgedata.length,numedgemeshes,edgegroup.length) 
-	var numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
+	var numedges = 0,  numverts =0
+	if(ourmodeldata.edgedata){
+		numedges = Math.min(ourmodeldata.edgedata.length,numedgemeshes,edgegroup.length) }
+	if(ourmodeldata.vertdata){
+		numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
+	}
 
 	var kindofmesh = 'edge'
 	
@@ -219,6 +227,7 @@ function updatethedrawing(){
 			ourmeshregistry[meshindex].visible= true;
 			kindofmesh = 'edge'
 			var edgeindex= meshindex
+			//edgeindex = 79;
 			var m = edgegroup[edgeindex]
 			
 			if(ourguiparams['Multiply the motion on the']=='left'){
@@ -234,19 +243,28 @@ function updatethedrawing(){
 
 			if(ourguiparams['show as']=='four-d'){
 			ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
-				e0, e1,.03,false,colorableMaterial,true);
+				e0, e1,.03,false,colorablematerial,true);
 			}
 			else{
 				ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
-				e0, e1,.03,false,colorableMaterial,false);
+				e0, e1,.03,false,colorablematerial,false);
 			}
 			
-			// now color all of the vertices on the edge. 
-			for(var i = 0; i<500; i++)
-				{	//var s = Math.random();
-					ourmeshregistry[edgeindex].geometry.attributes.color.array.set(
-						edgecolorfunction((i%50)/50,ourmodeldata.edgedata[edgeindex]),i*4)}
-		
+			// now color all of the vertices on the edge. If ourmodeldata.edgedata[edgeindex] == 0, 
+			// switch materials. 
+			switch(ourmodeldata.edgedata[edgeindex][0]){
+				case 0:
+					ourmeshregistry[edgeindex].material= transparentmaterial;
+					break
+				default: 
+					ourmeshregistry[edgeindex].material= materialregistry[edgeindex]
+					for(var i = 0; i<500; i++)
+					{	var colorvalue = edgecolorfunction((i%50)/50,ourmodeldata.edgedata[edgeindex]);
+						ourmeshregistry[edgeindex].geometry.attributes.color.array.set(
+							colorvalue,i*4)}
+
+			}
+			
 
 			ourmeshregistry[meshindex].geometry.attributes.position.needsUpdate = true;
 			ourmeshregistry[meshindex].geometry.attributes.color.needsUpdate = true;

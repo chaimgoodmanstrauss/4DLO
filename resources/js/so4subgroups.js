@@ -75,7 +75,7 @@ function makeGroupFromName(groupname,gpElList= groupsElementsList,gpsource = so4
 
 
 
-const qOne = new quat(1,0,0,0)
+const qOne = new quat(1,0,0,0).positivize()
 const qW = new quat(-.5,.5,.5,.5) // note normalized
 const qWp= new quat(.5,.5,.5,.5)
 const qWi= new quat(.5,-.5,.5,.5)

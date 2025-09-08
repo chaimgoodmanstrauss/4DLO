@@ -86,18 +86,27 @@ createMaterials()
 // further material. 
 
 // Colorable material: 
-const colorableMaterial = new THREE.MeshLambertMaterial({ 
+function makecolorableMaterial(opacity=1)
+  { var newmat = new THREE.MeshLambertMaterial({ 
             vertexColors: true,
             transparent: true,
             side: THREE.DoubleSide,
-            alphaTest: 0.1 // Helps with rendering transparent surfaces
-
+            alphaTest: 0.1, // Helps with rendering transparent surfaces
+            opacity: opacity,
         });
+  return newmat
+     }
 
+const colorablematerial = makecolorableMaterial();
 
-
-
-
+const transparentmaterial = new THREE.MeshLambertMaterial({ 
+          color: 0x000000,
+            vertexColors: true,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1, // Helps with rendering transparent surfaces
+            opacity: .1,
+        });
 
 function fillarraywithrgba(r,g,b,a,n){
 	var arr = []

@@ -1,0 +1,59 @@
+# rules.txt
+# Replace decimal zeros with integer zeros
+s/0\.0000/0/g
+# same for 1's
+s/1\.0000/1/g
+# .5s become
+s/0\.5000/h/g
+
+#remove all spaces
+s/ //g
+
+# Convert array separators to newlines
+s/\],\[/]\n[/g
+
+# Remove leading 1 from unit vectors i, j, k
+s/1\([ijk]\)/\1/g
+
+# get rid of +- 's 
+s/+-/-/g
+
+# remove a stupid '
+s/'//g
+
+#and some dumb ,'s
+s/,\]/\]/g
+s/\[,/\[/g
+
+#convert to root; we'll drop anyway later
+s/0\.7071/r/g
+s/0\.707/r/g
+
+#any 0's at this point are re = 0 and can be removed.
+s/\[0/\[/g
+s/\[-0/\[/g
+s/,0/,/g
+s/,-0/,/g
+
+# now we'll compress our notation: 
+# no need to write out
+s/+i/i/g
+s/+j/j/g
+s/+k/k/g
+s/+0i//g
+s/+0[ijk]//g
+s/-0[ijk]//g
+#s/i/I/g
+#s/j/J/g
+#s/k/K/g
+
+s/hi//g
+s/hj//g
+s/hk//g
+s/-h/-/g
+s/\[h/\[+/g
+s/,h/,+/g
+s/ri/i/g
+s/rj/j/g
+s/rk/k/g
+s/r/1/g
