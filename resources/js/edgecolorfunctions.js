@@ -128,20 +128,22 @@ function gaussiancolorfunction(position, time, hue0=0, variance=".01", timeshift
 }
 
 
+async function example1() {
+    const func = new discreteFunction('resources/graphs/testfunc.json');
+    await func.waitForLoad();
+    
+    if (func.isReady()) {
+        console.log('Function info:', func.getInfo());
+        const y = func.evaluate(0.3);
+        console.log('f(0.3) =', y);
+    }
+}
 
-
-
-
-
-
-
-
+example1()
 
 
 //function edgecolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001){
-function edgecolorfunction(x,modeldata,time=Date.now()* 0.001,
-    colorprogram=defaultcolorprogram
-){
+function edgecolorfunction(x,modeldata,time=Date.now()* 0.001, colorprogram=defaultcolorprogram){
         var rgb; 
         var position; 
 
@@ -170,7 +172,7 @@ function edgecolorfunction(x,modeldata,time=Date.now()* 0.001,
 
 
 const colorfunctions={
-  blank:function(x,t){return [0,0,0,1]},
+  blank:function(x,t){return [.6,.6,.6,1]},
   basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
   black:function(x,t){return [0,0,0,1]},
   white:function(x,t){return [1,1,1,1]},

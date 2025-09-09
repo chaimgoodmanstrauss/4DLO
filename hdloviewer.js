@@ -51,21 +51,17 @@ ourgui.add(ourguiparams,'transparency with height',0,1).onChange(theModelChanged
 */
 
 ourguiparams['show as'] = 'four-d';
-ourgui.add(ourguiparams,'show as',
-	['four-d','three-d']).onChange(thecamerachanged);
+//ourgui.add(ourguiparams,'show as',['four-d','three-d']).onChange(thecamerachanged);
 
 
 
 ourguiparams['the model'] = defaultmodel
-//ourmodels.find(dict => dict.name === defaultmodel);
-//ourmodels.map(x=>x.name)[0];
-ourgui.add(ourguiparams,'the model',
-	ourmodels.map(x=>x.name)).onChange(theModelChanged);
+
+ourgui.add(ourguiparams,'the model',ourmodels.map(x=>x.name)).onChange(theModelChanged);
 
 
 ourguiparams['Reset the camera position'] = 'scrolling';
-ourgui.add(ourguiparams,'Reset the camera position',
-	['scrolling','1000-1111 axis','1000-1100 axis']).onChange(thecamerachanged);
+//ourgui.add(ourguiparams,'Reset the camera position',	['scrolling','1000-1111 axis','1000-1100 axis']).onChange(thecamerachanged);
 
 
 
@@ -109,8 +105,7 @@ ourgui.add( ourguiparams, 'offset 1 to 1111 by', 0,1).onChange(updateoffset) // 
 
 
 ourguiparams['Multiply the motion on the']='right'
-ourgui.add(ourguiparams,'Multiply the motion on the',
-	['left','right']).onChange(theModelChanged);
+//ourgui.add(ourguiparams,'Multiply the motion on the',['left','right']).onChange(theModelChanged);
 
 
 function updateoffset(){
@@ -129,7 +124,7 @@ ourguiparams['the offset']=new quat(1,0,0,0);
 
 // this controls whether just a single test edge is shown, or all of them.
 ourguiparams['show all edges'] = true;
-ourgui.add(ourguiparams,'show all edges').onChange(theModelChanged);
+//ourgui.add(ourguiparams,'show all edges').onChange(theModelChanged);
 
 // when anything changes:
 
@@ -170,8 +165,12 @@ var ourmeshregistry = [];
 
 const materialregistry=[]
 
-function setupthemeshes(){
+//////////////////////////////
+//
 // set up some generic meshes, to be run at initialization. 
+//
+
+function setupthemeshes(){
 
 
 	for(var i = 0; i<numourmeshes; i++){
@@ -180,8 +179,8 @@ function setupthemeshes(){
 		var c = Math.cos(a);
 		var q1 = new quat(s+Math.random(),s,c,c-Math.random());
 		var q2 = new quat(c,c+Math.random(),-s,-s+Math.random());
-		ourmeshregistry[i] = tubeArc(
-			q1 ,q2,.03,false,colorablematerial)
+		// give them the geometry of a tubeArc, for now
+		ourmeshregistry[i] = tubeArc(q1 ,q2,.03,false,colorablematerial)
 		ourmeshregistry[i].visible = false;
 		ourmeshregistry[i].name = 'mesh'+i.toString()
 
@@ -244,7 +243,7 @@ function updatethedrawing(){
 			}
 		
 			var tuberadius =.03;
-			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = .01}
+			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = .02}
 
 			if(ourguiparams['show as']=='four-d'){
 			ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
@@ -259,14 +258,18 @@ function updatethedrawing(){
 			// switch materials. 
 			switch(ourmodeldata.edgedata[edgeindex][0]){
 				case 0:
-					ourmeshregistry[edgeindex].material= transparentmaterial;
+					ourmeshregistry[edgeindex].material= transparentlightmaterial
 					break
 				default: 
-					ourmeshregistry[edgeindex].material= materialregistry[edgeindex]
+					ourmeshregistry[edgeindex].material= materialregistry[edgeindex]//bring our material in (this should always be the same one in any case)
 					for(var i = 0; i<500; i++)
-					{	var colorvalue = edgecolorfunction((i%50)/50,ourmodeldata.edgedata[edgeindex]);
-						ourmeshregistry[edgeindex].geometry.attributes.color.array.set(
-							colorvalue,i*4)}
+					{	
+						var stepnumber = (i%50)/50 // the tubes are ten around and 50 long, 
+						// but the vertices are numbered lengthwise. i%50/50 is the length 
+						// along a tube
+						var colorvalue = edgecolorfunction(stepnumber,ourmodeldata.edgedata[edgeindex]);
+						
+						ourmeshregistry[edgeindex].geometry.attributes.color.array.set(colorvalue,i*4)}
 
 			}
 			

@@ -389,10 +389,14 @@ function makemodel(modelinfo,oldmodel = basicmodel){
     return newmodel
 }
 
+
+
+/*
+/////////////getting started 
 addmodel(basicmodel)
 
 addmodel(
-    {name:'twentyfourcell',
+    {name:'oldtwentyfourcell',
         edgedata:Array.from({ length: 96 }, () => [1, 1])})
 
 
@@ -404,7 +408,7 @@ const tester2 = permutemodel(tester, new qAction(qOne.positivize(), new quat(0,-
 
 addmodel(mergemodels(tester,tester2,"testing"))
 
-
+*/
 
 
 
@@ -429,7 +433,9 @@ var moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
         ))
 
 
-addmodel(mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),moreoctas[1]),moreoctas[2]),"octachain")
+addmodel(mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),
+    moreoctas[1]),
+    moreoctas[2],"octachain"))
 
 function makecycle(colorindices,direction=1){
     var models
@@ -457,18 +463,19 @@ function makecycle(colorindices,direction=1){
 
 
 
+///////////////
+//  Here are three sample colorings, a 1 coloring, 2 coloring, or 3
+
 //var acycle = makecycle([2])
-var qq= new qAction(qOne.positivize(), qI)
+//var qq= new qAction(qOne.positivize(), qI)
+//addmodel(permutemodel(makecycle([1]),qq,'cycle 1'))
+//addmodel(permutemodel(makecycle([1,2]),qq,'cycle 2'))
+//addmodel(permutemodel(makecycle([1,2,3]),qq,'cycle 3'))
 
-addmodel(permutemodel(makecycle([1]),qq,'cycle 1'))
-addmodel(permutemodel(makecycle([1,2]),qq,'cycle 2'))
-addmodel(permutemodel(makecycle([1,2,3]),qq,'cycle 3'))
-
-addmodel(makemodel({name:'basic cube',listofindexandcolorlists:
-    [{indices:[74,59,37,27,87,21,63,49,62,51,23,86],modelinfo:[1,1]}]}))
+//addmodel(makemodel({name:'basic cube',listofindexandcolorlists:   [{indices:[74,59,37,27,87,21,63,49,62,51,23,86],modelinfo:[1,1]}]}))
 
 
-addmodel(makemodel({name:'tet cube',listofindexandcolorlists:
+addmodel(makemodel({name:'cube',listofindexandcolorlists:
     [{indices:[59,37],modelinfo:[1,1]},
     {indices:[63,49],modelinfo:[2,1]},
     {indices:[62,51],modelinfo:[3,1]},
@@ -477,7 +484,7 @@ addmodel(makemodel({name:'tet cube',listofindexandcolorlists:
     {indices:[23,86],modelinfo:[3,-1]},
 ]}))
 
-addmodel(makemodel({name:'tet hcube',listofindexandcolorlists:
+addmodel(makemodel({name:'four color hypercube',listofindexandcolorlists:
     [{indices:[59,37,38,56],modelinfo:[1,1]},
     {indices:[63,49,50,60],modelinfo:[2,1]},
     {indices:[62,51,48,61],modelinfo:[3,1]},
@@ -489,6 +496,47 @@ addmodel(makemodel({name:'tet hcube',listofindexandcolorlists:
 ]
 }))
 
+
+
+
+
+const hypercube = makemodel({name:'hypercube',
+    colorways:['redpulse','greenpulse','bluepulse'],
+    listofindexandcolorlists:
+    [{indices:[59,37,38,56,
+        63,49,50,60,
+        62,51,48,61,
+        39,58,57,36],modelinfo:[1,1]},
+    {indices:[74,27,24,73,87,21,22,84,23,86,20,85,75,25,26,72],modelinfo:[1,-1]},
+]
+})
+
+
+var tempp = [qW,new quat(-1,1,1,1).normalize()]
+
+var tempcntr = 1;
+var hypercubes=[qW,new quat(-1,-1,1,1).normalize()].map(q=>
+permutemodel(hypercube, new qAction(qOne.positivize(), q),"hypercube"+tempcntr++))
+    
+hypercubes = [hypercube,...hypercubes ]
+
+addmodel(hypercube)
+//addmodel(hypercubes[1])
+//addmodel(hypercubes[2])
+
+
+
+
+
+const twentyfourcell = mergemodels(hypercubes[0],
+                            mergemodels(hypercubes[1],hypercubes[2]),'twenty-four cell')
+
+addmodel(twentyfourcell)
+//hypercubes.map(h=>addmodel(h))
+
+
+
+
 //tet cube
 //& hcube
 
@@ -499,5 +547,5 @@ addmodel(makemodel({name:'tet hcube',listofindexandcolorlists:
 //cycles
 
 
-defaultmodel = 'tet hcube';
-
+defaultmodel = 'twenty-four cell';
+//defaultmodel = 'hypercube'

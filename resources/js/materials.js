@@ -108,6 +108,14 @@ const transparentmaterial = new THREE.MeshLambertMaterial({
             opacity: .1,
         });
 
+const transparentlightmaterial = new THREE.MeshLambertMaterial({ 
+          color: 0xffffff,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1, // Helps with rendering transparent surfaces
+            opacity: .4,
+        });
+
 function fillarraywithrgba(r,g,b,a,n){
 	var arr = []
 	for(var i=0;i<n;i++){
