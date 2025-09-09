@@ -114,51 +114,91 @@ function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
 
 
 function cyclecolorfunction(position,time,  hue0=0,speed=1/*cycle per second*/, inneramp=.1, saturation=1, brightness = 1){
-    return hsbToRgb(hue0+inneramp*Math.sin(speed*time+position*3.141),saturation,brightness);
+    return hsbToRgb(hue0+inneramp*Math.sin(speed*time+position*3.1416),saturation,brightness);
+}
+
+initGaussianTables()
+
+function gaussiancolorfunction(position, time, hue0=0, variance=".01", timeshift=0,speed = 1,inner=.4, saturation=1, brightness=1){
+  var temp = Math.floor(position+speed*(time-timeshift))
+  var hue = hue0+inner*gaussianHeight(position+speed*(time+timeshift)-temp,
+    GAUSSIAN_TABLES[variance])
+  return hsbToRgb(
+    hue,saturation,brightness)
 }
 
 
 
+
+
+
+
+
+
+
+
+
 //function edgecolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001){
-function edgecolorfunction(x,modeldata,time=Date.now()* 0.001){
-        
-    
+function edgecolorfunction(x,modeldata,time=Date.now()* 0.001,
+    colorprogram=defaultcolorprogram
+){
         var rgb; 
         var position; 
 
-        if(modeldata[1]<0){position = 1-x}
-        else if(modeldata[1]>0){position = x}
-        else{position = 2*Math.abs(.5-x)}
+        // if the direction=modeldata[1] is negative, reverse the colors 
+        if(modeldata[1]==-1){
+          position = 1-x}
+        // if it's positive, keep it as it is
+        else if(modeldata[1]==1){
+          position = x}
+        // if it's 0, reverse it in the middle. 
+        else{
+          position = 2*Math.abs(.5-x)}
+        // we could add a NaN option to reverse that
         
         
+        rgb =colorfunctions[colorprogram[modeldata[0]]](position, time)
 
-        // here we just hard code some named functions
-        switch(modeldata[0]){
-            case 0: 
-                // this is irrelevant now
-                // rgb = cyclecolorfunction(position, time,.2,5,.03,.1,.1)
-                rgb = [0,0,0,1]
-                break;
-            case 1:
-                rgb = cyclecolorfunction(position, time,.4,1,.5,.7)
-                break;
-            case 2:
-                rgb = [0,1,0]
-               // rgb = cyclecolorfunction(position, time)
-                break;
-            case 3:
-                rgb = [0,0,1]
-            //rgb = cyclecolorfunction(position, time,.9,10,.03)
-                break;
-        }
 
 		return rgb;
 	}
 
 
+/// put the colorfunctions here. 
+/// Each has names and a function
+/// returning an rgb 
 
 
+const colorfunctions={
+  blank:function(x,t){return [0,0,0,1]},
+  basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
+  black:function(x,t){return [0,0,0,1]},
+  white:function(x,t){return [1,1,1,1]},
+  red:function(x,t){return [1,0,0,1]},
+  blue:function(x,t){return [0,0,1,1]},
+  green:function(x,t){return [0,1,0,1]},
+  yellow:function(x,t){return [1,1,0,1]},
+  pulse2:function(x,t){return cyclecolorfunction(x*3,t,0,.22,.1,.9)},
+  pulse:function(x,t){return cyclecolorfunction(x,t,.4,1,.5,.7)},
+  purplepulse:function(x,t){return gaussiancolorfunction(x,t,.9,".01",.3,.3,1,1)},
+  cyanpulse:function(x,t){return gaussiancolorfunction(x,t,.8,".01",.3,.3,.1)},
+  redpulse:function(x,t){return gaussiancolorfunction(x,t,0,".01",.3,.3,.2)},
+  greenpulse:function(x,t){return gaussiancolorfunction(x,t,.4,".01",.3,.3,.2,1,.5)},
+  bluepulse:function(x,t){return gaussiancolorfunction(x,t,.65,".01",.3,.3,.2,1,.7)}
+}
 
+/// A color program is an array of names, a look up table of colorfunctions
 
+var defaultcolorprogram=['blank','pulse2','pulse','purplepulse','basiccycle','cyanpulse']
 
+const pulsingcolors=['blank','redpulse','greenpulse','bluepulse','purplepulse','cyanpulse']
+
+const solidcolors = ['blank','red','green','blue','yellow','black','white']
+
+const testingcolors = ['blank','redpulse','green','blue','blank','blank','blank']
+
+const temp = ['blank','redpulse','greenpulse',
+          'bluepulse','purplepulse']
+          
+defaultcolorprogram=temp//pulsingcolors;
 

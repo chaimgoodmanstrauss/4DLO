@@ -56,7 +56,9 @@ ourgui.add(ourguiparams,'show as',
 
 
 
-ourguiparams['the model'] = ourmodels.map(x=>x.name)[0];
+ourguiparams['the model'] = defaultmodel
+//ourmodels.find(dict => dict.name === defaultmodel);
+//ourmodels.map(x=>x.name)[0];
 ourgui.add(ourguiparams,'the model',
 	ourmodels.map(x=>x.name)).onChange(theModelChanged);
 
@@ -203,7 +205,7 @@ function updatethedrawing(){
 	//ourmodeldata = ourmodels[ourguiparams['the model']];
 
 	// Use the find() method to get the dictionary where foo is 'fee'
-	ourmodeldata = ourmodels.find(dict => dict.name === ourguiparams['the model']);
+	var ourmodeldata = ourmodels.find(dict => dict.name === ourguiparams['the model']);
 
 
 	// hide all of the meshes in case they're showing. 
@@ -217,6 +219,8 @@ function updatethedrawing(){
 	if(ourmodeldata.vertdata){
 		numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
 	}
+
+	if (!ourguiparams["show all edges"]){numedges=1}
 
 	var kindofmesh = 'edge'
 	
@@ -239,15 +243,16 @@ function updatethedrawing(){
 				e1 = (m.acton(edgebase1)).mult(offset);
 			}
 		
-
+			var tuberadius =.03;
+			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = .01}
 
 			if(ourguiparams['show as']=='four-d'){
 			ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
-				e0, e1,.03,false,colorablematerial,true);
+				e0, e1,tuberadius,false,colorablematerial,true);
 			}
 			else{
 				ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
-				e0, e1,.03,false,colorablematerial,false);
+				e0, e1,tuberadius,false,colorablematerial,false);
 			}
 			
 			// now color all of the vertices on the edge. If ourmodeldata.edgedata[edgeindex] == 0, 
@@ -290,8 +295,10 @@ function updatethedrawing(){
 				vert = (vert).mult(offset);
 			}
 
+			var vertradius = .06
+
 			ourmeshregistry[meshindex]=rejiggersphere(ourmeshregistry[meshindex],
-				mapQToWorld(vert),.1,false,mats[0],false)
+				mapQToWorld(vert),vertradius,false,mats[0],false)
 
 			// now color all of the vertices on the vertex 
 			for(var i = 0; i<500; i++)

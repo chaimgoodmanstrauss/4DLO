@@ -268,11 +268,21 @@ class qAction{
     return this;
   }
   
+  inverse(){
+    var newname=""
+    if(this.name && this.name!=""){newname=this.name+" inverse"}
+    return new qAction(this.l.inverse(),this.r.inverse(),this.star, newname)
+  }
+  
   // returns a new quat, acted upon by this
   acton(q){
     return q.actby(this);
   }
   
+  composeon(a){
+    return a.mult(this)
+  }
+
   //  returns a new action, this followed by action a (a on outside)
   mult(a){
     if(!this.star && !a.star){// remember that the left will ne inverted when the action is performed
