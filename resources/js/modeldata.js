@@ -273,26 +273,69 @@ const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
 
 
 
-
-function permutedgemodels(edgemodellist,q){
-    // an edge model is index:[color, direction]
-    // we create a new one as follows:
-    var perms =getactiononedgegroupaspermutationofindices(q)
-    var out=perms.map(p=>{
-            
-            var model = edgemodellist[p[0]];
-            if(model[0]!=0){
-                console.log('stop here')
-            } 
-            return [model[0],p[1]*model[1]
-            ]})
-    return  out
+function makemodel(modelinfo,oldmodel = basicmodel){
+    var newmodel = structuredClone(oldmodel)
+    newmodel.name = modelinfo.name
+    
+    modelinfo.listofindexandcolorlists.map(
+        indexandcolorlist=>{
+            var indexcount = 0
+            var spread = indexandcolorlist.indices.length
+            indexandcolorlist.indices.map(
+                index=>{
+                    var dir = Math.sign(index), iindex = Math.abs(index)
+                    if(indexandcolorlist.modelinfo.length>1){
+                       dir = dir*indexandcolorlist.modelinfo[1]}
+                    newmodel.edgedata[iindex]=[indexandcolorlist.modelinfo[0],dir,...indexandcolorlist.modelinfo.slice(2)]
+                    if(indexandcolorlist.spread){
+                        // then we add the spreading to the info. 
+                        // this conflicts if this is already added in the modelinfo
+                        newmodel.edgedata[iindex]=[...newmodel.edgedata[iindex],
+                        1/spread,//x spread
+                        indexcount/spread//x0 //(indexcount+1)/spread*indexandcolorlist.spread
+                        ]  
+                    }
+                    if(indexandcolorlist.timing){
+                        // then we add the speeding to the info. 
+                        newmodel.edgedata[iindex]=[...newmodel.edgedata[iindex],
+                            indexandcolorlist.timing]  
+                    }
+                    indexcount++
+                })
+        })
+    return newmodel
 }
 
 
-function permutemodel(oldmodel,q,newname=""){
+
+
+function permutedgemodels(edgemodellist,q,colorpermutations=[]){
+    // an edge model is index:[color, direction]
+    // we create a new one as follows:
+    var perms =getactiononedgegroupaspermutationofindices(q)
+  
+    var out=perms.map(p=>{
+            
+            var copymodel = edgemodellist[p[0]];
+            var newcolor
+            if(copymodel[0]==0||copymodel[0]>colorpermutations.length){ 
+				newcolor= copymodel[0]}
+            else{
+				newcolor = colorpermutations[copymodel[0]-1]}
+            return [newcolor,p[1]*copymodel[1],...copymodel.slice( 2)]
+            
+            })
+    return  out
+}
+
+// we permute the edges of oldmodel by an action q
+// In other words, edgedata[i] is the image of the edge that q^-1 edgedata[i]
+// This function works out the matching. 
+// We can assign a name, and we can change the colors with a permutation
+
+function permutemodel(oldmodel,q,newname="", colorpermutations=[]){
     var newmodel= structuredClone(oldmodel)
-    newmodel.edgedata= permutedgemodels(oldmodel.edgedata,q)
+    newmodel.edgedata= permutedgemodels(oldmodel.edgedata,q,colorpermutations)
     //var cntr=0;
     //debugstrings = newmodel.edgedata.map(e=>(cntr++).toString()+": ["+e.toString()+"]")
     if(newname!=""){newmodel.name = newname}
@@ -300,9 +343,9 @@ function permutemodel(oldmodel,q,newname=""){
     return newmodel
 }
 
-function permutenamedmodel(name,q,newname="")
+function permutenamedmodel(name,q,newname="",colorpermutations=[])
 {   var modelname = ourmodels.find(item => item.name === name)
-    return permutemodel(modelname,q,newname)
+    return permutemodel(modelname,q,newname,colorpermutations)
 }
 
 function mergemodels(model1,model2,newname="")
@@ -321,18 +364,6 @@ function mergemodels(model1,model2,newname="")
 
 
 
-
-// Given  { 
-//      {indices:[],edgemodel}
-//                    }
-//  overlay this onto a model
-
-function makemodel(modelinfo,oldmodel = basicmodel){
-    var newmodel = structuredClone(oldmodel)
-    newmodel.name = modelinfo.name
-    modelinfo.listofindexandcolorlists.map(indexandcolorlist=>indexandcolorlist.indices.map(index=>{newmodel.edgedata[index]=indexandcolorlist.modelinfo}))
-    return newmodel
-}
 
 
 
@@ -382,60 +413,31 @@ const blankModel = {name:"basic", edgedata:Array(96).fill([0,1]), vertdata:stand
 const basicmodel = permutemodel(blankModel,new qAction(qOne.positivize(), qOne.positivize()),"basic")// this should give the overlay correctly
 // this gives the direction of the edges relative to lexigraphic name, but doesn't really matter
 
-function makemodel(modelinfo,oldmodel = basicmodel){
-    var newmodel = structuredClone(oldmodel)
-    newmodel.name = modelinfo.name
-    modelinfo.listofindexandcolorlists.map(indexandcolorlist=>indexandcolorlist.indices.map(index=>{newmodel.edgedata[index]=indexandcolorlist.modelinfo}))
-    return newmodel
-}
 
 
 
-/*
-/////////////getting started 
-addmodel(basicmodel)
-
-addmodel(
-    {name:'oldtwentyfourcell',
-        edgedata:Array.from({ length: 96 }, () => [1, 1])})
 
 
-const tester = makemodel({name:'tester', 
+
+const octahedron = makemodel({name:'octahedron', 
     listofindexandcolorlists:[
-{indices:[87],modelinfo:[4,-1]}]})
-
-const tester2 = permutemodel(tester, new qAction(qOne.positivize(), new quat(0,-1,0,0)),"tester2")
-
-addmodel(mergemodels(tester,tester2,"testing"))
-
-*/
-
-
-
-
-
-
-
-const octahedron = makemodel({name:'firstoctahedron', 
-    listofindexandcolorlists:[
-        {indices:[95,91,70,34],modelinfo:[1,1]},
-        {indices:[ 29, 43, 66, 83],modelinfo:[3,1]},
-       {indices:[21,51,62],modelinfo:[2,1]},
-      {indices:[87],modelinfo:[4,1]}
+        {indices:[95,91,70,34],modelinfo:[1,1,.5,.5],timing:2},
+        {indices:[ 29, 43, 66, 83],modelinfo:[1,1,.5,0],timing:2},
+      // {indices:[21,51,62,87],modelinfo:[5,1]}
     ]})
 
 
-addmodel( octahedron)
 
 
 var moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
-    q=>permutenamedmodel('firstoctahedron', new qAction(qOne.positivize(), q)
+    q=>permutemodel(octahedron, new qAction(qOne.positivize(), q)
         ))
 
 
 addmodel(mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),
     moreoctas[1]),
     moreoctas[2],"octachain"))
+
 
 function makecycle(colorindices,direction=1){
     var models
@@ -475,16 +477,18 @@ function makecycle(colorindices,direction=1){
 //addmodel(makemodel({name:'basic cube',listofindexandcolorlists:   [{indices:[74,59,37,27,87,21,63,49,62,51,23,86],modelinfo:[1,1]}]}))
 
 
-addmodel(makemodel({name:'cube',listofindexandcolorlists:
+const basiccube = makemodel({name:'cube',listofindexandcolorlists:
     [{indices:[59,37],modelinfo:[1,1]},
     {indices:[63,49],modelinfo:[2,1]},
     {indices:[62,51],modelinfo:[3,1]},
     {indices:[74,27],modelinfo:[1,-1]},
     {indices:[87,21,],modelinfo:[2,-1]},
     {indices:[23,86],modelinfo:[3,-1]},
-]}))
+]})
 
-addmodel(makemodel({name:'four color hypercube',listofindexandcolorlists:
+
+
+const basichypercube =  makemodel({name:'four color hypercube',listofindexandcolorlists:
     [{indices:[59,37,38,56],modelinfo:[1,1]},
     {indices:[63,49,50,60],modelinfo:[2,1]},
     {indices:[62,51,48,61],modelinfo:[3,1]},
@@ -494,7 +498,8 @@ addmodel(makemodel({name:'four color hypercube',listofindexandcolorlists:
     {indices:[23,86,20,85],modelinfo:[3,-1]},
     {indices:[75,25,26,72],modelinfo:[4,-1]},
 ]
-}))
+
+})
 
 
 
@@ -513,29 +518,84 @@ const hypercube = makemodel({name:'hypercube',
 
 
 var tempp = [qW,new quat(-1,1,1,1).normalize()]
-
 var tempcntr = 1;
 var hypercubes=[qW,new quat(-1,-1,1,1).normalize()].map(q=>
 permutemodel(hypercube, new qAction(qOne.positivize(), q),"hypercube"+tempcntr++))
     
 hypercubes = [hypercube,...hypercubes ]
 
-addmodel(hypercube)
-//addmodel(hypercubes[1])
-//addmodel(hypercubes[2])
 
 
+tempcntr = 1;
+var rr = new quat(-1,-1,1,1).normalize();
+var qone =qOne.positivize()
+var coloredhypercubes=[[qone,[5]],[qW,[6]],[rr,[10]]].map(q=>
+permutemodel(hypercube, new qAction(qone, q[0]),"colored hypercubes"+tempcntr++,q[1]))
+    
+
+
+const compoundofhypercubes = mergemodels(coloredhypercubes[0],
+						mergemodels(coloredhypercubes[1],coloredhypercubes[2]),'three hypercubes')
 
 
 
 const twentyfourcell = mergemodels(hypercubes[0],
                             mergemodels(hypercubes[1],hypercubes[2]),'twenty-four cell')
 
-addmodel(twentyfourcell)
+
+const twentyfourcell2 = permutemodel(twentyfourcell,new qAction(qone,qone),'twenty-four cell 2',[4])
+
 //hypercubes.map(h=>addmodel(h))
 
 
+///// a little gray code action:
 
+
+const graycode = makemodel({name:'gray code',
+    listofindexandcolorlists:
+    [{indices:[22,57,23,49,86,37,-51,-21,-62,39,85,38,84,-73,20,56],modelinfo:[5]},
+    {indices:[61,72,63,74,-87,25,50,24,48,26,59,75,60,-58,-27,-36],modelinfo:[6,-1]}
+]})
+
+
+
+
+	
+const graycode2 = makemodel(
+	{
+	name:'two gray codes',
+    listofindexandcolorlists:[
+        {indices:[22,57,23,49,86,37,-51,-21,-62,39,85,38,84,-73,20,56],modelinfo:[1],spread:2,timing:1},
+    {indices:[61,72,63,74,-87,25,50,24,48,26,59,75,60,-58,-27,-36],modelinfo:[2],spread:1}
+]})
+
+
+
+//a compound of six hamiltonian paths
+
+tempcntr = 0;
+var graycodes=[[qone,[7,8]],[qW,[9,10]],[rr,[5,6]]].map(q=>
+permutemodel(graycode2, new qAction(qone, q[0]),"gray code"+tempcntr++,q[1]))
+    
+
+
+const compoundofgraycodes = mergemodels(graycodes[0],mergemodels(graycodes[1],graycodes[2]),'six paths')
+
+
+
+
+addmodel( octahedron)
+addmodel(basiccube)
+//addmodel(basichypercube)
+addmodel(hypercube)
+addmodel(twentyfourcell)
+addmodel(twentyfourcell2)
+addmodel(compoundofhypercubes)
+
+//addmodel(graycode)
+
+addmodel(graycode2)
+addmodel(compoundofgraycodes)
 
 //tet cube
 //& hcube
@@ -547,5 +607,10 @@ addmodel(twentyfourcell)
 //cycles
 
 
-defaultmodel = 'twenty-four cell';
+
 //defaultmodel = 'hypercube'
+defaultmodel = 'three hypercubes'
+defaultmodel = 'gray code'
+defaultmodel = 'six hamiltonian paths'
+defaultmodel = 'two gray codes'
+defaultmodel = 'twenty-four cell';

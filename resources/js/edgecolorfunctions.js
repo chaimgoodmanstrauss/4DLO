@@ -30,14 +30,30 @@ function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
 }
 */
 
-function hsbToRgba(h, s, b,a=1) {
+
+
+function hsbToRgb3(h, s, b) {
   // Handle grayscale case (no saturation)
   if (s === 0) {
-    return [b, b, b,a];
+    return [b, b, b];
+  }
+  
+  // Properly normalize hue to 0-1 range
+  h = ((h % 1) + 1) % 1;
+  
+  // Remap hue to expand green range
+  // Standard green is roughly 0.167-0.5 (120°-180° expanded to 240°)
+  if (h >= 0.167 && h <= 0.667) {
+    // Expand this range (0.167-0.667 = 0.5 of input) to occupy more of the wheel
+    // Map to 0.167-0.75 (expanding green/cyan region)
+    h = 0.167 + (h - 0.167) * 1.166; // stretch factor of ~1.166
+  } else if (h > 0.667) {
+    // Compress the remaining range (0.667-1.0) into smaller space
+    h = 0.75 + (h - 0.667) * 0.75; // compress remaining colors
   }
   
   // Convert hue to 0-6 range and find which sector we're in
-  const hue = (h%1) * 6;
+  const hue = h * 6;
   const sector = Math.floor(hue);
   const fractional = hue - sector;
   
@@ -47,19 +63,19 @@ function hsbToRgba(h, s, b,a=1) {
   const t = b * (1 - s * (1 - fractional));
   
   // Determine RGB based on which sector of the color wheel
-  switch (sector % 6) {
-    case 0: return [b, t, p,a]; // Red to Yellow
-    case 1: return [q, b, p,a]; // Yellow to Green
-    case 2: return [p, b, t,a]; // Green to Cyan
-    case 3: return [p, q, b,a]; // Cyan to Blue
-    case 4: return [t, p, b,a]; // Blue to Magenta
-    case 5: return [b, p, q,a]; // Magenta to Red
+  switch (sector) {
+    case 0: return [b, t, p]; // Red to Yellow
+    case 1: return [q, b, p]; // Yellow to Green
+    case 2: return [p, b, t]; // Green to Cyan
+    case 3: return [p, q, b]; // Cyan to Blue
+    case 4: return [t, p, b]; // Blue to Magenta
+    case 5: return [b, p, q]; // Magenta to Red
+    default: return [b, t, p]; // Fallback
   }
 }
 
 
-
-function hsbToRgb(h, s, b) {
+function hsbToRgb2(h, s, b) {
   // Handle grayscale case (no saturation)
   if (s === 0) {
     return [b, b, b];
@@ -88,6 +104,37 @@ function hsbToRgb(h, s, b) {
   }
 }
 
+
+function hsbToRgb(h, s, b) {
+  // Handle grayscale case (no saturation)
+  if (s === 0) {
+    return [b, b, b];
+  }
+  
+  // Properly normalize hue to 0-1 range
+  h = ((h % 1) + 1) % 1;
+  
+  // Convert hue to 0-6 range and find which sector we're in
+  const hue = h * 6;
+  const sector = Math.floor(hue);
+  const fractional = hue - sector;
+  
+  // Calculate intermediate values
+  const p = b * (1 - s);
+  const q = b * (1 - s * fractional);
+  const t = b * (1 - s * (1 - fractional));
+  
+  // Determine RGB based on which sector of the color wheel
+  switch (sector) {
+    case 0: return [b, t, p]; // Red to Yellow
+    case 1: return [q, b, p]; // Yellow to Green
+    case 2: return [p, b, t]; // Green to Cyan
+    case 3: return [p, q, b]; // Cyan to Blue
+    case 4: return [t, p, b]; // Blue to Magenta
+    case 5: return [b, p, q]; // Magenta to Red
+    default: return [b, t, p]; // Fallback (shouldn't happen)
+  }
+}
 
 
 function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
@@ -127,6 +174,13 @@ function gaussiancolorfunction(position, time, hue0=0, variance=".01", timeshift
     hue,saturation,brightness)
 }
 
+function spikecolorfunction(x,t,hue0=0,colorspread=.3, spacespread = .4, direction=1, saturation=1, brightness = 1){
+  // within spacespread/2 of 1/2, the colors are spread about hue0
+  // in short:
+  var shift = direction*colorspread*(1-Math.min(Math.abs(((x+t)%1)*2/spacespread-.5),1))
+  return hsbToRgb( hue0+shift,saturation,brightness)
+}
+
 
 async function example1() {
     const func = new discreteFunction('resources/graphs/testfunc.json');
@@ -142,10 +196,17 @@ async function example1() {
 example1()
 
 
-//function edgecolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001){
 function edgecolorfunction(x,modeldata,time=Date.now()* 0.001, colorprogram=defaultcolorprogram){
         var rgb; 
         var position; 
+
+// modeldata is [0] = index of color
+//              [1] = direction 
+//              [2] = xstretch, if defined
+//              [3] = x0 if defined
+//              [4] = time stretch, if defined
+//              [5] = t0 if defined
+
 
         // if the direction=modeldata[1] is negative, reverse the colors 
         if(modeldata[1]==-1){
@@ -158,8 +219,20 @@ function edgecolorfunction(x,modeldata,time=Date.now()* 0.001, colorprogram=defa
           position = 2*Math.abs(.5-x)}
         // we could add a NaN option to reverse that
         
+        var xscale = 1, tscale = 1, x0 = 0, t0=0
+        // If there is further information in the modeldata, let's use it. 
+        switch(modeldata.length){
+          case 6: // we have a t0
+            t0=modeldata[5]
+          case 5: // we have a tscale
+            tscale = modeldata[4]
+          case 4: // we have an x0
+            x0= modeldata[3]
+          case 3:// an xscale
+            xscale = modeldata[2]
+        }
         
-        rgb =colorfunctions[colorprogram[modeldata[0]]](position, time)
+        rgb =colorfunctions[colorprogram[modeldata[0]]](position*xscale+x0, time*tscale+t0)
 
 
 		return rgb;
@@ -177,6 +250,13 @@ const colorfunctions={
   black:function(x,t){return [0,0,0,1]},
   white:function(x,t){return [1,1,1,1]},
   red:function(x,t){return [1,0,0,1]},
+  huewheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
+  huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
+  throbbingred:function(x,t){
+    return hsbToRgb(0,1,1)
+   // 0,1-.5*Math.abs(Math.sin(t/5)), 1-.5*Math.abs(Math.sin(t/5))
+   
+  },
   blue:function(x,t){return [0,0,1,1]},
   green:function(x,t){return [0,1,0,1]},
   yellow:function(x,t){return [1,1,0,1]},
@@ -186,7 +266,14 @@ const colorfunctions={
   cyanpulse:function(x,t){return gaussiancolorfunction(x,t,.8,".01",.3,.3,.1)},
   redpulse:function(x,t){return gaussiancolorfunction(x,t,0,".01",.3,.3,.2)},
   greenpulse:function(x,t){return gaussiancolorfunction(x,t,.4,".01",.3,.3,.2,1,.5)},
-  bluepulse:function(x,t){return gaussiancolorfunction(x,t,.65,".01",.3,.3,.2,1,.7)}
+  bluepulse:function(x,t){return gaussiancolorfunction(x,t,.65,".01",.3,.3,.2,1,.7)},
+  yellowspikepulse:function(x,t){return spikecolorfunction(x,t/5,0,.2,.2)},
+  bluespikepulse:function(x,t){return spikecolorfunction(x,t/5,.6,.3,.4)},
+  redspikepulse:function(x,t){return spikecolorfunction(x,t/5,.2,.3,.2,-1)},
+  spikepulse4:function(x,t){return spikecolorfunction(x,t/5,.9,.2,.2,1)},
+  spikepulse5:function(x,t){return spikecolorfunction(x,t/5,.45,.3,.2,1)},
+  spikepulse6:function(x,t){return spikecolorfunction(x,t/5,.75,.4,.2,1)},
+  
 }
 
 /// A color program is an array of names, a look up table of colorfunctions
@@ -199,8 +286,13 @@ const solidcolors = ['blank','red','green','blue','yellow','black','white']
 
 const testingcolors = ['blank','redpulse','green','blue','blank','blank','blank']
 
-const temp = ['blank','redpulse','greenpulse',
-          'bluepulse','purplepulse']
-          
-defaultcolorprogram=temp//pulsingcolors;
+ defaultcolorprogram = 
+['blank',
+  'huewheel2','huewheel',
+  'redpulse','greenpulse','bluepulse','purplepulse',
+  'redspikepulse','bluespikepulse', 'yellowspikepulse','spikepulse4',
+  'spikepulse5','spikepulse6',
+  'throbbing red',
+  'red','green','blue']
+
 

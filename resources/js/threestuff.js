@@ -30,7 +30,7 @@
     container = document.querySelector( '#scene-container' );
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0x16117f );
+    scene.background = new THREE.Color( 0x170630 );
 
    
    
@@ -65,7 +65,7 @@
       15, // FOV
       container.clientWidth / container.clientHeight, // aspect
 
-      5, // near clipping plane
+      9, // near clipping plane
       40, // far clipping plane
     );
 
@@ -82,7 +82,7 @@
   function createControls() {
 
     controls = new THREE.OrbitControls( camera, container ); 
-    camera.position.set( 11, 2, 4 );
+    camera.position.set( 14, .4, 2.3 );
     controls.update();
     
     //controls.addEventListener( 'change', render );
