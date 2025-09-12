@@ -23,12 +23,11 @@ var edgebase0 = qOne.positivize(), edgebase1=  new quat(.5,.5,.5,.5);
 
 // positioning the edges in a canonical way:
 
-const edgegroup = makegroup([
-   // new qAction(qI, qOne), 
+var edgegroupgen1 = new qAction(new quat(sqrt(.5),sqrt(.5),0,0),new quat(sqrt(.5),sqrt(.5),0,0))
     
-    new qAction(new quat(sqrt(.5),sqrt(.5),0,0),new quat(sqrt(.5),sqrt(.5),0,0)),
-    new qAction(qW,qOne),
-    
+var edgegroupgen2 = new qAction(qW,qOne)
+
+const edgegroup = makegroup([edgegroupgen1,edgegroupgen2
 ]).groupElements
 
 
@@ -64,7 +63,7 @@ function getindexforaction(q){
     var iddir = generateidforedgeaction(q);
     var index = edgeids.findIndex(i=>i.id==iddir.id);
     if(index<0){
-        console.log('hi')}
+        console.log('FLAMES FLAMES; this is not a legit group action at for '+iddir.toString())}
     return [index,iddir.direction*edgeids[index].direction]
 }
 
@@ -245,7 +244,7 @@ const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
 
 
 
-
+var qone =qOne.positivize()
 
 
 //////////////////////////////////////////////////////////
@@ -365,18 +364,6 @@ function mergemodels(model1,model2,newname="")
 
 
 
-
-
-
-////////////////////////////////
-// 
-// Our models
-//
-//
-
-
-var ourmodels=[]
-
 function addmodel(amodel){
     ourmodels = [...ourmodels,amodel]
 }
@@ -394,6 +381,20 @@ function appendmodel(model){
 }
 
 
+
+////////////////////////////////
+// 
+// Our models
+//
+//
+
+
+var tempcntr = 1;
+
+var ourmodels=[]
+
+
+
 // Given  { 
 //      {indices:[],edgemodel}
 //                    }
@@ -401,21 +402,14 @@ function appendmodel(model){
 
 
 
-var defaultmodel = 'twentyfourcell';
-
-
-
 const standardverts =[ [22,0],[5,1],[3,2],[1,3]]
+
+
 
 const blankModel = {name:"basic", edgedata:Array(96).fill([0,1]), vertdata:standardverts};
 
  
 const basicmodel = permutemodel(blankModel,new qAction(qOne.positivize(), qOne.positivize()),"basic")// this should give the overlay correctly
-// this gives the direction of the edges relative to lexigraphic name, but doesn't really matter
-
-
-
-
 
 
 
@@ -423,22 +417,92 @@ const octahedron = makemodel({name:'octahedron',
     listofindexandcolorlists:[
         {indices:[95,91,70,34],modelinfo:[1,1,.5,.5],timing:2},
         {indices:[ 29, 43, 66, 83],modelinfo:[1,1,.5,0],timing:2},
-      // {indices:[21,51,62,87],modelinfo:[5,1]}
+       {indices:[21,51,87,62],modelinfo:[6,1],timing:2,spread:1}
     ]})
 
+const moreoctas =[[qI.mult(qW),'-- octo 2'],[qJ,'-- octo 3']].map(
+    q=>permutemodel(octahedron, new qAction(qOne.positivize(), q[0]),q[1])
+        )
+   
 
-
-
-var moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
+/*const moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
     q=>permutemodel(octahedron, new qAction(qOne.positivize(), q)
         ))
 
-
-addmodel(mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),
+const octachain = mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),
     moreoctas[1]),
-    moreoctas[2],"octachain"))
+    moreoctas[2],"octachain")
+
+const octashiftchain = permutemodel(octachain,new qAction(qone,qW),"octachain2")
+*/
+
+// +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
+
+const cycle = 
+    makemodel({name:'cycle',
+    listofindexandcolorlists:
+    [{indices:[67,95,39,64,92,36],modelinfo:[1,1], spread:2}]})
 
 
+var cycleactions = [//cyclecosetgen, 
+    new qAction(qO.mult(qO), qO.mult(qW).mult(qO)),
+    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW)),
+    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW).mult(qW))
+   // new qAction(qO, qO.mult(qW.mult(qW))),
+    //new qAction(qO, qO.mult(qW.mult(qW.mult(qW)))) 
+  //  [new qAction(qone, qI)],//, new qAction(qone, new quat(-Math.sqrt(.5),Math.sqrt(.5))) 
+        ]
+
+//cycleactions=cyclequotient.groupElements
+//edgegroup
+
+const rightcycleclass = cycleactions.map(q=>{
+    console.log(q.toString())
+    return permutemodel(cycle,q,"")})
+
+var fourcycles = structuredClone(cycle)
+rightcycleclass.map(m=>fourcycles = mergemodels(fourcycles,m))
+
+
+const cycleactionscosets =//[[qOneOne,12], [qOqO,11],[new qAction(qI,qI),13] ]
+[[qOneOne,12], [qOqO,11],[qIOne,13]]
+
+const cycleperms = cycleactionscosets.map(q=>
+    permutemodel(fourcycles,q[0],"-",[q[1]])
+)
+//cycleperms.map(m=>addmodel(m))
+
+allcycles = structuredClone(fourcycles)
+cycleperms.map(a=>{allcycles = mergemodels(allcycles, a
+,"all cycles")})
+
+fourcycles.name="four cycles"
+
+
+
+
+/*
+const leftcycleclass = [new qAction(qone, qone),// new qAction(qO,qone), 
+    new qAction(qI,qone), //new qAction(new quat(-Math.sqrt(.5),Math.sqrt(.5)),qone) 
+        ].map(q=>permutemodel(cycle, q,""))
+*/
+/*
+const leftcycles = permutemodel(mergemodels(cycle, 
+    mergemodels(leftcycleclass[1], 
+        mergemodels(leftcycleclass[2],leftcycleclass[3]))),
+        new qAction(qone, qone),[7])
+*//*
+const fourleftcycles = [[new qAction(qone, qone),5], [new qAction(qO,qO),6], [new qAction(qI,qI),7], 
+[new qAction(new quat(-Math.sqrt(.5),Math.sqrt(.5)),new quat(-Math.sqrt(.5),Math.sqrt(.5))),8]
+        ].map(q=>permutemodel(leftcycles, q[0],q[1]))
+
+*/
+
+
+//addmodel(fourleftcycles)
+
+
+/* // important cycle info!
 function makecycle(colorindices,direction=1){
     var models
     switch(colorindices.length){
@@ -462,14 +526,16 @@ function makecycle(colorindices,direction=1){
             listofindexandcolorlists:models}
     )
 }
+*/
 
 
 
 ///////////////
 //  Here are three sample colorings, a 1 coloring, 2 coloring, or 3
 
-//var acycle = makecycle([2])
+//var acycle = makecycle([1])
 //var qq= new qAction(qOne.positivize(), qI)
+
 //addmodel(permutemodel(makecycle([1]),qq,'cycle 1'))
 //addmodel(permutemodel(makecycle([1,2]),qq,'cycle 2'))
 //addmodel(permutemodel(makecycle([1,2,3]),qq,'cycle 3'))
@@ -486,6 +552,11 @@ const basiccube = makemodel({name:'cube',listofindexandcolorlists:
     {indices:[23,86],modelinfo:[3,-1]},
 ]})
 
+const misccubes = [[qJ,"-- cube 2"],[qI.mult(qW),"-- cube 3"],[qmone,"-- cube 4"],[qI.mult(qW).mult(qI),"-- cube 5"]].map(q=>{
+    var qa = new qAction(qone,q[0])
+    return permutemodel(basiccube,qa,q[1] )
+}
+)
 
 
 const basichypercube =  makemodel({name:'four color hypercube',listofindexandcolorlists:
@@ -518,7 +589,7 @@ const hypercube = makemodel({name:'hypercube',
 
 
 var tempp = [qW,new quat(-1,1,1,1).normalize()]
-var tempcntr = 1;
+
 var hypercubes=[qW,new quat(-1,-1,1,1).normalize()].map(q=>
 permutemodel(hypercube, new qAction(qOne.positivize(), q),"hypercube"+tempcntr++))
     
@@ -528,7 +599,7 @@ hypercubes = [hypercube,...hypercubes ]
 
 tempcntr = 1;
 var rr = new quat(-1,-1,1,1).normalize();
-var qone =qOne.positivize()
+
 var coloredhypercubes=[[qone,[5]],[qW,[6]],[rr,[10]]].map(q=>
 permutemodel(hypercube, new qAction(qone, q[0]),"colored hypercubes"+tempcntr++,q[1]))
     
@@ -574,20 +645,57 @@ const graycode2 = makemodel(
 //a compound of six hamiltonian paths
 
 tempcntr = 0;
-var graycodes=[[qone,[7,8]],[qW,[9,10]],[rr,[5,6]]].map(q=>
+var graycodes=[[qone,[5,6]],[qW,[7,8]],[rr,[3,4]]].map(q=>
 permutemodel(graycode2, new qAction(qone, q[0]),"gray code"+tempcntr++,q[1]))
     
 
 
 const compoundofgraycodes = mergemodels(graycodes[0],mergemodels(graycodes[1],graycodes[2]),'six paths')
 
+/*const centralcube = makemodel({name:"centralcube",
+    listofindexandcolorlists:[{indices:[]
+    }]})
+*/
+const possibleunit = makemodel({name:"possibleunit",
+    listofindexandcolorlists:[{indices:[69, -48,80,90,-7,0,18,
+        -55,-57,-24,-39,-14,9,46,-79,29,71,50,81
+    ],modelinfo:[1],spread:1,timing:1}]
+})
 
 
+
+const rot = new qAction(new quat(1,1,0,0).normalize(),new quat(1,1,0,0).normalize())
+const possibleunitpieces = 
+[[qOneOne,[11]], [rot,[12]],
+[new qAction(new quat(0,1,0,0).normalize(),new quat(0,1,0,0).normalize()),[13]],
+[new qAction(new quat(1,-1,0,0).normalize(),new quat(1,-1,0,0).normalize()),[8]],
+//,[qOqO.mult(qOqO).mult(qOqO),[10]]
+						   ].map(q=>
+    permutemodel(possibleunit,q[0],"-",[q[1]]))
+
+var possibleunits =possibleunit; //
+     mergemodels(possibleunitpieces[0],possibleunitpieces[1]) ;
+possibleunitpieces.map(m=>possibleunits=mergemodels(possibleunits,m))
+possibleunits.name = "possibleunits"
+addmodel(possibleunits)
+
+
+
+
+
+//addmodel(cycle)
+//rightcycleclass.map(m=>addmodel(m))
+addmodel(fourcycles)
+//addmodel(allcycles)
 
 addmodel( octahedron)
+moreoctas.map(o=>addmodel(o)) 
+
 addmodel(basiccube)
+misccubes.map(o=>addmodel(o)) 
 //addmodel(basichypercube)
 addmodel(hypercube)
+addmodel(permutemodel(hypercube,new qAction(qone, qI.mult(qW)),"   hypercube 2"))
 addmodel(twentyfourcell)
 addmodel(twentyfourcell2)
 addmodel(compoundofhypercubes)
@@ -614,3 +722,8 @@ defaultmodel = 'gray code'
 defaultmodel = 'six hamiltonian paths'
 defaultmodel = 'two gray codes'
 defaultmodel = 'twenty-four cell';
+//defaultmodel = 'octachain2'
+defaultmodel = 'four cycles';
+//defaultmodel = 'all cycles';
+
+//defaultmodel = 'possibleunits'

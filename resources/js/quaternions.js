@@ -313,6 +313,11 @@ class qAction{
       )
     ) 
   }
+
+  conjugateby(a)// returns a new (a^-1 this a)
+  {
+    return a.inverse().mult(this.mult(a))
+  }
   
   lessThan(a){
     let tlp = this.standardize().copy();
@@ -349,6 +354,7 @@ class qAction{
       return "["+this.l.toString(forMathematica,prec)+", "+this.r.toString(forMathematica,prec)+", "+tf+"]"
     }
   }
+
 }
 
 

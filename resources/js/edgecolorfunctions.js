@@ -187,9 +187,9 @@ async function example1() {
     await func.waitForLoad();
     
     if (func.isReady()) {
-        console.log('Function info:', func.getInfo());
+        console.log('testing the loading of discrete function info', func.getInfo());
         const y = func.evaluate(0.3);
-        console.log('f(0.3) =', y);
+        console.log('for which f(0.3) =', y);
     }
 }
 
@@ -250,6 +250,7 @@ const colorfunctions={
   black:function(x,t){return [0,0,0,1]},
   white:function(x,t){return [1,1,1,1]},
   red:function(x,t){return [1,0,0,1]},
+  yellow:function(x,t){return [.7,.6,0,1]},
   huewheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
   huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
   throbbingred:function(x,t){
@@ -288,11 +289,14 @@ const testingcolors = ['blank','redpulse','green','blue','blank','blank','blank'
 
  defaultcolorprogram = 
 ['blank',
-  'huewheel2','huewheel',
-  'redpulse','greenpulse','bluepulse','purplepulse',
-  'redspikepulse','bluespikepulse', 'yellowspikepulse','spikepulse4',
-  'spikepulse5','spikepulse6',
-  'throbbing red',
-  'red','green','blue']
+  //'huewheel2','huewheel',
+ /*1-4*/ 'redpulse','greenpulse','bluepulse','purplepulse',
+ /*5-8*/  'redspikepulse','bluespikepulse', 'yellowspikepulse','spikepulse4',
+ /*9-10*/  'spikepulse5','spikepulse6',
+ /*11-14*/ 'red','green','blue','yellow',
+  /*15-*/'huewheel2','huewheel',
+  
+  
+  'throbbing red',]
 
 
