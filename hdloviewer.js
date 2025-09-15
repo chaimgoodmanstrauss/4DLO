@@ -57,7 +57,15 @@ ourguiparams['show as'] = 'four-d';
 
 ourguiparams['the model'] = defaultmodel
 
-ourgui.add(ourguiparams,'the model',ourmodels.map(x=>x.name)).onChange(theModelChanged);
+//ourgui.add(ourguiparams,'the model',ourmodels.map(x=>x.name)).onChange(theModelChanged);
+
+var displaymodelkeys = Object.keys(ourModelRegistry).filter(key => {
+    // For each key, check if its value is an object and has a key `foo` with a value of `true`.
+    // The optional chaining operator (`?.`) prevents errors if `obj[key]` is not an object.
+    return ourModelRegistry[key]?.fordisplayQ === true;
+  })
+
+ourgui.add(ourguiparams,'the model',displaymodelkeys).onChange(theModelChanged);
 
 
 ourguiparams['Reset the camera position'] = 'scrolling';
@@ -196,7 +204,6 @@ function setupthemeshes(){
 
 
 
-
 function updatethedrawing(){
 	var offset = ourguiparams['the offset']
 	//offset =qOne.positivize();
@@ -204,7 +211,7 @@ function updatethedrawing(){
 	//ourmodeldata = ourmodels[ourguiparams['the model']];
 
 	// Use the find() method to get the dictionary where foo is 'fee'
-	var ourmodeldata = ourmodels.find(dict => dict.name === ourguiparams['the model']);
+	var ourmodeldata = ourModelRegistry[ourguiparams['the model']]
 
 
 	// hide all of the meshes in case they're showing. 
@@ -242,14 +249,14 @@ function updatethedrawing(){
 				e1 = (m.acton(edgebase1)).mult(offset);
 			}
 		
-			var tuberadius =.03;
-			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = .02}
+			var tuberadius =DEFAULT_TUBE_RADIUS;
+			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = SMALL_TUBE_RADIUS}
 
 			if(ourguiparams['show as']=='four-d'){
 			ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
 				e0, e1,tuberadius,false,colorablematerial,true);
 			}
-			else{
+			else{// TBD; redo this as regular sized tubes
 				ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
 				e0, e1,tuberadius,false,colorablematerial,false);
 			}
@@ -257,7 +264,7 @@ function updatethedrawing(){
 			// now color all of the vertices on the edge. If ourmodeldata.edgedata[edgeindex] == 0, 
 			// switch materials. 
 			switch(ourmodeldata.edgedata[edgeindex][0]){
-				case 0:
+				case 0:// we reserve this index for the basic material.
 					ourmeshregistry[edgeindex].material= transparentlightmaterial
 					break
 				default: 

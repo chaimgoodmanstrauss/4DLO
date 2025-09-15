@@ -260,6 +260,10 @@ var qone =qOne.positivize()
 // In this code, a "model" then, will be an array of values tied to a pre-computed and 
 // organized list of edges. 
 
+
+
+const  DEFAULT_TUBE_RADIUS = .03, SMALL_TUBE_RADIUS = .02
+
 class edgemodel{
     // this.edgeindex
     // this.edgecoloringfunction // an index, or a string, or a function
@@ -288,10 +292,17 @@ class edgemodel{
         else(this.shiftposition = 0) // shift position by
        
         if(options.scaletime){this.scaletime = options.scaletime}
-        else(this.scaletime = 1) // scale position by
+        else(this.scaletime = 1) // scale time by
 
         if(options.shifttime){this.shifttime = options.shifttime}
-        else(this.shifttime = 0) // shift position by
+        else(this.shifttime = 0) // shift time by
+
+        if(options.tuberadius){this.tuberadius = options.tuberadius}
+        else(this.tuberadius = DEFAULT_TUBE_RADIUS)// defined in hdloviewer, until moved
+
+
+
+
       }
 
       evaluateat(position,time){
@@ -311,18 +322,25 @@ class edgemodel{
 // At the moment, vertices are being handled in an ad hoc manner but can 
 // be added.  
  
+let ourModelRegistry={}
 
 class hdlomodel{
     constructor(options={}){
         if(options.name){this.name = options.name }
-        else this.name = "amodel"
+        else this.name = "amodel"+(Object.keys(ourModelRegistry).length)
 
-        if(options.edgedata){ this.edgedata =options.edgedata        }
+        if(options.edgedata){ this.edgedata =options.edgedata }
         else {this.edgedata = Array(96).fill(new edgemodel())}
 
         if(options.colorfunctionlist){this.colorfunctionlist = options.colorfunctionlist}
-        else{this.colorfunctionlist = defaultcolorlist}//defined and maintained in edgecolorfunctions.js
-     }
+        else{this.colorfunctionlist = defaultcolorprogram}//TBD ourColorFunctionRegistry}//defined and maintained in edgecolorfunctions.js
+     
+        if(options.fordisplayQ){this.fordisplayQ = options.fordisplayQ}
+        else{this.fordisplayQ = false}//only if true, show in the gui
+
+        ourModelRegistry[this.name]=this//automatically update the registry
+    
+    }
 
      evaluate(edge,position,time){//other external information is built into the colorfunctions, defined in this thread
         var direction = 1
@@ -337,11 +355,13 @@ class hdlomodel{
         return this.edgedata[edgemodel].evaluateat(position,time)
      }
 
-     //add, merge, permute etc. 
+     //add, merge, permute etc. create a copy, change colors, 
 }
 
 
+const basichdlomodel = new hdlomodel()
 
+basichdlomodel.name = 'basicModel'
 
 // {edgedata:[an array of edgemodels, each of which is [edgecoloringindex, direction]s, 
 // presumable one for each element of edgegroup],
@@ -354,7 +374,7 @@ class hdlomodel{
 // As it's a pain to type in 96 values, we'll further have a way of overlaying 
 // structures on top of a blank model, further described below. 
 
-
+// modelinfo: name, listofindexandcolorlists, list of color functions, 
 
 function makemodel(modelinfo,oldmodel = basicmodel){
     var newmodel = structuredClone(oldmodel)
@@ -766,7 +786,7 @@ addmodel(possibleunits)
 
 
 
-
+/*
 //addmodel(cycle)
 //rightcycleclass.map(m=>addmodel(m))
 addmodel(fourcycles)
@@ -813,3 +833,6 @@ defaultmodel = 'four cycles';
 //defaultmodel = 'possibleunits'
 
 
+*/
+
+defaultmodel ='basicModel'
