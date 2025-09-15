@@ -300,3 +300,4 @@ const testingcolors = ['blank','redpulse','green','blue','blank','blank','blank'
   'throbbing red',]
 
 
+//edgecolorfunctions[name and indices]

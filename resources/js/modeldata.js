@@ -259,6 +259,90 @@ var qone =qOne.positivize()
 
 // In this code, a "model" then, will be an array of values tied to a pre-computed and 
 // organized list of edges. 
+
+class edgemodel{
+    // this.edgeindex
+    // this.edgecoloringfunction // an index, or a string, or a function
+    // this.edgecoloringscaleposition 
+    // this.edgecoloringscaletime
+    // this.edgecoloringshiftposition // so position in [0,1] -> scale*pos+shift in [shift,shift+scale]
+    // this.edgecoloringshifttime // so time %1 -> scale*(time%1)+shift in [shift,shift+scale]
+    
+    constructor(options={}){
+    
+        if(options.edgeindex){this.edgeindex = options.edgeindex}
+        else(this.edgeindex = 1)// which can either be ignored or is a problem
+        
+        if(options.direction){this.direction = options.direction}
+        else this.direction = 1 // -1 can and prob should be controlled by scale. 
+        // however, for emerging or converging in the middle, use this flag,
+        // conventions yet tbd. 
+
+        if(options.coloringfunction){this.coloringfunction = options.coloringfunction}
+        else(this.coloringfunction = 0)// this is the "blank" color
+   
+        if(options.scaleposition){this.scaleposition = options.scaleposition}
+        else(this.scaleposition = 1) // scale position by
+
+        if(options.shiftposition){this.shiftposition = options.shiftposition}
+        else(this.shiftposition = 0) // shift position by
+       
+        if(options.scaletime){this.scaletime = options.scaletime}
+        else(this.scaletime = 1) // scale position by
+
+        if(options.shifttime){this.shifttime = options.shifttime}
+        else(this.shifttime = 0) // shift position by
+      }
+
+      evaluateat(position,time){
+        if(typeof this.edgecoloringfunction == 'function'){
+            return this.edgecoloringfunction(
+                this.scaleposition*position+shiftposition,
+                this.scaletime*time+shifttime)}
+        else {return edgecolorfunctions[this.edgecoloringfunction](
+                this.scaleposition*position+shiftposition,
+                this.scaletime*time+shifttime)}
+        }
+}
+
+
+
+// An hdlomodel is an assignment of edgemodels to each of the 96 edges. 
+// At the moment, vertices are being handled in an ad hoc manner but can 
+// be added.  
+ 
+
+class hdlomodel{
+    constructor(options={}){
+        if(options.name){this.name = options.name }
+        else this.name = "amodel"
+
+        if(options.edgedata){ this.edgedata =options.edgedata        }
+        else {this.edgedata = Array(96).fill(new edgemodel())}
+
+        if(options.colorfunctionlist){this.colorfunctionlist = options.colorfunctionlist}
+        else{this.colorfunctionlist = defaultcolorlist}//defined and maintained in edgecolorfunctions.js
+     }
+
+     evaluate(edge,position,time){//other external information is built into the colorfunctions, defined in this thread
+        var direction = 1
+        // TBD: edge could be a name, like "++-+,k" or an array [qppmp, qK]
+        // for the moment, we are taking edge to be an index ±0 to 95. 
+        // (that 0 is a problem!)
+        var edgeindex = edge
+        if(edge<0){
+            edgeindex = -edge;
+            direction = -1}
+         
+        return this.edgedata[edgemodel].evaluateat(position,time)
+     }
+
+     //add, merge, permute etc. 
+}
+
+
+
+
 // {edgedata:[an array of edgemodels, each of which is [edgecoloringindex, direction]s, 
 // presumable one for each element of edgegroup],
 
@@ -727,3 +811,5 @@ defaultmodel = 'four cycles';
 //defaultmodel = 'all cycles';
 
 //defaultmodel = 'possibleunits'
+
+
