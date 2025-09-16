@@ -220,8 +220,8 @@ function updatethedrawing(){
 	}
 
 	var numedges = 0,  numverts =0
-	if(ourmodeldata.edgedata){
-		numedges = Math.min(ourmodeldata.edgedata.length,numedgemeshes,edgegroup.length) }
+	if(ourmodeldata.edgemodels){
+		numedges = Math.min(ourmodeldata.edgemodels.length,numedgemeshes,edgegroup.length) }
 	if(ourmodeldata.vertdata){
 		numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
 	}
@@ -250,7 +250,7 @@ function updatethedrawing(){
 			}
 		
 			var tuberadius =DEFAULT_TUBE_RADIUS;
-			if(ourmodeldata.edgedata[edgeindex][0]==0){tuberadius = SMALL_TUBE_RADIUS}
+			if(ourmodeldata.edgemodels[edgeindex].coloringfunctionname=='blank'){tuberadius = SMALL_TUBE_RADIUS}
 
 			if(ourguiparams['show as']=='four-d'){
 			ourmeshregistry[edgeindex] = rejiggertubeArc(ourmeshregistry[edgeindex],
@@ -263,8 +263,9 @@ function updatethedrawing(){
 			
 			// now color all of the vertices on the edge. If ourmodeldata.edgedata[edgeindex] == 0, 
 			// switch materials. 
-			switch(ourmodeldata.edgedata[edgeindex][0]){
-				case 0:// we reserve this index for the basic material.
+			switch(ourmodeldata.edgemodels[edgeindex].coloringfunctionname){
+				case 'blank':// we reserve this index for the basic material.
+				case 0:
 					ourmeshregistry[edgeindex].material= transparentlightmaterial
 					break
 				default: 
@@ -274,7 +275,7 @@ function updatethedrawing(){
 						var stepnumber = (i%50)/50 // the tubes are ten around and 50 long, 
 						// but the vertices are numbered lengthwise. i%50/50 is the length 
 						// along a tube
-						var colorvalue = edgecolorfunction(stepnumber,ourmodeldata.edgedata[edgeindex]);
+						var colorvalue = ourmodeldata.evaluate(edgeindex,stepnumber);
 						
 						ourmeshregistry[edgeindex].geometry.attributes.color.array.set(colorvalue,i*4)}
 

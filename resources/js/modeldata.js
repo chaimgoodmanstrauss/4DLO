@@ -39,11 +39,17 @@ function cleanupid(s){
     }
     news = news.replaceAll('-0.0', '+0.0');
     news = news.replaceAll('000', '');
+    news = news.replaceAll('0.0', '0');
+
+    /// TBD -- clean up cleanup --  simplify the output further
+    
     return news
 
   
 }
 function generateidforedgeaction(q){
+
+    /// TBD -- clean up cleanup --  simplify the output further
     var id,dir=1,end0,end1, e0, e1
     e0 = q.acton(edgebase0).toString()
     e1 = q.acton(edgebase1).toString()
@@ -54,36 +60,44 @@ function generateidforedgeaction(q){
     return {id:end0+"::"+end1,direction:dir}
 }
 
+// TBD: clean up the global edge data structure; 
+// each edge is to have a known direction, location, ends, length in R3, etc
+
+
 const edgeids = edgegroup.map(q=>generateidforedgeaction(q))
 
 
-// more generally, we can manipulate edge indices 
+// This function returns the index of the edge action. 
+// If an action doesn't map 
+// the "unit" edge, 1 to W, to an edge of the 24 cell, then the program will crash, 
+// but there will be a console message. (Any such error needs to be removed.)
 
 function getindexforaction(q){
-    var iddir = generateidforedgeaction(q);
-    var index = edgeids.findIndex(i=>i.id==iddir.id);
-    if(index<0){
+    var iddir = generateidforedgeaction(q);// a canonical ID associated with the action, based on the end pts.
+    var index = edgeids.findIndex(i=>i.id==iddir.id);// look it up in our edgeid list. 
+    // // TBD edgedata.edgeids.findIndex etc. returning a name rather than an index
+    if(index<0){//findIndex returns -1 if the id isn't found.
         console.log('FLAMES FLAMES; this is not a legit group action at for '+iddir.toString())}
-    return [index,iddir.direction*edgeids[index].direction]
+    return {oldindex:index,  directionchange:iddir.direction*edgeids[index].direction}
 }
 
 function getactiononedgegroupaspermutationofindices(q){
-    var debugcntr=0
+    // q is a qAction
+    //var debugcntr=0
     var perms = edgegroup.map(g=>{
-        if(debugcntr== 86){
-                console.log("pausehere")
-            }
-        debugcntr++
+        //if(debugcntr== 86){console.log("pausehere") }
+        //debugcntr++
         var newq = q.inverse().composeon(g)
         var newindex = getindexforaction(newq)
-        return newindex})
+        return newindex}) // of the form {oldindex,directionchange} 
+        // // TBD old ID, direction change
     return perms
     // this translates between the indices of an edge before and after the action; 
-    // [...[oldindex, directionchange]...]
+    // [...{old index, directionchange}...]
 }
 
 
-///// Here are the edges in order
+///// Here are the edges in order; TBD this is the format they will be in.
 /*
 0: [-k,--++]
 1: [-j,+-+-]
@@ -185,16 +199,13 @@ function getactiononedgegroupaspermutationofindices(q){
 */
 
 
-
-
-
-
 const vertgroup =makegroup([new qAction(qI,qOne),
 			new qAction(qW,qOne)],"Oxone").groupElements;
 
 const vertices = vertgroup.map(m=>{return (m.acton(qOne))})
 
 const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
+
 /*[
 0 +0i +0j –1k     // -K     
 0 +0i +0j +1k     // K
@@ -224,27 +235,7 @@ const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
 
 
 
-
-
-// makeGroupFromName("Oxone").groupElements; 
-
-/*
-{vertmotions:makegroup([new qAction(qI,qOne),
-			new qAction(qW,qOne)],"Oxone").groupElements,
-	edgemotions:
-			//makegroup(
-			//	[new qAction(qI,qOne),new qAction(qOne,qI),new qAction(qW,qOne),new qAction(qOne,qW)],"Oxone"),
-		makeGroupFromName("Oxone").groupElements,
-	vertexbasepoints:[qOne],
-	edges://each coset gets one; the motions flip these around
-		[["1111","1000",1],["1000","111-",1],,["1000","11-1",1],,["1000","1-11",1]]
-	},//end of '24-cell'
-*/
-
-
-
-
-var qone =qOne.positivize()
+var qone =qOne.positivize() // TBD: is qOne (still) messed up? What was the issue?
 
 
 //////////////////////////////////////////////////////////
@@ -261,30 +252,48 @@ var qone =qOne.positivize()
 // organized list of edges. 
 
 
+////////////////////////
+///
+/// Edge models. Each edge, say anedge, of the mathematical object can return an rgb by
+//  anedge.evaluate(position), which incorporates time into some colorfunction, which 
+// further may gather other input data. 
+
 
 const  DEFAULT_TUBE_RADIUS = .03, SMALL_TUBE_RADIUS = .02
 
+
 class edgemodel{
-    // this.edgeindex
-    // this.edgecoloringfunction // an index, or a string, or a function
-    // this.edgecoloringscaleposition 
-    // this.edgecoloringscaletime
-    // this.edgecoloringshiftposition // so position in [0,1] -> scale*pos+shift in [shift,shift+scale]
-    // this.edgecoloringshifttime // so time %1 -> scale*(time%1)+shift in [shift,shift+scale]
+
+    // the edgemodel defaults are: 
+    // edgemodel:{
+    // coloringfunction:"colorname"(or function or index),
+    // coloringfunctionoptions:{},direction:1,
+    // shiftposition:0,
+    // scaleposition:2,
+    // shifttime:0,
+    // scaletime:1,
+    // fordisplayQ:true}
+
     
     constructor(options={}){
     
-        if(options.edgeindex){this.edgeindex = options.edgeindex}
-        else(this.edgeindex = 1)// which can either be ignored or is a problem
-        
         if(options.direction){this.direction = options.direction}
         else this.direction = 1 // -1 can and prob should be controlled by scale. 
         // however, for emerging or converging in the middle, use this flag,
         // conventions yet tbd. 
 
+        
         if(options.coloringfunction){this.coloringfunction = options.coloringfunction}
-        else(this.coloringfunction = 0)// this is the "blank" color
+        else(this.coloringfunction = ourColorFunctionRegistry["blank"])// this is the "blank" color
    
+        if(options.coloringfunctionname){this.coloringfunctionname=options.coloringfunctionname
+            this.coloringfunction=ourColorFunctionRegistry[this.coloringfunctionname]
+        }
+        else this.coloringfunctionname =this.coloringfunction.name
+
+
+        if(options.coloringfunctionoptions){this.coloringfunctionoptions = options.coloringfunctionoptions}
+        
         if(options.scaleposition){this.scaleposition = options.scaleposition}
         else(this.scaleposition = 1) // scale position by
 
@@ -297,159 +306,287 @@ class edgemodel{
         if(options.shifttime){this.shifttime = options.shifttime}
         else(this.shifttime = 0) // shift time by
 
+		// this isn't actually used
         if(options.tuberadius){this.tuberadius = options.tuberadius}
         else(this.tuberadius = DEFAULT_TUBE_RADIUS)// defined in hdloviewer, until moved
 
-
-
-
       }
 
-      evaluateat(position,time){
-        if(typeof this.edgecoloringfunction == 'function'){
-            return this.edgecoloringfunction(
-                this.scaleposition*position+shiftposition,
-                this.scaletime*time+shifttime)}
-        else {return edgecolorfunctions[this.edgecoloringfunction](
-                this.scaleposition*position+shiftposition,
-                this.scaletime*time+shifttime)}
+      updatecolorfunction(newcolorfunctionname){// this seems like a good one to abstract
+        if(ourColorFunctionRegistry[newcolorfunctionname]){
+            this.coloringfunction=ourColorFunctionRegistry[newcolorfunctionname]
+            this.coloringfunctionname = newcolorfunctionname
+        }
+        else {console.log("Hey, that's not a legit color function")}
+       }
+
+    // the main task of an edge model is to return an RGB value for a given position:
+    // at a specific time, which is indicated for the first time here. 
+
+      evaluateat(position,edgedirection=1){ 
+	//	if(this.coloringfunctionname =='blue'){console.log('stopforasec')}
+        if(typeof this.coloringfunction == 'string')
+        {this.coloringfunction=ourColorFunctionRegistry[this.coloringfunction]}
+        //if(typeof this.edgecoloringfunction == 'number')// let's get rid of these
+        if(typeof this.coloringfunction != 'function'){
+           {this.coloringfunction=ourColorFunctionRegistry['defaultcolorfunction']}
+        }
+        var adjustposition = this.scaleposition*position+this.shiftposition;
+      
+        if(!this.direction){
+                // then the colorfunction is doubled, flowing to the middle
+                adjustposition = 1-2*Math.abs(1/2-adjustposition)}
+        else if(this.direction==0){adjustposition =2*Math.abs(1/2-adjustposition)}
+               
+		else if(this.direction ==  -1){
+                adjustposition= 1-adjustposition }
+        // else no further adjustments.
+
+		  //var f =ourColorFunctionRegistry[this.coloringfunction.name]
+		  var adjusttime = this.scaletime*(Date.now()*.001)+this.shifttime
+
+
+        return this.coloringfunction(
+                adjustposition,
+                adjusttime)
+            }
+
+
+    // the basic operations on an edge model are standard dictionary operations.
+
+        copy(){return new edgemodel({
+			coloringfunction:this.coloringfunction,
+            coloringfunctionname:this.coloringfunctionname,
+            coloringfunctionoptions:this.coloringfunctionoptions,
+            shiftposition:this.shiftposition,
+            scaleposition:this.scaleposition,
+            shifttime:this.shifttime,
+            scaletime:this.scaletime,
+            fordisplayQ:this.fordisplayQ})
+
         }
 }
 
-
+/////////////////////////////////////////////
+///
+/// HDLO models. Lighting it up!
+//
 
 // An hdlomodel is an assignment of edgemodels to each of the 96 edges. 
-// At the moment, vertices are being handled in an ad hoc manner but can 
-// be added.  
+// The fundamental task of a model is to be able to evaluate 
+// anhdlomodel.evaluate(edge,position)
+// with time and any other parameters input downstream.
+// 
+// An hdlo model specifies for each edge which edgecolor model, and in which direction, 
+// and with what further linear transformations to apply to space and time, to apply 
+
+// TBD: edges are identified by indices; much better by unique ID. 
+// TBD: vertices are now being handled in an ad hoc manner, and only for 1IJK. 
  
-let ourModelRegistry={}
+let ourModelRegistry=[]//,names:[],order:[]}
 
 class hdlomodel{
     constructor(options={}){
         if(options.name){this.name = options.name }
         else this.name = "amodel"+(Object.keys(ourModelRegistry).length)
 
-        if(options.edgedata){ this.edgedata =options.edgedata }
-        else {this.edgedata = Array(96).fill(new edgemodel())}
 
-        if(options.colorfunctionlist){this.colorfunctionlist = options.colorfunctionlist}
-        else{this.colorfunctionlist = defaultcolorprogram}//TBD ourColorFunctionRegistry}//defined and maintained in edgecolorfunctions.js
-     
+        // can specify the explicit list of edgemodels to fill in
+        if(options.edgemodels){ this.edgemodels =options.edgemodels }
+        else {
+			this.edgemodels=[]
+			for(var i=0;i<96;i++){
+			this.edgemodels[i] = new edgemodel()}
+		}
+
+        //  if there is a list of edgemodel data, 
+        if(options.listofedmodels){
+            //  distribute this data into new edge models
+            this.fillinmodelfromdata(options.listofedmodels)
+        }
+
         if(options.fordisplayQ){this.fordisplayQ = options.fordisplayQ}
         else{this.fordisplayQ = false}//only if true, show in the gui
 
         ourModelRegistry[this.name]=this//automatically update the registry
-    
+        //ourModelRegistry.names = [...ourModelRegistry.names,this.name]
+        return this
     }
 
-     evaluate(edge,position,time){//other external information is built into the colorfunctions, defined in this thread
-        var direction = 1
+
+    // the fundamental task that this hdlomodel class does:
+
+     evaluate(edge,position){// scaling and shifting, and the time are be added to colorfunction in the edgemodel
+        //other external information is built into the colorfunctions, defined in this thread
+        var edgedirection = 1
         // TBD: edge could be a name, like "++-+,k" or an array [qppmp, qK]
         // for the moment, we are taking edge to be an index ±0 to 95. 
         // (that 0 is a problem!)
         var edgeindex = edge
         if(edge<0){
             edgeindex = -edge;
-            direction = -1}
+            edgedirection = -1}
          
-        return this.edgedata[edgemodel].evaluateat(position,time)
+        return this.edgemodels[edgeindex].evaluateat(position,edgedirection)
      }
 
-     //add, merge, permute etc. create a copy, change colors, 
+
+     fillinmodelfromdata(listofedmodeldata){
+        // each element of the listofedmodeldata will be of the form:
+        // name:"a model",
+        // listofedgemodels:{indices:[i,j,..],
+                // the indices of the edges in order.
+                // negative indices are ok
+        // distributeby:false 
+                //whether to distribute the effect across all of the indices
+        // edgemodel: an edgemodel, as described above.
+        listofedmodeldata.map(
+        edgemodeldata=>{
+            var spread = edgemodeldata.indices.length
+            var edgecount = 0 // if there is a spread, this keeps track of where we are
+            edgemodeldata.indices.map(
+                index=>{
+                    if(index == 21){
+                        console.log('stop')
+                    }
+                    var iindex = Math.abs(index)
+                    this.edgemodels[iindex]=edgemodeldata.edgemodel.copy()
+                    this.edgemodels[iindex].direction =  Math.sign(index)*edgemodeldata.edgemodel.direction
+    
+                    if(edgemodeldata.distributeby){
+                        // then we add the spreading to the info. 
+                        this.edgemodels[iindex].scaleposition = 1/spread //multiply position by this before evaluating the color function
+						if(edgemodeldata.scaleposition){
+							this.edgemodels[iindex].scaleposition=edgemodels[iindex].scaleposition*edgemodeldata.scaleposition}
+                        this.edgemodels[iindex].shiftposition= edgecount++/spread 
+						if(edgemodeldata.shiftposition){
+							this.edgemodels[iindex].shiftposition= this.edgemodels[iindex].shiftposition+edgemodeldata.shiftposition
+						}
+                    }
+                    
+                })
+        })
+    }
+
+    copy(options={})
+    {   
+        var newname=this.name+" copy"
+        if(options.name){
+            newname = options.name}
+
+        var copyofedgemodels=[]
+        for(var i = 0;i<96;i++){
+            copyofedgemodels[i]=this.edgemodels[i].copy()
+            if(options.colorpermutations){
+            if(options.colorpermutations[copyofedgemodels[i].coloringfunctionname]) // is this edgecolor one to be permuted?
+                {
+                    copyofedgemodels[i].updatecolorfunction(
+                    options.colorpermutations[copyofedgemodels[i].coloringfunctionname])
+                }
+        }}
+        var newmodel = new hdlomodel(
+            {name:newname,edgemodels:copyofedgemodels,fordisplayQ:this.fordisplayQ})
+        return newmodel 
+    }
+
+
+    //TBD: Add the ability to permute additional features
+
+    permute(quatoraction,options={})
+        //return a new model, the old model shifted by a quat (on right iff onrightq)
+        //or by an action (for convenience, these are specified as {l,r} for q->(l^-1 q r)
+        //Color permutations are by a dictionary on color names (if a key isn't present, don't permute)
+    {   
+        // options include name, onrightq, fordisplayQ, 
+        
+
+        var newname=this.name+(quatoraction.toString())//TBD make short string 
+        if(options.name){newname = options.name}
+
+        var newfordisplayQ = false;
+        if(options.fordisplayQ==false||options.fordisplayQ==true){newfordisplayQ=options.fordisplayQ}
+        else{newfordisplayQ= this.fordisplayQ}
+
+        var qaction = quatoraction
+        if(quatoraction.constructor.name=='quat'){
+            if(!options.onrightq){qaction = new qAction(quatoraction,qOne)}
+            else qaction = new qAction(qOne,quatoraction)
+        }
+
+        var newedgemodels  = []
+        var perms = getactiononedgegroupaspermutationofindices(qaction)
+        // of the form {oldindex,directionchange} 
+        for(var i = 0; i<96; i++){
+			if(i==28){
+				console.log('hi')}
+            newedgemodels[i]=this.edgemodels[perms[i].oldindex].copy()
+            //this.edgemodels[perms[i]] is the  edge models of this. 
+            newedgemodels[i].direction =(newedgemodels[i].direction)* (perms[i].directionchange)
+            if(options.colorpermutations[newedgemodels[i].coloringfunctionname]) // is this edgecolor one to be permuted?
+                {newedgemodels[i].updatecolorfunction(
+                    options.colorpermutations[newedgemodels[i].coloringfunctionname])
+            }
+        }
+        var newmodel = new hdlomodel({name:newname, edgemodels:newedgemodels, fordisplayQ:newfordisplayQ})
+		return newmodel
+
+    }
+
+    mergeonto(anothermodel,options={})//overwrites this model over anothermodel, 
+    // producing a newmodel
+    {
+        var newmodel =  anothermodel.copy()
+        for(var i = 0; i<96; i++){
+            if(this.edgemodels[i].coloringfunctionname!='blank'){
+                newmodel.edgemodels[i]=this.edgemodels[i].copy()
+            }
+        }
+        if(options.name){ 
+            newmodel.name = options.name}
+        else{newmodel.name = this.name+" & "+anothermodel.name}
+
+        if(options.fordisplayQ){newmodel.fordisplayQ=true}
+        else{newmodel.fordisplayQ = this.fordisplayQ}
+
+        return newmodel
+    }
+    
 }
 
 
-const basichdlomodel = new hdlomodel()
+const basichdlomodel = new hdlomodel({name:'basicModel'})
 
 basichdlomodel.name = 'basicModel'
 
-// {edgedata:[an array of edgemodels, each of which is [edgecoloringindex, direction]s, 
-// presumable one for each element of edgegroup],
 
-// (We keep the possibility of adding and coloring vertices for 
-// debugging the geometry, but it's a different system 
-// vertdata[an array of [index in the vert positions, vertcoloringindex]]}
-// and for future work to align.)
+const baseflowingoctahedron = new hdlomodel(
+    {name:'flow octahedron', 
+    listofedmodels:[
+        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
+        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
+        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
+    ],fordisplayQ:false})
 
-// As it's a pain to type in 96 values, we'll further have a way of overlaying 
-// structures on top of a blank model, further described below. 
+/*
+const octahedron = new hdlomodel(
+    {name:'octahedron', 
+    listofedmodels:[
+        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:"purplepulse",scaleposition:.5})},
+        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:"purplepulse",shiftposition:.5,scaleposition:.5})},
+        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:"colorwheel",direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
+    ],fordisplayQ:true})
+*/
 
-// modelinfo: name, listofindexandcolorlists, list of color functions, 
-
-function makemodel(modelinfo,oldmodel = basicmodel){
-    var newmodel = structuredClone(oldmodel)
-    newmodel.name = modelinfo.name
-    
-    modelinfo.listofindexandcolorlists.map(
-        indexandcolorlist=>{
-            var indexcount = 0
-            var spread = indexandcolorlist.indices.length
-            indexandcolorlist.indices.map(
-                index=>{
-                    var dir = Math.sign(index), iindex = Math.abs(index)
-                    if(indexandcolorlist.modelinfo.length>1){
-                       dir = dir*indexandcolorlist.modelinfo[1]}
-                    newmodel.edgedata[iindex]=[indexandcolorlist.modelinfo[0],dir,...indexandcolorlist.modelinfo.slice(2)]
-                    if(indexandcolorlist.spread){
-                        // then we add the spreading to the info. 
-                        // this conflicts if this is already added in the modelinfo
-                        newmodel.edgedata[iindex]=[...newmodel.edgedata[iindex],
-                        1/spread,//x spread
-                        indexcount/spread//x0 //(indexcount+1)/spread*indexandcolorlist.spread
-                        ]  
-                    }
-                    if(indexandcolorlist.timing){
-                        // then we add the speeding to the info. 
-                        newmodel.edgedata[iindex]=[...newmodel.edgedata[iindex],
-                            indexandcolorlist.timing]  
-                    }
-                    indexcount++
-                })
-        })
-    return newmodel
-}
+const newoct = baseflowingoctahedron.permute(qIOne,{name:'new oct', colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:true})
 
 
+const nudderocta = baseflowingoctahedron.copy({name:"nudder octa",fordisplayQ:true,colorpermutations:{1:"yellowspikepulse",2:"colorwheel"}})
 
 
-function permutedgemodels(edgemodellist,q,colorpermutations=[]){
-    // an edge model is index:[color, direction]
-    // we create a new one as follows:
-    var perms =getactiononedgegroupaspermutationofindices(q)
-  
-    var out=perms.map(p=>{
-            
-            var copymodel = edgemodellist[p[0]];
-            var newcolor
-            if(copymodel[0]==0||copymodel[0]>colorpermutations.length){ 
-				newcolor= copymodel[0]}
-            else{
-				newcolor = colorpermutations[copymodel[0]-1]}
-            return [newcolor,p[1]*copymodel[1],...copymodel.slice( 2)]
-            
-            })
-    return  out
-}
+const octapair = newoct.mergeonto(nudderocta,{fordisplayQ:true,name:'octapair'})
 
-// we permute the edges of oldmodel by an action q
-// In other words, edgedata[i] is the image of the edge that q^-1 edgedata[i]
-// This function works out the matching. 
-// We can assign a name, and we can change the colors with a permutation
 
-function permutemodel(oldmodel,q,newname="", colorpermutations=[]){
-    var newmodel= structuredClone(oldmodel)
-    newmodel.edgedata= permutedgemodels(oldmodel.edgedata,q,colorpermutations)
-    //var cntr=0;
-    //debugstrings = newmodel.edgedata.map(e=>(cntr++).toString()+": ["+e.toString()+"]")
-    if(newname!=""){newmodel.name = newname}
-    else{newmodel.name = oldmodel.name+" ["+generateidforedgeaction(q).id+"]"}
-    return newmodel
-}
-
-function permutenamedmodel(name,q,newname="",colorpermutations=[])
-{   var modelname = ourmodels.find(item => item.name === name)
-    return permutemodel(modelname,q,newname,colorpermutations)
-}
+/*
 
 function mergemodels(model1,model2,newname="")
 {
@@ -468,21 +605,6 @@ function mergemodels(model1,model2,newname="")
 
 
 
-function addmodel(amodel){
-    ourmodels = [...ourmodels,amodel]
-}
-
-function prependmodel(amodel){
-    ourmodels = [amodel,...ourmodels]
-}
-
-function addmodels(models){
-    ourmodels = [...ourmodels,...models]
-}
-
-function appendmodel(model){
-    addmodel(model)
-}
 
 
 
@@ -517,7 +639,7 @@ const basicmodel = permutemodel(blankModel,new qAction(qOne.positivize(), qOne.p
 
 
 
-const octahedron = makemodel({name:'octahedron', 
+const newoctahedron = makemodel({name:'octahedron', 
     listofindexandcolorlists:[
         {indices:[95,91,70,34],modelinfo:[1,1,.5,.5],timing:2},
         {indices:[ 29, 43, 66, 83],modelinfo:[1,1,.5,0],timing:2},
@@ -528,7 +650,7 @@ const moreoctas =[[qI.mult(qW),'-- octo 2'],[qJ,'-- octo 3']].map(
     q=>permutemodel(octahedron, new qAction(qOne.positivize(), q[0]),q[1])
         )
    
-
+*/
 /*const moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
     q=>permutemodel(octahedron, new qAction(qOne.positivize(), q)
         ))
@@ -541,7 +663,7 @@ const octashiftchain = permutemodel(octachain,new qAction(qone,qW),"octachain2")
 */
 
 // +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
-
+/*
 const cycle = 
     makemodel({name:'cycle',
     listofindexandcolorlists:
@@ -582,7 +704,7 @@ cycleperms.map(a=>{allcycles = mergemodels(allcycles, a
 
 fourcycles.name="four cycles"
 
-
+*/
 
 
 /*
@@ -646,7 +768,7 @@ function makecycle(colorindices,direction=1){
 
 //addmodel(makemodel({name:'basic cube',listofindexandcolorlists:   [{indices:[74,59,37,27,87,21,63,49,62,51,23,86],modelinfo:[1,1]}]}))
 
-
+/*
 const basiccube = makemodel({name:'cube',listofindexandcolorlists:
     [{indices:[59,37],modelinfo:[1,1]},
     {indices:[63,49],modelinfo:[2,1]},
@@ -755,11 +877,12 @@ permutemodel(graycode2, new qAction(qone, q[0]),"gray code"+tempcntr++,q[1]))
 
 
 const compoundofgraycodes = mergemodels(graycodes[0],mergemodels(graycodes[1],graycodes[2]),'six paths')
-
+*/
 /*const centralcube = makemodel({name:"centralcube",
     listofindexandcolorlists:[{indices:[]
     }]})
 */
+/*
 const possibleunit = makemodel({name:"possibleunit",
     listofindexandcolorlists:[{indices:[69, -48,80,90,-7,0,18,
         -55,-57,-24,-39,-14,9,46,-79,29,71,50,81
@@ -784,8 +907,7 @@ possibleunits.name = "possibleunits"
 addmodel(possibleunits)
 
 
-
-
+*/
 /*
 //addmodel(cycle)
 //rightcycleclass.map(m=>addmodel(m))
@@ -836,3 +958,5 @@ defaultmodel = 'four cycles';
 */
 
 defaultmodel ='basicModel'
+defaultmodel ='octahedron'
+defaultmodel ='new oct'

@@ -1,35 +1,10 @@
-
-/////////////////
+/////////////////////////////////
+///
+//    Some color conversions 
 //
-//
-//  Our color function
-//  All this needs to be is a function that
-// 	takes in a time, a value in [0,1], a small index, and whether to reflect
-//
-
-// replace these as we wish.
-
-
-/*
-function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
-	var color
-	var xx = x
-	if(reflectQ){
-		xx=1-Math.abs(1-2*x)
-	}
-	switch(index)
-	{
-		case 0: color = [ourFrequencyAnalyzer.analyze(300,500).dbLevel/60,
-		ourFrequencyAnalyzer.analyze(500,900).dbLevel/60,
-		ourFrequencyAnalyzer.analyze(900,3000).dbLevel/60,1]; break
-		case 1: color = [0,xx,1-x,1]; break
-		case 2: color = [0,.5+.5*Math.sin(6.14*5*xx+time),0,1]; break
-		case 3: color = [0,.5+.5*Math.cos(6.14*5*xx+6*time),.5+.5*Math.cos(6.14*5*xx+7*time),1]; break
-	}
-	return color
-}
-*/
-
+//  Not really clear which of these is best; 
+//  can experiment with in the cycle command.
+//  Two of these are LLM generated. 
 
 
 function hsbToRgb3(h, s, b) {
@@ -137,27 +112,27 @@ function hsbToRgb(h, s, b) {
 }
 
 
-function testcolorfunction(x,index=0,reflectQ=false,time=Date.now()* 0.001 ){
-	var color
-	var xx = x
-	if(reflectQ){
-		xx=1-Math.abs(1-2*x)
 
-	}
 
-	var rgb;
-	switch(index)
-	{
-		case 0:  
-			color = hsbToRgb(.5+.06*Math.sin(time+xx*3.141),1,1); break
-		case 1: color = hsbToRgb(.7+.06*Math.sin(time+xx*3.141),1,1); break
-		case 2: color = hsbToRgb((.95+.06*Math.sin(1*time+xx*3.141)),1,1);break//.25+.5*Math.sin(1*time+(xx+.5)*3.141)); break;
-		case 3: color = hsbToRgb(.25+.06*Math.sin(time+xx*3.141),1,.5+.5*
-			(.6+.4*Math.sin(2*time))*
-			(Math.sqrt(1+Math.sin(20*time+xx*3.141*10)))); break
-	}
-	return color
-}
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////
+////  Color Functions
+//
+//  Each color function is a function that
+// 	takes in a time, a value in [0,1], a small index, 
+//     and whether to reflect
+//
+
+// First model functions. 
+// Soon these will be abstracted completely.
+
+// The registry consists of nothing more than 
+//  affine versions of the domain and rangea of these.
+
+
+
 
 
 function cyclecolorfunction(position,time,  hue0=0,speed=1/*cycle per second*/, inneramp=.1, saturation=1, brightness = 1){
@@ -182,6 +157,8 @@ function spikecolorfunction(x,t,hue0=0,colorspread=.3, spacespread = .4, directi
 }
 
 
+
+
 async function example1() {
     const func = new discreteFunction('resources/graphs/testfunc.json');
     await func.waitForLoad();
@@ -196,68 +173,27 @@ async function example1() {
 example1()
 
 
-function edgecolorfunction(x,modeldata,time=Date.now()* 0.001, colorprogram=defaultcolorprogram){
-        var rgb; 
-        var position; 
-
-// modeldata is [0] = index of color
-//              [1] = direction 
-//              [2] = xstretch, if defined
-//              [3] = x0 if defined
-//              [4] = time stretch, if defined
-//              [5] = t0 if defined
-
-
-        // if the direction=modeldata[1] is negative, reverse the colors 
-        if(modeldata[1]==-1){
-          position = 1-x}
-        // if it's positive, keep it as it is
-        else if(modeldata[1]==1){
-          position = x}
-        // if it's 0, reverse it in the middle. 
-        else{
-          position = 2*Math.abs(.5-x)}
-        // we could add a NaN option to reverse that
-        
-        var xscale = 1, tscale = 1, x0 = 0, t0=0
-        // If there is further information in the modeldata, let's use it. 
-        switch(modeldata.length){
-          case 6: // we have a t0
-            t0=modeldata[5]
-          case 5: // we have a tscale
-            tscale = modeldata[4]
-          case 4: // we have an x0
-            x0= modeldata[3]
-          case 3:// an xscale
-            xscale = modeldata[2]
-        }
-        
-        rgb =colorfunctions[colorprogram[modeldata[0]]](position*xscale+x0, time*tscale+t0)
-
-
-		return rgb;
-	}
-
 
 /// put the colorfunctions here. 
 /// Each has names and a function
 /// returning an rgb 
+let ourColorFunctionRegistry={}
 
 
-const colorfunctions={
+ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functions, or dictionaries that include the colorfunction key.
   blank:function(x,t){return [.6,.6,.6,1]},
+  huewheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
+  colorwheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
+  huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
+  throbbingred:function(x,t){
+    return hsbToRgb(0,1,1)//something is wrong here
+   // 0,1-.5*Math.abs(Math.sin(t/5)), 1-.5*Math.abs(Math.sin(t/5))
+  },
+  defaultcolorfunction:function(x,t){return hsbToRgb3(x+t/5,1,1)},
   basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
   black:function(x,t){return [0,0,0,1]},
   white:function(x,t){return [1,1,1,1]},
   red:function(x,t){return [1,0,0,1]},
-  yellow:function(x,t){return [.7,.6,0,1]},
-  huewheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
-  huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
-  throbbingred:function(x,t){
-    return hsbToRgb(0,1,1)
-   // 0,1-.5*Math.abs(Math.sin(t/5)), 1-.5*Math.abs(Math.sin(t/5))
-   
-  },
   blue:function(x,t){return [0,0,1,1]},
   green:function(x,t){return [0,1,0,1]},
   yellow:function(x,t){return [1,1,0,1]},
@@ -274,30 +210,10 @@ const colorfunctions={
   spikepulse4:function(x,t){return spikecolorfunction(x,t/5,.9,.2,.2,1)},
   spikepulse5:function(x,t){return spikecolorfunction(x,t/5,.45,.3,.2,1)},
   spikepulse6:function(x,t){return spikecolorfunction(x,t/5,.75,.4,.2,1)},
-  
+}
 }
 
-/// A color program is an array of names, a look up table of colorfunctions
+ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
+ourColorFunctionRegistry[1]=ourColorFunctionRegistry.green
+ourColorFunctionRegistry[2]=ourColorFunctionRegistry.blue
 
-var defaultcolorprogram=['blank','pulse2','pulse','purplepulse','basiccycle','cyanpulse']
-
-const pulsingcolors=['blank','redpulse','greenpulse','bluepulse','purplepulse','cyanpulse']
-
-const solidcolors = ['blank','red','green','blue','yellow','black','white']
-
-const testingcolors = ['blank','redpulse','green','blue','blank','blank','blank']
-
- defaultcolorprogram = 
-['blank',
-  //'huewheel2','huewheel',
- /*1-4*/ 'redpulse','greenpulse','bluepulse','purplepulse',
- /*5-8*/  'redspikepulse','bluespikepulse', 'yellowspikepulse','spikepulse4',
- /*9-10*/  'spikepulse5','spikepulse6',
- /*11-14*/ 'red','green','blue','yellow',
-  /*15-*/'huewheel2','huewheel',
-  
-  
-  'throbbing red',]
-
-
-//edgecolorfunctions[name and indices]
