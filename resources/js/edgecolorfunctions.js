@@ -131,13 +131,60 @@ function hsbToRgb(h, s, b) {
 // The registry consists of nothing more than 
 //  affine versions of the domain and rangea of these.
 
+let modelfunctionregistry ={}
 
+// The following set up works very broadly; we add these just to modelfunctionregistry
+class modelfunction {
+  constructor(fn, defaultParams = {}, name = "") {
+    this.fn = fn; // renamed for clarity (was `modelfunction`)
+    this.defaultParams = defaultParams;
+    let num = Object.keys(modelfunctionregistry).length
+    if(name == ""){
+      this.name =  "model function "+num}
+    else this.name = name
+    
+    modelfunctionregistry[this.name] = this
 
+    const self = this;
 
+    const handler = {
+      apply: (target, thisArg, args) => self.evaluate(...args),
+      get: (target, prop, receiver) =>
+        prop in self ? self[prop] : Reflect.get(target, prop, receiver),
+    };
 
-function cyclecolorfunction(position,time,  hue0=0,speed=1/*cycle per second*/, inneramp=.1, saturation=1, brightness = 1){
-    return hsbToRgb(hue0+inneramp*Math.sin(speed*time+position*3.1416),saturation,brightness);
+    // A bare callable wrapper (not polluted with props)
+    const callable = (...args) => self.evaluate(...args);
+
+    // Inherit prototype methods like compose, evaluate
+    Object.setPrototypeOf(callable, this.constructor.prototype);
+
+    return new Proxy(callable, handler);
+  }
+
+  evaluate(x, t, params = {}) {
+    const allParams = { ...this.defaultParams, ...params };
+    return this.fn(x, t, allParams);
+  }
+
+  // there is no presumption of the type of output, and
+  //  we can chain these functions together.
+  compose(otherTransform) {
+    return new modelfunction((x, t, params = {}) => {
+      const [x1, y1] = this.evaluate(x, t, params);
+      return otherTransform.evaluate(x1, t1, params);
+    }, { ...this.defaultParams, ...otherTransform.defaultParams });
+  }
 }
+
+
+
+// a simple color wheel. 
+const cyclecolorfunction = new modelfunction(
+  (position,time,/*note braces*/{hue0=0, hueW=.1, saturation=1, brightness=1})=>
+    hsbToRgb(hue0+hueW*Math.sin(time+position*3.1416),saturation,brightness),"color wheel"
+)
+
 
 initGaussianTables()
 
