@@ -19,6 +19,77 @@
 //	
 //  	
 
+
+
+//////////////////////////////////////////////////////////
+///
+/// The Models 
+
+// For a physical sculpture we will need the following information:
+
+// Given a strand and the index of an LED upon it, return a color
+// Within the Arduino code, we will have pre-computed tables that convert 
+// [strand,index] to [edgeindex,x] where 0≤x≤1. 
+
+// In this code, a "model" then, will be an array of values tied to a pre-computed and 
+// organized list of edges. 
+
+
+////////////////////////
+///
+/// Vertex Models
+/// For now, this is it:
+///
+
+
+const standardverts =[ //indices from the list someplace
+    [new quat(1.0001,.0001,.001,0).normalize()/*22*/,"darkgray"],
+    [qI/*5*/,"red"],
+    [qJ/*3*/,"green"],
+    [qK/*1*/,"blue"]]
+
+    // this is for a more general framework: 
+
+const vertgroup =makegroup([new qAction(qI,qOne),
+			new qAction(qW,qOne)],"Oxone").groupElements;
+
+const vertices = vertgroup.map(m=>{return (m.acton(qOne))})
+
+const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
+
+// Here are the vertices in order
+/*[
+0 +0i +0j –1k     // -K     
+0 +0i +0j +1k     // K
+0 +0i –1j +0k     // -J
+0 +0i +1j +0k      // J
+0 –1i +0j +0k      // -I
+0 +1i +0j +0k      // I
+.5 +.5i +.5j +.5k
+–.5 –.5i –.5j –.5k
+.5 +.5i +.5j –.5k
+–.5 –.5i –.5j +.5k
+.5 +.5i –.5j +.5k
+–.5 –.5i +.5j –.5k
+.5 +.5i –.5j –.5k
+–.5 –.5i +.5j +.5k
+.5 –.5i +.5j +.5k
+–.5 +.5i –.5j –.5k
+.5 –.5i +.5j –.5k
+–.5 +.5i –.5j +.5k
+.5 –.5i –.5j +.5k
+–.5 +.5i +.5j –.5k
+.5 –.5i –.5j –.5k
+–.5 +.5i +.5j +.5k
+1 +0i +0j +0k         // 1
+–1 +0i +0j +0k       // -1
+]*/
+
+
+
+var qone =qOne.positivize() // TBD: is qOne (still) messed up? What was the issue?
+
+
 var edgebase0 = qOne.positivize(), edgebase1=  new quat(.5,.5,.5,.5);
 
 // positioning the edges in a canonical way:
@@ -199,58 +270,6 @@ function getactiononedgegroupaspermutationofindices(q){
 */
 
 
-const vertgroup =makegroup([new qAction(qI,qOne),
-			new qAction(qW,qOne)],"Oxone").groupElements;
-
-const vertices = vertgroup.map(m=>{return (m.acton(qOne))})
-
-const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
-
-/*[
-0 +0i +0j –1k     // -K     
-0 +0i +0j +1k     // K
-0 +0i –1j +0k     // -J
-0 +0i +1j +0k      // J
-0 –1i +0j +0k      // -I
-0 +1i +0j +0k      // I
-.5 +.5i +.5j +.5k
-–.5 –.5i –.5j –.5k
-.5 +.5i +.5j –.5k
-–.5 –.5i –.5j +.5k
-.5 +.5i –.5j +.5k
-–.5 –.5i +.5j –.5k
-.5 +.5i –.5j –.5k
-–.5 –.5i +.5j +.5k
-.5 –.5i +.5j +.5k
-–.5 +.5i –.5j –.5k
-.5 –.5i +.5j –.5k
-–.5 +.5i –.5j +.5k
-.5 –.5i –.5j +.5k
-–.5 +.5i +.5j –.5k
-.5 –.5i –.5j –.5k
-–.5 +.5i +.5j +.5k
-1 +0i +0j +0k         // 1
-–1 +0i +0j +0k       // -1
-]*/
-
-
-
-var qone =qOne.positivize() // TBD: is qOne (still) messed up? What was the issue?
-
-
-//////////////////////////////////////////////////////////
-///
-/// The Models 
-
-// For a physical sculpture we will need the following information:
-
-// Given a strand and the index of an LED upon it, return a color
-// Within the Arduino code, we will have pre-computed tables that convert 
-// [strand,index] to [edgeindex,x] where 0≤x≤1. 
-
-// In this code, a "model" then, will be an array of values tied to a pre-computed and 
-// organized list of edges. 
-
 
 ////////////////////////
 ///
@@ -387,9 +406,24 @@ let ourModelRegistry=[]//,names:[],order:[]}
 
 class hdlomodel{
     constructor(options={}){
+        
+        this.addToRegistryQ = false
+        if("addToRegistryQ" in options){
+            this.addToRegistryQ=options.addToRegistryQ
+        }
+        
+
+        if( "fordisplayQ" in options){this.fordisplayQ = options.fordisplayQ}
+        else{this.fordisplayQ = false}//only if true, show in the gui
+        
+
         if(options.name){this.name = options.name }
         else this.name = "amodel"+(Object.keys(ourModelRegistry).length)
 
+
+        if(this.addToRegistryQ){
+        ourModelRegistry[this.name]=this}//automatically update the registry
+      
 
         // can specify the explicit list of edgemodels to fill in
         if(options.edgemodels){ this.edgemodels =options.edgemodels }
@@ -404,12 +438,7 @@ class hdlomodel{
             //  distribute this data into new edge models
             this.fillinmodelfromdata(options.listofedmodels)
         }
-
-        if(options.fordisplayQ){this.fordisplayQ = options.fordisplayQ}
-        else{this.fordisplayQ = false}//only if true, show in the gui
-
-        ourModelRegistry[this.name]=this//automatically update the registry
-        //ourModelRegistry.names = [...ourModelRegistry.names,this.name]
+          //ourModelRegistry.names = [...ourModelRegistry.names,this.name]
         return this
     }
 
@@ -468,6 +497,26 @@ class hdlomodel{
         })
     }
 
+    changename(newname){
+        // this ensures that the model registry is kept up to date
+        // delete the old key from the model registry
+        // if the new key is already being used, delete that too!
+        // Notice that this overwrites any model with that name
+        // add the new key to the model registry
+        var oldname = (this.name)
+        delete ourModelRegistry.oldname
+        if(ourModelRegistry[newname]){
+            delete ourModelRegistry.newname
+        }
+        ourModelRegistry[newname]=this
+        this.name= newname
+        return this
+    }
+
+    delete(){
+        delete ourModelRegistry.this.name
+    }
+
     copy(options={})
     {   
         var newname=this.name+" copy"
@@ -484,8 +533,14 @@ class hdlomodel{
                     options.colorpermutations[copyofedgemodels[i].coloringfunctionname])
                 }
         }}
+        var fordisplayQ=this.fordisplayQ
+        if("fordisplayQ" in options){fordisplayQ=options.fordisplayQ}
+
+        var addToRegistryQ = this.addToRegistryQ
+        if("addToRegistryQ" in options){addToRegistryQ=options.addToRegistryQ}
         var newmodel = new hdlomodel(
-            {name:newname,edgemodels:copyofedgemodels,fordisplayQ:this.fordisplayQ})
+         {...options, name:newname,edgemodels:copyofedgemodels, 
+            fordisplayQ:fordisplayQ, addToRegistryQ:addToRegistryQ})
         return newmodel 
     }
 
@@ -503,9 +558,13 @@ class hdlomodel{
         var newname=this.name+(quatoraction.toString())//TBD make short string 
         if(options.name){newname = options.name}
 
-        var newfordisplayQ = false;
-        if(options.fordisplayQ==false||options.fordisplayQ==true){newfordisplayQ=options.fordisplayQ}
-        else{newfordisplayQ= this.fordisplayQ}
+        // we presume permutations are to show off
+        
+        var newfordisplayQ = this.fordisplayQ;
+        if("fordisplayQ" in options){newfordisplayQ=options.fordisplayQ}
+        
+        var newaddToRegistryQ = true;
+        if("addToRegistry" in options){newaddToRegistryQ=options.addToRegistryQ}
 
         var qaction = quatoraction
         if(quatoraction.constructor.name=='quat'){
@@ -517,17 +576,16 @@ class hdlomodel{
         var perms = getactiononedgegroupaspermutationofindices(qaction)
         // of the form {oldindex,directionchange} 
         for(var i = 0; i<96; i++){
-			if(i==28){
-				console.log('hi')}
-            newedgemodels[i]=this.edgemodels[perms[i].oldindex].copy()
+			newedgemodels[i]=this.edgemodels[perms[i].oldindex].copy()
             //this.edgemodels[perms[i]] is the  edge models of this. 
             newedgemodels[i].direction =(newedgemodels[i].direction)* (perms[i].directionchange)
+            if(options.colorpermutations){
             if(options.colorpermutations[newedgemodels[i].coloringfunctionname]) // is this edgecolor one to be permuted?
                 {newedgemodels[i].updatecolorfunction(
                     options.colorpermutations[newedgemodels[i].coloringfunctionname])
-            }
+            }}
         }
-        var newmodel = new hdlomodel({name:newname, edgemodels:newedgemodels, fordisplayQ:newfordisplayQ})
+        var newmodel = new hdlomodel({...options, edgemodels:newedgemodels, fordisplayQ:newfordisplayQ,addToRegistryQ:newaddToRegistryQ})
 		return newmodel
 
     }
@@ -535,7 +593,11 @@ class hdlomodel{
     mergeonto(anothermodel,options={})//overwrites this model over anothermodel, 
     // producing a newmodel
     {
-        var newmodel =  anothermodel.copy()
+        var deleteOntoQ = false
+        if(options.deleteOntoQ){
+            deleteOntoQ=options.deleteOntoQ
+        }
+        var newmodel =  anothermodel.copy(options)
         for(var i = 0; i<96; i++){
             if(this.edgemodels[i].coloringfunctionname!='blank'){
                 newmodel.edgemodels[i]=this.edgemodels[i].copy()
@@ -550,7 +612,64 @@ class hdlomodel{
 
         return newmodel
     }
-    
+
+    applyactions(actionoptionlist,options={}){
+        // actionoptionlist is either 
+        //[transform1 (a quat or qaction), transform2, ... ]
+        // or (more likely)
+        // [{transform:transform1, ... additional options1},...]
+
+        // We may have additonal options for the actions as a whole:
+        // name, fordisplayQ for the final piece, as well as the individual ones.
+
+        var newname = this.name+" compound "+(Object.keys(ourModelRegistry)).length
+        if(options.name){newname =options.name}
+        
+        var fordisplayQ = false
+        if(options.fordisplayQ){fordisplayQ=options.fordisplayQ}
+        
+        var addToRegistry = false
+        if(options.addToRegistry){addToRegistry=options.addToRegistry}
+
+        
+        var finalobject = new hdlomodel({name:newname,fordisplayQ:fordisplayQ, addToRegistryQ:addToRegistry}) // to merge onto
+        var displayeachQ = false
+        if(options.displayeachQ){displayeachQ=options.displayeachQ}
+
+         actionoptionlist.map(actionoroption=>{
+            // which are we?
+            
+            // if actionoroption is a quat or a qAction:
+            var options = {fordisplayQ:displayeachQ}
+            var transform = actionoroption
+            //else
+            if(!actionoroption.constructor.name=='quat'&&
+                !actionoroption.constructor.name=='qAction'){
+                    transform =actionoroption.transform// we need a transform,
+                    // but we may not have options
+                    if(actionoroption.options){
+                        options =actionoroption.options
+                        if(actionoroption.options.fordisplayQ){
+                            options.fordisplayQ=actionoroption.options.fordisplayQ
+                        }
+                    }
+                    
+                    
+                }
+            var nextobject=this.permute(transform,{...options,addToRegistryQ:false})
+            //this is the only place this is used!
+            finalobject = finalobject.mergeonto(nextobject,{addToRegistryQ:false})
+        }
+
+        )
+        if(options.fordisplayQ){finalobject.fordisplayQ=options.fordisplayQ}
+        var oldkey = Object.keys(ourModelRegistry).at(-1)
+        delete ourModelRegistry.oldkey
+        return finalobject.changename(newname)
+        
+    }
+
+   
 }
 
 
@@ -580,23 +699,30 @@ const baseflowingoctahedron = new hdlomodel(
         {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
         {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
         {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
-    ],fordisplayQ:false})
+    ],fordisplayQ:false,addToRegistry:false})
+
+// to this we can add colorways: 
 
 
-const newoct = baseflowingoctahedron.permute(qIOne,{name:'new oct', colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:true})
+const flowoct = baseflowingoctahedron.permute(qOneOne,{name:'flow oct', 
+    colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:false,addToRegistry:false})
 
 
-const nudderocta = baseflowingoctahedron.copy({name:"nudder octa",fordisplayQ:true,colorpermutations:{1:"yellowspikepulse",2:"colorwheel"}})
+const anoctachain = baseflowingoctahedron.applyactions([qOneOne,qIOne,qMOneOne,qmIOneOne
+],{fordisplayQ:false, addToRegistryQ:false, name:''})
 
+const octachain  = anoctachain.permute(qOne,
+    {name:"octachain",colorpermutations:{2:"bluepulse", 1:"colorwheel"}
+,fordisplayQ:true})
 
-const octapair = newoct.mergeonto(nudderocta,{fordisplayQ:true,name:'octapair'})
+const octachain2 = anoctachain.permute(qW,{name:"octachain shifted by ++++",
+    colorpermutations:{1:"red", 2:"blue"},fordisplayQ:true
+})
 
-
-
-var tempcntr = 1;
-
-var ourmodels=[]
-
+defaultmodel ='basicModel'
+defaultmodel ='octahedron'
+defaultmodel ='new oct'
+defaultmodel ='octachain'
 
 
 // Given  { 
@@ -605,10 +731,7 @@ var ourmodels=[]
 //  overlay this onto a model
 
 
-
-const standardverts =[ [22,0],[5,1],[3,2],[1,3]]
-
-
+/*
 
 const blankModel = {name:"basic", edgedata:Array(96).fill([0,1]), vertdata:standardverts};
 
@@ -935,6 +1058,3 @@ defaultmodel = 'four cycles';
 
 */
 
-defaultmodel ='basicModel'
-defaultmodel ='octahedron'
-defaultmodel ='new oct'

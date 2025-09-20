@@ -234,8 +234,8 @@ class quat {
 
 class qAction{
   constructor(l,r,star=false,name=""){
-    this.l=l;
-    this.r=r;
+    this.l=l.copy();
+    this.r=r.copy();
     this.star = star;
     this.name = name;
   }

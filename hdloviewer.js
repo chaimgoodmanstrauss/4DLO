@@ -94,8 +94,8 @@ function thecamerachanged(){
 	}}
 
 
-
-
+ourguiparams['show axes']=true;
+ourgui.add( ourguiparams, 'show axes').onChange(theModelChanged)
 
 // // these will remain switched as is for now:
 //ourguiparams['Show pedagogy']=false
@@ -224,8 +224,9 @@ function updatethedrawing(){
 	var numedges = 0,  numverts =0
 	if(ourmodeldata.edgemodels){
 		numedges = Math.min(ourmodeldata.edgemodels.length,numedgemeshes,edgegroup.length) }
-	if(ourmodeldata.vertdata){
-		numverts = Math.min(ourmodeldata.vertdata.length,numvertmeshes,vertgroup.length) 
+	if(ourguiparams['show axes']
+		){numverts = Math.min(standardverts.length, //constant for this implementation
+			numvertmeshes,vertgroup.length) 
 	}
 
 	if (!ourguiparams["show all edges"]){numedges=1}
@@ -299,8 +300,10 @@ function updatethedrawing(){
 		{ 	ourmeshregistry[meshindex].visible = true;
 			kindofmesh = 'vertex';
 			var vindex = meshindex - numedgemeshes;
-			var vertdataindex = ourmodeldata.vertdata[vindex][0] ;
-			var vert =vertices[vertdataindex];
+			var vdata = standardverts[vindex];// using the standard verts for now.
+			// TBD: add this to the model, as it was in earlier versions of the code.
+			
+			var vert = vdata[0] 
 			if(ourguiparams['Multiply the motion on the']=='left'){
 				vert = offset.mult(vert);
 			}
@@ -316,7 +319,7 @@ function updatethedrawing(){
 			// now color all of the vertices on the vertex 
 			for(var i = 0; i<500; i++)
 				{	ourmeshregistry[meshindex].geometry.attributes.color.array.set(
-						[[0,0,0,1],[1,0,0,1],[0,1,0,1],[0,0,1,1]][vindex],
+						ourColorFunctionRegistry[vdata[1]](),
 					// hsbToRgb((meshindex%4)/4,1,1),
 						  i*4)}
 		

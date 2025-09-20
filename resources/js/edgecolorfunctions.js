@@ -78,13 +78,20 @@ function hsbToRgbold(h, s, b) {
 ////////////////////////////////////////////////////////////////////
 ////
 ////  Color Functions
+
+// We keep these in a registry:
+
+let modelfunctionregistry ={}
+
 //
 //  Each color function is a function that
 // 	takes in a time, a value in [0,1], a small index, 
 //     and whether to reflect
-//
+//  
+// For more flexibility, the optional parameters are 
+// in a dictionary, named options.
 
-let modelfunctionregistry ={}
+
 
 //////////////////////////////////////////////////
 ///
@@ -99,7 +106,14 @@ let modelfunctionregistry ={}
 /////////
 //
 // a simple color wheel. 
-function cyclecolorfunction(position,time,hue0=0, hueW=.1, saturation=1, brightness=1){
+function cyclecolorfunction(position,time,options={})
+  {var hue0=0, hueW=1, saturation=1, brightness = 1
+    //TBD turn this into something else. 
+    if(options.hue0){hue0=options.hue0}
+    if(options.hueW){hueW=options.hueW}
+    if(options.saturation){saturation=options.saturation}
+    if(options.brightness){brightness=options.brightness}
+    
     return hsbToRgb(hue0+hueW*Math.sin(time+position*3.1416),saturation,brightness)}
 
 ///////////
@@ -152,29 +166,45 @@ let ourColorFunctionRegistry={}
 
 
 ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functions, or dictionaries that include the colorfunction key.
+  
+  generic:function(x,t,f,options){return f(x,t,options)},
+  // TBD this is why we need to abstract this. Want to be able to add and manage
+  // these on the fly. 
+
   blank:function(x,t){return [.6,.6,.6,1]},
+
+  // some wheels
   huewheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
   colorwheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
   huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
-  throbbingred:function(x,t){
-    return hsbToRgb(0,1,1)//something is wrong here
-   // 0,1-.5*Math.abs(Math.sin(t/5)), 1-.5*Math.abs(Math.sin(t/5))
-  },
   defaultcolorfunction:function(x,t){return hsbToRgb2(x+t/5,1,1)},
+  
+  // using the cycle function 
   basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
+  pulse2:function(x,t){return cyclecolorfunction(x*3,t,{hue0:0,hueW:.22,saturation:.1,brightness:.9})},
+  pulse:function(x,t){return cyclecolorfunction(x,t,{hue0:.4,hueW:1,saturation:.5,brightness:.7})},
+  
+  // basic colors 
   black:function(x,t){return [0,0,0,1]},
+  darkgray:function(x,t){return [.1,.1,.1,1]},
+  gray:function(x,t){return [.6,.6,.6,1]},
+  lightgray:function(x,t){return [.8,.8,.8,1]},
   white:function(x,t){return [1,1,1,1]},
   red:function(x,t){return [1,0,0,1]},
   blue:function(x,t){return [0,0,1,1]},
   green:function(x,t){return [0,1,0,1]},
   yellow:function(x,t){return [1,1,0,1]},
-  pulse2:function(x,t){return cyclecolorfunction(x*3,t,0,.22,.1,.9)},
-  pulse:function(x,t){return cyclecolorfunction(x,t,.4,1,.5,.7)},
+
+  // using the gaussian 
   purplepulse:function(x,t){return gaussiancolorfunction(x,t,.9,".01",.3,.3,1,1)},
   cyanpulse:function(x,t){return gaussiancolorfunction(x,t,.8,".01",.3,.3,.1)},
   redpulse:function(x,t){return gaussiancolorfunction(x,t,0,".01",.3,.3,.2)},
   greenpulse:function(x,t){return gaussiancolorfunction(x,t,.4,".01",.3,.3,.2,1,.5)},
   bluepulse:function(x,t){return gaussiancolorfunction(x,t,.65,".01",.3,.3,.2,1,.7)},
+  
+  
+  // draw some. 
+
   yellowspikepulse:function(x,t){return spikecolorfunction(x,t/5,0,.2,.2)},
   bluespikepulse:function(x,t){return spikecolorfunction(x,t/5,.6,.3,.4)},
   redspikepulse:function(x,t){return spikecolorfunction(x,t/5,.2,.3,.2,-1)},
