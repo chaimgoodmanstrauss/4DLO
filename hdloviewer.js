@@ -69,6 +69,9 @@ var displaymodelkeys = Object.keys(ourModelRegistry).filter(key => {
 ourgui.add(ourguiparams,'the model',displaymodelkeys).onChange(theModelChanged);
 
 
+//ourguiparams['color way']=defaultcolorway
+
+
 ourguiparams['Reset the camera position'] = 'scrolling';
 //ourgui.add(ourguiparams,'Reset the camera position',	['scrolling','1000-1111 axis','1000-1100 axis']).onChange(thecamerachanged);
 
