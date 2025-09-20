@@ -7,50 +7,9 @@
 //  Two of these are LLM generated. 
 
 
-function hsbToRgb3(h, s, b) {
-  // Handle grayscale case (no saturation)
-  if (s === 0) {
-    return [b, b, b];
-  }
-  
-  // Properly normalize hue to 0-1 range
-  h = ((h % 1) + 1) % 1;
-  
-  // Remap hue to expand green range
-  // Standard green is roughly 0.167-0.5 (120°-180° expanded to 240°)
-  if (h >= 0.167 && h <= 0.667) {
-    // Expand this range (0.167-0.667 = 0.5 of input) to occupy more of the wheel
-    // Map to 0.167-0.75 (expanding green/cyan region)
-    h = 0.167 + (h - 0.167) * 1.166; // stretch factor of ~1.166
-  } else if (h > 0.667) {
-    // Compress the remaining range (0.667-1.0) into smaller space
-    h = 0.75 + (h - 0.667) * 0.75; // compress remaining colors
-  }
-  
-  // Convert hue to 0-6 range and find which sector we're in
-  const hue = h * 6;
-  const sector = Math.floor(hue);
-  const fractional = hue - sector;
-  
-  // Calculate intermediate values
-  const p = b * (1 - s);
-  const q = b * (1 - s * fractional);
-  const t = b * (1 - s * (1 - fractional));
-  
-  // Determine RGB based on which sector of the color wheel
-  switch (sector) {
-    case 0: return [b, t, p]; // Red to Yellow
-    case 1: return [q, b, p]; // Yellow to Green
-    case 2: return [p, b, t]; // Green to Cyan
-    case 3: return [p, q, b]; // Cyan to Blue
-    case 4: return [t, p, b]; // Blue to Magenta
-    case 5: return [b, p, q]; // Magenta to Red
-    default: return [b, t, p]; // Fallback
-  }
-}
 
-
-function hsbToRgb2(h, s, b) {
+//adjusted and better
+function hsbToRgb(h, s, b) {
   // Handle grayscale case (no saturation)
   if (s === 0) {
     return [b, b, b];
@@ -80,7 +39,7 @@ function hsbToRgb2(h, s, b) {
 }
 
 
-function hsbToRgb(h, s, b) {
+function hsbToRgbold(h, s, b) {
   // Handle grayscale case (no saturation)
   if (s === 0) {
     return [b, b, b];
@@ -125,75 +84,40 @@ function hsbToRgb(h, s, b) {
 //     and whether to reflect
 //
 
-// First model functions. 
-// Soon these will be abstracted completely.
-
-// The registry consists of nothing more than 
-//  affine versions of the domain and rangea of these.
-
 let modelfunctionregistry ={}
 
-// The following set up works very broadly; we add these just to modelfunctionregistry
-class modelfunction {
-  constructor(fn, defaultParams = {}, name = "") {
-    this.fn = fn; // renamed for clarity (was `modelfunction`)
-    this.defaultParams = defaultParams;
-    let num = Object.keys(modelfunctionregistry).length
-    if(name == ""){
-      this.name =  "model function "+num}
-    else this.name = name
-    
-    modelfunctionregistry[this.name] = this
-
-    const self = this;
-
-    const handler = {
-      apply: (target, thisArg, args) => self.evaluate(...args),
-      get: (target, prop, receiver) =>
-        prop in self ? self[prop] : Reflect.get(target, prop, receiver),
-    };
-
-    // A bare callable wrapper (not polluted with props)
-    const callable = (...args) => self.evaluate(...args);
-
-    // Inherit prototype methods like compose, evaluate
-    Object.setPrototypeOf(callable, this.constructor.prototype);
-
-    return new Proxy(callable, handler);
-  }
-
-  evaluate(x, t, params = {}) {
-    const allParams = { ...this.defaultParams, ...params };
-    return this.fn(x, t, allParams);
-  }
-
-  // there is no presumption of the type of output, and
-  //  we can chain these functions together.
-  compose(otherTransform) {
-    return new modelfunction((x, t, params = {}) => {
-      const [x1, y1] = this.evaluate(x, t, params);
-      return otherTransform.evaluate(x1, t1, params);
-    }, { ...this.defaultParams, ...otherTransform.defaultParams });
-  }
-}
+//////////////////////////////////////////////////
+///
+///   Lots of examples
+///
+//  This set up ensures functions of (x,t) are automatically added to a central
+//  registry, to help keep track of what we have. 
+//  Functions all are named, and can be composed. 
+//  
 
 
-
+/////////
+//
 // a simple color wheel. 
-const cyclecolorfunction = new modelfunction(
-  (position,time,/*note braces*/{hue0=0, hueW=.1, saturation=1, brightness=1})=>
-    hsbToRgb(hue0+hueW*Math.sin(time+position*3.1416),saturation,brightness),"color wheel"
-)
+function cyclecolorfunction(position,time,hue0=0, hueW=.1, saturation=1, brightness=1){
+    return hsbToRgb(hue0+hueW*Math.sin(time+position*3.1416),saturation,brightness)}
+
+///////////
+//
 
 
-initGaussianTables()
-
-function gaussiancolorfunction(position, time, hue0=0, variance=".01", timeshift=0,speed = 1,inner=.4, saturation=1, brightness=1){
-  var temp = Math.floor(position+speed*(time-timeshift))
-  var hue = hue0+inner*gaussianHeight(position+speed*(time+timeshift)-temp,
-    GAUSSIAN_TABLES[variance])
+function gaussiancolorfunction(position, time, hue0=0, sigma= .01, range=[0,1],  saturation=1, brightness=1){
+ /* 
+  var adjustedposition  // putting it in line with the origin at 0
+  //Gaussian height: (1/(σ√(2π))) * exp(-(x-μ)²/(2σ²))
+  var hue = hue0+(range[1]-range[0])*
+      gaussianHeight(position+time-Math.floor(position+time), // %1 is probably correct, as time is >>0, but just in case. ,
+      GAUSSIAN_TABLES[variance])// these are precomputed for 
   return hsbToRgb(
     hue,saturation,brightness)
+    */
+  //RETURN TO THIS
+  return [.4,.4,.4]
 }
 
 function spikecolorfunction(x,t,hue0=0,colorspread=.3, spacespread = .4, direction=1, saturation=1, brightness = 1){
@@ -229,14 +153,14 @@ let ourColorFunctionRegistry={}
 
 ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functions, or dictionaries that include the colorfunction key.
   blank:function(x,t){return [.6,.6,.6,1]},
-  huewheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
-  colorwheel:function(x,t){return hsbToRgb3(x+t/5,1,1)},
+  huewheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
+  colorwheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
   huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
   throbbingred:function(x,t){
     return hsbToRgb(0,1,1)//something is wrong here
    // 0,1-.5*Math.abs(Math.sin(t/5)), 1-.5*Math.abs(Math.sin(t/5))
   },
-  defaultcolorfunction:function(x,t){return hsbToRgb3(x+t/5,1,1)},
+  defaultcolorfunction:function(x,t){return hsbToRgb2(x+t/5,1,1)},
   basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
   black:function(x,t){return [0,0,0,1]},
   white:function(x,t){return [1,1,1,1]},
@@ -263,4 +187,5 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
 ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
 ourColorFunctionRegistry[1]=ourColorFunctionRegistry.green
 ourColorFunctionRegistry[2]=ourColorFunctionRegistry.blue
+
 

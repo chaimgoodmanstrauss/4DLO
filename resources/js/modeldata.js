@@ -554,54 +554,6 @@ class hdlomodel{
 }
 
 
-const basichdlomodel = new hdlomodel({name:'basicModel'})
-
-basichdlomodel.name = 'basicModel'
-
-
-const baseflowingoctahedron = new hdlomodel(
-    {name:'flow octahedron', 
-    listofedmodels:[
-        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
-        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
-        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
-    ],fordisplayQ:false})
-
-/*
-const octahedron = new hdlomodel(
-    {name:'octahedron', 
-    listofedmodels:[
-        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:"purplepulse",scaleposition:.5})},
-        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:"purplepulse",shiftposition:.5,scaleposition:.5})},
-        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:"colorwheel",direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
-    ],fordisplayQ:true})
-*/
-
-const newoct = baseflowingoctahedron.permute(qIOne,{name:'new oct', colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:true})
-
-
-const nudderocta = baseflowingoctahedron.copy({name:"nudder octa",fordisplayQ:true,colorpermutations:{1:"yellowspikepulse",2:"colorwheel"}})
-
-
-const octapair = newoct.mergeonto(nudderocta,{fordisplayQ:true,name:'octapair'})
-
-
-/*
-
-function mergemodels(model1,model2,newname="")
-{
-    newmodel=structuredClone(model1)
-    if(newname==""){
-            newmodel.name = model1.name+"&"+model2.name}
-    else{
-            newmodel.name = newname}
-    for(i=0;i<model1.edgedata.length && i<model2.edgedata.length;i++){
-        if(model2.edgedata[i][0]!=0){
-            newmodel.edgedata[i]=model2.edgedata[i]}
-        }
-    return newmodel
-}
-
 
 
 
@@ -613,6 +565,32 @@ function mergemodels(model1,model2,newname="")
 // Our models
 //
 //
+
+
+
+const basichdlomodel = new hdlomodel({name:'basicModel'})
+
+basichdlomodel.name = 'basicModel'
+
+
+// a basic octahedron, with flow from one end (at to the other. This is positio
+const baseflowingoctahedron = new hdlomodel(
+    {name:'flow octahedron', 
+    listofedmodels:[
+        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
+        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
+        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
+    ],fordisplayQ:false})
+
+
+const newoct = baseflowingoctahedron.permute(qIOne,{name:'new oct', colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:true})
+
+
+const nudderocta = baseflowingoctahedron.copy({name:"nudder octa",fordisplayQ:true,colorpermutations:{1:"yellowspikepulse",2:"colorwheel"}})
+
+
+const octapair = newoct.mergeonto(nudderocta,{fordisplayQ:true,name:'octapair'})
+
 
 
 var tempcntr = 1;

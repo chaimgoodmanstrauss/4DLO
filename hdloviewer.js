@@ -54,9 +54,10 @@ ourguiparams['show as'] = 'four-d';
 //ourgui.add(ourguiparams,'show as',['four-d','three-d']).onChange(thecamerachanged);
 
 
+// which model should we display? 
+// TBD: turn this into entire programs, add options for color ways, etc.
 
 ourguiparams['the model'] = defaultmodel
-
 //ourgui.add(ourguiparams,'the model',ourmodels.map(x=>x.name)).onChange(theModelChanged);
 
 var displaymodelkeys = Object.keys(ourModelRegistry).filter(key => {
@@ -70,8 +71,6 @@ ourgui.add(ourguiparams,'the model',displaymodelkeys).onChange(theModelChanged);
 
 ourguiparams['Reset the camera position'] = 'scrolling';
 //ourgui.add(ourguiparams,'Reset the camera position',	['scrolling','1000-1111 axis','1000-1100 axis']).onChange(thecamerachanged);
-
-
 
 function thecamerachanged(){
 	switch (ourguiparams['Reset the camera position']){

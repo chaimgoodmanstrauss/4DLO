@@ -8,9 +8,9 @@ const CENTER = 0.5;       // Distribution centered at 0.5
  * Initialize the Gaussian lookup table with specified variance
  * @param {number} variance The variance (σ²) of the Gaussian distribution
  */
-function initGaussianTable(variance) {
+function initGaussianTable(sigma) {
     let GAUSSIAN_TABLE = new Array(TABLE_SIZE)
-     const sigma = Math.sqrt(variance);
+     const variance = sigma*sigma;
     const normFactor = 1.0 / Math.sqrt(2.0 * Math.PI * variance);
     
     for (let i = 0; i < TABLE_SIZE; i++) {
@@ -49,9 +49,9 @@ function gaussianHeight(x, GAUSSIAN_TABLE) {
 let GAUSSIAN_TABLES={}
 
 function initGaussianTables(){
-    GAUSSIAN_TABLES[".001"]=initGaussianTable(.001)
     GAUSSIAN_TABLES[".01"]=initGaussianTable(.01)
     GAUSSIAN_TABLES[".02"]=initGaussianTable(.02)
+    GAUSSIAN_TABLES[".03"]=initGaussianTable(.03)
     GAUSSIAN_TABLES[".04"]=initGaussianTable(.04)
 }
 
