@@ -17,6 +17,17 @@ function hsbToRgb(h, s, b) {
   
   if (h>0){h=h%1}else
   {h=1+(h%1)}
+
+  //h= h - .2*Math.tanh(.5*Math.sin(3*3.141*h)-.7)-.12087
+  
+  //if (h>0){h=h%1}else
+  //{h=1+(h%1)}
+  
+   h = h-(Math.sin(6*3.141*h))/30 
+  // this decreases CMY and increases RGB in the colorwheel
+
+
+
   // Convert hue to 0-6 range and find which sector we're in
   const hue = (h) * 6;
   const sector = Math.floor(hue);
@@ -47,6 +58,8 @@ function hsbToRgbold(h, s, b) {
   
   // Properly normalize hue to 0-1 range
   h = ((h % 1) + 1) % 1;
+
+  
   
   // Convert hue to 0-6 range and find which sector we're in
   const hue = h * 6;
@@ -79,10 +92,6 @@ function hsbToRgbold(h, s, b) {
 ////
 ////  Color Functions
 
-// We keep these in a registry:
-
-let modelfunctionregistry ={}
-
 //
 //  Each color function is a function that
 // 	takes in a time, a value in [0,1], a small index, 
@@ -90,6 +99,31 @@ let modelfunctionregistry ={}
 //  
 // For more flexibility, the optional parameters are 
 // in a dictionary, named options.
+
+/*let colorFunctionRegistry={}
+
+class colorfunction{
+  
+  constructor(options){
+    //we expect, at minimum, a function of (x,t) returning [r,g,b] or [r,g,b,a]
+    // each between 0 and 1;
+
+    // We can also allow optional further parameters (eg also functions of time)
+    // but that can be controlled 
+    
+    if(options.colorfunction){this.colorfunction=options.colorfunction}
+    else{hsbToRgb(time+position*3.14159,1,1)}
+    
+    if(options.name){this.name = options.name}
+    else{this.name = 'color function '+Object.keys(colorFunctionRegistry).length}
+
+    if(options.functionparameters){this.functionparameters=options.functionparameters}
+    else{this.functionparameters={}}
+    
+    colorFunctionRegistry[this.name]=this
+  }
+
+}*/
 
 
 
@@ -102,6 +136,13 @@ let modelfunctionregistry ={}
 //  Functions all are named, and can be composed. 
 //  
 
+/*
+new colorfunction({
+  colorfunction:
+  function(x,t,saturation, brightness){return hsbToRgb(hue0+hueW*Math.sin(time+position*3.1416),saturation,brightness)},
+  parameters:{saturation:1,brightness:1}
+})
+*/
 
 /////////
 //
@@ -118,20 +159,19 @@ function cyclecolorfunction(position,time,options={})
 
 ///////////
 //
+// Template functions 
+// 
 
+//of one variable
 
-function gaussiancolorfunction(position, time, hue0=0, sigma= .01, range=[0,1],  saturation=1, brightness=1){
- /* 
-  var adjustedposition  // putting it in line with the origin at 0
-  //Gaussian height: (1/(σ√(2π))) * exp(-(x-μ)²/(2σ²))
-  var hue = hue0+(range[1]-range[0])*
-      gaussianHeight(position+time-Math.floor(position+time), // %1 is probably correct, as time is >>0, but just in case. ,
-      GAUSSIAN_TABLES[variance])// these are precomputed for 
-  return hsbToRgb(
-    hue,saturation,brightness)
-    */
-  //RETURN TO THIS
-  return [.4,.4,.4]
+//function gaussian(x,bottom=0,height=1,sigma = .01)
+
+function gaussiancolorfunction(position, time, hue0=0, hueW=1, sigma= .01,  saturation=1, brightness=1){
+  var x = position, t = time%1
+  var color = hsbToRgb(hue0+hueW*(Math.exp(-(x+t)*(x+t)/sigma/sigma/2))/sigma/2.5,
+  saturation,brightness)
+  // scale and shift x and t in the application of gaussiancolorfunction.
+  return  color
 }
 
 function spikecolorfunction(x,t,hue0=0,colorspread=.3, spacespread = .4, direction=1, saturation=1, brightness = 1){
@@ -141,21 +181,15 @@ function spikecolorfunction(x,t,hue0=0,colorspread=.3, spacespread = .4, directi
   return hsbToRgb( hue0+shift,saturation,brightness)
 }
 
-
-
-
-async function example1() {
-    const func = new discreteFunction('resources/graphs/testfunc.json');
-    await func.waitForLoad();
+// this loads a function of one variable as a 
+async function loadbasefunction(filename,functionname='', filepath = 'resources/graphs/')
+{ const func = new discreteFunction('resources/graphs/testfunc.json');
     
-    if (func.isReady()) {
-        console.log('testing the loading of discrete function info', func.getInfo());
-        const y = func.evaluate(0.3);
-        console.log('for which f(0.3) =', y);
-    }
+    await func.waitForLoad();
+    return function(x){return func.evaluate(x)}
 }
 
-example1()
+
 
 
 
@@ -164,6 +198,12 @@ example1()
 /// returning an rgb 
 let ourColorFunctionRegistry={}
 
+
+//// For some reason, this doesn't work.
+
+function registercolorfunction(name, rgbfunctionofxt){
+    ourColorFunctionRegistry[name]=rgbfunctionofxt
+}
 
 ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functions, or dictionaries that include the colorfunction key.
   
@@ -175,9 +215,6 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
 
   // some wheels
   huewheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
-  colorwheel:function(x,t){return hsbToRgb(x+t/5,1,1)},
-  huewheel2:function(x,t){return hsbToRgb2(x+t/5,1,1)},
-  defaultcolorfunction:function(x,t){return hsbToRgb2(x+t/5,1,1)},
   
   // using the cycle function 
   basiccycle:  function(x,t){return cyclecolorfunction(x,t)},
@@ -194,6 +231,8 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
   blue:function(x,t){return [0,0,1,1]},
   green:function(x,t){return [0,1,0,1]},
   yellow:function(x,t){return [1,1,0,1]},
+  cyan:function(x,t){return[0,1,1,1]},
+  orange:function(x,t){return[1,.5,0,1]},
 
   // using the gaussian 
   purplepulse:function(x,t){return gaussiancolorfunction(x,t,.9,".01",.3,.3,1,1)},

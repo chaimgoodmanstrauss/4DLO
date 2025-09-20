@@ -342,7 +342,7 @@ class edgemodel{
     // the main task of an edge model is to return an RGB value for a given position:
     // at a specific time, which is indicated for the first time here. 
 
-      evaluateat(position,edgedirection=1){ 
+      evaluateat(position){ 
 	//	if(this.coloringfunctionname =='blue'){console.log('stopforasec')}
         if(typeof this.coloringfunction == 'string')
         {this.coloringfunction=ourColorFunctionRegistry[this.coloringfunction]}
@@ -350,15 +350,22 @@ class edgemodel{
         if(typeof this.coloringfunction != 'function'){
            {this.coloringfunction=ourColorFunctionRegistry['defaultcolorfunction']}
         }
-        var adjustposition = this.scaleposition*position+this.shiftposition;
+        
+        var direction = 1
+        if(this.direction){
+            if(this.direction==-1)
+                {direction=-1}}
+
+        var adjustposition = direction*this.scaleposition*position+this.shiftposition;
       
+        //TBD: Make this work correctly:
         if(!this.direction){
                 // then the colorfunction is doubled, flowing to the middle
                 adjustposition = 1-2*Math.abs(1/2-adjustposition)}
         else if(this.direction==0){adjustposition =2*Math.abs(1/2-adjustposition)}
                
-		else if(this.direction ==  -1){
-                adjustposition= 1-adjustposition }
+		//else if(this.direction ==  -1){
+       //         adjustposition= 1-adjustposition }
         // else no further adjustments.
 
 		  //var f =ourColorFunctionRegistry[this.coloringfunction.name]
@@ -375,6 +382,7 @@ class edgemodel{
 
         copy(){return new edgemodel({
 			coloringfunction:this.coloringfunction,
+            direction:this.direction,
             coloringfunctionname:this.coloringfunctionname,
             coloringfunctionoptions:this.coloringfunctionoptions,
             shiftposition:this.shiftposition,
@@ -445,18 +453,10 @@ class hdlomodel{
 
     // the fundamental task that this hdlomodel class does:
 
-     evaluate(edge,position){// scaling and shifting, and the time are be added to colorfunction in the edgemodel
+     evaluate(edgeindex,position){// scaling and shifting, and the time are be added to colorfunction in the edgemodel
         //other external information is built into the colorfunctions, defined in this thread
-        var edgedirection = 1
-        // TBD: edge could be a name, like "++-+,k" or an array [qppmp, qK]
-        // for the moment, we are taking edge to be an index ±0 to 95. 
-        // (that 0 is a problem!)
-        var edgeindex = edge
-        if(edge<0){
-            edgeindex = -edge;
-            edgedirection = -1}
-         
-        return this.edgemodels[edgeindex].evaluateat(position,edgedirection)
+        
+        return this.edgemodels[edgeindex].evaluateat(position)
      }
 
 
@@ -473,14 +473,14 @@ class hdlomodel{
         edgemodeldata=>{
             var spread = edgemodeldata.indices.length
             var edgecount = 0 // if there is a spread, this keeps track of where we are
+            var direction = 1;
+            if(edgemodeldata.edgemodel.direction){
+                direction = edgemodeldata.edgemodel.direction}
             edgemodeldata.indices.map(
                 index=>{
-                    if(index == 21){
-                        console.log('stop')
-                    }
                     var iindex = Math.abs(index)
                     this.edgemodels[iindex]=edgemodeldata.edgemodel.copy()
-                    this.edgemodels[iindex].direction =  Math.sign(index)*edgemodeldata.edgemodel.direction
+                    this.edgemodels[iindex].direction =  Math.sign(index)*direction
     
                     if(edgemodeldata.distributeby){
                         // then we add the spreading to the info. 
@@ -564,7 +564,7 @@ class hdlomodel{
         if("fordisplayQ" in options){newfordisplayQ=options.fordisplayQ}
         
         var newaddToRegistryQ = true;
-        if("addToRegistry" in options){newaddToRegistryQ=options.addToRegistryQ}
+        if("addToRegistryQ" in options){newaddToRegistryQ=options.addToRegistryQ}
 
         var qaction = quatoraction
         if(quatoraction.constructor.name=='quat'){
@@ -628,11 +628,11 @@ class hdlomodel{
         var fordisplayQ = false
         if(options.fordisplayQ){fordisplayQ=options.fordisplayQ}
         
-        var addToRegistry = false
-        if(options.addToRegistry){addToRegistry=options.addToRegistry}
+        var addToRegistryQ = false
+        if(options.addToRegistryQ){addToRegistryQ=options.addToRegistryQ}
 
         
-        var finalobject = new hdlomodel({name:newname,fordisplayQ:fordisplayQ, addToRegistryQ:addToRegistry}) // to merge onto
+        var finalobject = new hdlomodel({name:newname,fordisplayQ:fordisplayQ, addToRegistryQ:addToRegistryQ}) // to merge onto
         var displayeachQ = false
         if(options.displayeachQ){displayeachQ=options.displayeachQ}
 
@@ -699,94 +699,79 @@ const baseflowingoctahedron = new hdlomodel(
         {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
         {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
         {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
-    ],fordisplayQ:false,addToRegistry:false})
+    ],fordisplayQ:false,addToRegistryQ:false})
 
 // to this we can add colorways: 
 
 
 const flowoct = baseflowingoctahedron.permute(qOneOne,{name:'flow oct', 
-    colorpermutations:{1:"basiccycle", 2:"colorwheel"},fordisplayQ:false,addToRegistry:false})
+    colorpermutations:{1:"basiccycle", 2:"huewheel"},fordisplayQ:false,addToRegistryQ:false})
 
 
 const anoctachain = baseflowingoctahedron.applyactions([qOneOne,qIOne,qMOneOne,qmIOneOne
 ],{fordisplayQ:false, addToRegistryQ:false, name:''})
 
 const octachain  = anoctachain.permute(qOne,
-    {name:"octachain",colorpermutations:{2:"bluepulse", 1:"colorwheel"}
+    {name:"octachain",colorpermutations:{2:"bluespikepulse", 1:"huewheel"}
 ,fordisplayQ:true})
 
-const octachain2 = anoctachain.permute(qW,{name:"octachain shifted by ++++",
-    colorpermutations:{1:"red", 2:"blue"},fordisplayQ:true
+const octachain2 = octachain.permute(qW,{name:"octachain shifted by ++++",
+    colorpermutations:{"huewheel":"redspikepulse"},fordisplayQ:true
 })
+
+
+var templist =[ 
+        {indices:[95,29,66,70],distributeby:true, 
+            edgemodel:new edgemodel({
+                coloringfunctionname:"redspikepulse",scaleposition:.5})},
+        {indices:[83,34,91,43],distributeby:true, 
+            edgemodel:new edgemodel({
+                coloringfunctionname:"greenspikepulse",shiftposition:.5,scaleposition:.5})},
+        {indices:[21,51,87,62],distributeby:true, 
+            edgemodel:new edgemodel({
+                coloringfunctionname:"bluespikepulse",direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
+    ]
+
+    /*
+const rotatingocta = new hdlomodel(
+    {name:'rotatingocta', 
+    listofedmodels:templist,fordisplayQ:true,addToRegistryQ:true})
+   
+*/
+
+
+
+
+// +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
+
+const cycle = new hdlomodel(
+    {name:'cycle',
+    listofedmodels:
+    [{indices:
+        [67,95,39,64,92,36],
+        distributeby:true,
+        edgemodel:new edgemodel({coloringfunction:"testgauss"})}],fordisplayQ:true,addToRegistryQ:true})
+
+
+const cyclestemplate = cycle.applyactions(shiftcyclesright,
+    {fordisplayQ:false, addToRegistryQ:false, name:'cycles template',
+    })
+
+registercolorfunction("testgauss",
+    function(x,t){return gaussiancolorfunction(x+.3,3*t,.2, .5, sigma= .1)})
+
+    const cycles = cyclestemplate.permute(qOne,
+    {name:"cycles",
+    colorpermutations:{1:"testgauss"},fordisplayQ:true})
 
 defaultmodel ='basicModel'
 defaultmodel ='octahedron'
 defaultmodel ='new oct'
 defaultmodel ='octachain'
-
-
-// Given  { 
-//      {indices:[],edgemodel}
-//                    }
-//  overlay this onto a model
-
+defaultmodel ='rotatingocta'
+defaultmodel ='cycles'
 
 /*
-
-const blankModel = {name:"basic", edgedata:Array(96).fill([0,1]), vertdata:standardverts};
-
- 
-const basicmodel = permutemodel(blankModel,new qAction(qOne.positivize(), qOne.positivize()),"basic")// this should give the overlay correctly
-
-
-
-const newoctahedron = makemodel({name:'octahedron', 
-    listofindexandcolorlists:[
-        {indices:[95,91,70,34],modelinfo:[1,1,.5,.5],timing:2},
-        {indices:[ 29, 43, 66, 83],modelinfo:[1,1,.5,0],timing:2},
-       {indices:[21,51,87,62],modelinfo:[6,1],timing:2,spread:1}
-    ]})
-
-const moreoctas =[[qI.mult(qW),'-- octo 2'],[qJ,'-- octo 3']].map(
-    q=>permutemodel(octahedron, new qAction(qOne.positivize(), q[0]),q[1])
-        )
-   
-*/
-/*const moreoctas =[qI,new quat(-1,0,0,0),new quat(0,-1,0,0)].map(
-    q=>permutemodel(octahedron, new qAction(qOne.positivize(), q)
-        ))
-
-const octachain = mergemodels(mergemodels(mergemodels(moreoctas[0],octahedron),
-    moreoctas[1]),
-    moreoctas[2],"octachain")
-
-const octashiftchain = permutemodel(octachain,new qAction(qone,qW),"octachain2")
-*/
-
-// +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
-/*
-const cycle = 
-    makemodel({name:'cycle',
-    listofindexandcolorlists:
-    [{indices:[67,95,39,64,92,36],modelinfo:[1,1], spread:2}]})
-
-
-var cycleactions = [//cyclecosetgen, 
-    new qAction(qO.mult(qO), qO.mult(qW).mult(qO)),
-    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW)),
-    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW).mult(qW))
-   // new qAction(qO, qO.mult(qW.mult(qW))),
-    //new qAction(qO, qO.mult(qW.mult(qW.mult(qW)))) 
-  //  [new qAction(qone, qI)],//, new qAction(qone, new quat(-Math.sqrt(.5),Math.sqrt(.5))) 
-        ]
-
-//cycleactions=cyclequotient.groupElements
-//edgegroup
-
-const rightcycleclass = cycleactions.map(q=>{
-    console.log(q.toString())
-    return permutemodel(cycle,q,"")})
-
 var fourcycles = structuredClone(cycle)
 rightcycleclass.map(m=>fourcycles = mergemodels(fourcycles,m))
 
@@ -801,7 +786,7 @@ const cycleperms = cycleactionscosets.map(q=>
 
 allcycles = structuredClone(fourcycles)
 cycleperms.map(a=>{allcycles = mergemodels(allcycles, a
-,"all cycles")})
+,"all cycles template")})
 
 fourcycles.name="four cycles"
 

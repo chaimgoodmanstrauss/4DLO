@@ -33,6 +33,8 @@ const qmI = new quat(0,-1.0,0,0)
 const qmJ = new quat(0,0,-1.0,0)
 const qmK = new quat(0,0,0,-1.0)
 
+const qO = new quat(0,0,1,1).normalize()
+
 
 // named qActions
 
@@ -46,3 +48,13 @@ const qmIOneOne = new qAction(qmI,qOne)
 
 //const rots4I[qOneOne,qIone,qmOneONe,qmIOneOne]
 //const rots4J[qOneOne,qJone,qmOneONe,qmJOneOne]
+
+
+//these preserve a right handed collection of cycles
+
+const shiftcyclesright = [
+    qOneOne,
+    new qAction(qO.mult(qO), qO.mult(qW).mult(qO)),
+   new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW)),
+    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW).mult(qW))
+]
