@@ -1043,3 +1043,23 @@ defaultmodel = 'four cycles';
 
 */
 
+
+const fs = require('fs');
+
+function writeArrayToFile(arrays, filename) {
+  // Get dimensions
+  const rows = arrays.length;
+  const cols = arrays[0].length;
+  
+  // Create header with dimensions
+  let content = `${rows} ${cols}\n`;
+  
+  // Write each row of data
+  for (let i = 0; i < rows; i++) {
+    content += arrays[i].join(' ') + '\n';
+  }
+  
+  // Write to file
+  fs.writeFileSync(filename, content, 'utf8');
+  console.log(`Data written to ${filename}`);
+}
