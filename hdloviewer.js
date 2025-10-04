@@ -175,6 +175,8 @@ var ourmeshregistry = [];
 
 const materialregistry=[]
 
+
+
 //////////////////////////////
 //
 // set up some generic meshes, to be run at initialization. 
@@ -358,6 +360,18 @@ setupthemeshes();
 
 	// now draw the drawing for the first time
 theModelChanged();
+
+// //const content = writeArrayToFile(data, 'array_data.txt');
+// Object.keys(ourModelRegistry).map(key=>
+// {writeTwoDArrayToFile(
+	
+// 	ourModelRegistry[key].edgemodels.map(x=>x.toArray()),
+// 	'model '+ourModelRegistry[key].name+'.txt'
+// )
+// }
+// ) 
+
+writeModelsToFile(ourModelRegistry)
 
 function animate() {
             requestAnimationFrame(animate);

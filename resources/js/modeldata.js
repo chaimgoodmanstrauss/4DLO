@@ -280,12 +280,13 @@ function getactiononedgegroupaspermutationofindices(q){
 
 const  DEFAULT_TUBE_RADIUS = .03, SMALL_TUBE_RADIUS = .02
 
-
+const REALRESOLUTION = 10000
 class edgemodel{
 
     // the edgemodel defaults are: 
     // edgemodel:{
     // coloringfunction:"colorname"(or function or index),
+    // coloringfunctionindex:0,
     // coloringfunctionoptions:{},direction:1,
     // shiftposition:0,
     // scaleposition:2,
@@ -294,6 +295,13 @@ class edgemodel{
     // fordisplayQ:true}
 
     
+// For this application, rework the use of colorfunctions
+// Currently, each edgemodel has an coloringfunction (an int or a function name) 
+// a coloring function name (deprecated), 
+// and a coloringfunction index (which is the real info needed in a model), with no real
+// effort to check that these are in alignment. 
+
+
     constructor(options={}){
     
         if(options.direction){this.direction = options.direction}
@@ -329,6 +337,11 @@ class edgemodel{
         if(options.tuberadius){this.tuberadius = options.tuberadius}
         else(this.tuberadius = DEFAULT_TUBE_RADIUS)// defined in hdloviewer, until moved
 
+        // this is useful way to keep track of the color models for export,
+        // and hence TBD can rewrite existing models and the use of functions
+        // for this.
+        if(options.coloringfunctionindex){this.coloringfunctionindex=options.coloringfunctionindex}
+        else{this.coloringfunctionindex=0}
       }
 
       updatecolorfunction(newcolorfunctionname){// this seems like a good one to abstract
@@ -389,9 +402,28 @@ class edgemodel{
             scaleposition:this.scaleposition,
             shifttime:this.shifttime,
             scaletime:this.scaletime,
-            fordisplayQ:this.fordisplayQ})
+            forexportQ:this.forexportQ,
+            coloringfunctionindex:this.coloringfunctionindex})
 
         }
+
+
+    toArray(){
+        // this is for exporting to the Teensy. 
+        // We are just assuming that coloringfunctionindex is defined;
+        // 
+        return[this.coloringfunctionindex,
+            this.direction,
+            Math.round(REALRESOLUTION* this.shiftposition),
+            Math.round(REALRESOLUTION* this.scaleposition),
+            Math.round(REALRESOLUTION*this.shifttime ),
+            Math.round(REALRESOLUTION*this.scaletime )
+        ]
+        
+       
+
+    
+    }
 }
 
 /////////////////////////////////////////////
@@ -424,6 +456,9 @@ class hdlomodel{
         if( "fordisplayQ" in options){this.fordisplayQ = options.fordisplayQ}
         else{this.fordisplayQ = false}//only if true, show in the gui
         
+        if( "forexportQ" in options){this.forexportQ = options.forexportQ}
+        else{this.forexportQ = false}//only if true, export
+
 
         if(options.name){this.name = options.name }
         else this.name = "amodel"+(Object.keys(ourModelRegistry).length)
@@ -431,6 +466,7 @@ class hdlomodel{
 
         if(this.addToRegistryQ){
         ourModelRegistry[this.name]=this}//automatically update the registry
+        // not really sure if this is doing anything or not right now. 
       
 
         // can specify the explicit list of edgemodels to fill in
@@ -536,11 +572,14 @@ class hdlomodel{
         var fordisplayQ=this.fordisplayQ
         if("fordisplayQ" in options){fordisplayQ=options.fordisplayQ}
 
+        var forexportQ=this.forexportQ
+        if("forexportQ" in options){forexportQ=options.forexportQ}
+
         var addToRegistryQ = this.addToRegistryQ
         if("addToRegistryQ" in options){addToRegistryQ=options.addToRegistryQ}
         var newmodel = new hdlomodel(
          {...options, name:newname,edgemodels:copyofedgemodels, 
-            fordisplayQ:fordisplayQ, addToRegistryQ:addToRegistryQ})
+            fordisplayQ:fordisplayQ,forexportQ:forexportQ, addToRegistryQ:addToRegistryQ})
         return newmodel 
     }
 
@@ -673,6 +712,76 @@ class hdlomodel{
 }
 
 
+///// And a way to print ourModelRegistry out :
+
+
+function writeModelsToFile(modelRegistry) {
+    let headercontent="",bodycontent="";
+    headercontent+="///////////////////////////\n";
+    headercontent+="// HDLO Models\n\n// define the data:\n\n";
+    
+    bodycontent = headercontent;
+    
+    headercontent +="#ifndef HDLO_MODELS_H\n#define HDLO_MODELS_H\n#include <array>\n#include \"models.h\"\n\n";
+    bodycontent+="#include \"hdlo_models.h\"\n\n";
+
+    let modelkeys =  Object.keys(ourModelRegistry);
+    let nummodels = modelkeys.length;
+
+    modelkeys.map(key=>{
+        let name = key.replace(/[^a-zA-Z0-9]/g, '');
+        headercontent+= "extern std::array<std::array<int, 6>, 120> "+name+"data;\n";
+        bodycontent  += "std::array<std::array<int, 6>, 120> "+name+"data={{\n";
+                for(let i=0; i<120; i++){
+                    bodycontent+="  {{";
+                    if(i<96){
+                    bodycontent+=(ourModelRegistry[key].edgemodels[i].toArray()).join(',');   
+                    }
+                    else bodycontent+=[0,0,0,0,0,0].join(',');
+                bodycontent+='}},\n'
+                }
+                bodycontent+="}};//end of " +name+'data\n\n';
+            }
+        
+        );
+
+    headercontent+="// array of pointers\nconst int nummodels = "+nummodels+";\n"
+    headercontent+="extern colormodel* ourcolormodels["+nummodels+"];\n"
+    headercontent+="\nvoid initializemodels();\n"
+    headercontent+="#endif // HDLO_MODELS_H\n"
+
+    bodycontent += "\ncolormodel* ourcolormodels["+nummodels+"];\n\n";
+    bodycontent += "void initializemodels(){\n"
+    
+    for(let i = 0; i<nummodels;i++){
+        let key = modelkeys[i];
+        let name = key.replace(/[^a-zA-Z0-9]/g, '');
+        bodycontent+="  ourcolormodels["+i+"] = new colormodel("+name+"data, \""+name+"\");\n"                  
+    }
+    
+    bodycontent+="}\n";
+
+    // Create a blob and download link
+    let blob = new Blob([headercontent], { type: 'text/plain' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'hdlo_models.h';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Create a blob and download link
+    blob = new Blob([bodycontent], { type: 'text/plain' });
+    url = URL.createObjectURL(blob);
+    a = document.createElement('a');
+    a.href = url;
+    a.download = 'hdlo_models.cpp';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+
+    return content;
+}
 
 
 
@@ -696,24 +805,35 @@ basichdlomodel.name = 'basicModel'
 const baseflowingoctahedron = new hdlomodel(
     {name:'flow octahedron', 
     listofedmodels:[
-        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,scaleposition:.5})},
-        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
-        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
-    ],fordisplayQ:false,addToRegistryQ:false})
+        {indices:[95,91,70,34],distributeby:false, edgemodel:new edgemodel({
+            coloringfunctionindex:1, coloringfunctionname:1,scaleposition:.5})},
+        {indices:[29,43,66,83],distributeby:false, edgemodel:new edgemodel({
+            coloringfunctionindex:1, coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
+        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({
+            coloringfunctionindex:2,coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
+    ],
+    fordisplayQ:false,
+    forexportQ:true, 
+    addToRegistryQ:true})
 
 // to this we can add colorways: 
 
 
 const flowoct = baseflowingoctahedron.permute(qOneOne,{name:'flow oct', 
-    colorpermutations:{1:"basiccycle", 2:"huewheel"},fordisplayQ:false,addToRegistryQ:false})
+    colorpermutations:{1:"basiccycle", 2:"huewheel"},
+    fordisplayQ:false,
+    addToRegistryQ:false})
 
 
 const anoctachain = baseflowingoctahedron.applyactions([qOneOne,qIOne,qMOneOne,qmIOneOne
-],{fordisplayQ:false, addToRegistryQ:false, name:''})
+],{fordisplayQ:false,forexportQ:true, addToRegistryQ:false, name:''})
 
 const octachain  = anoctachain.permute(qOne,
     {name:"octachain",colorpermutations:{2:"bluespikepulse", 1:"huewheel"}
-,fordisplayQ:true})
+,
+fordisplayQ:true,
+addToRegistryQ:false,
+forexportQ:true,})
 
 const octachain2 = octachain.permute(qW,{name:"octachain shifted by ++++",
     colorpermutations:{"huewheel":"redspikepulse"},fordisplayQ:true
@@ -722,13 +842,13 @@ const octachain2 = octachain.permute(qW,{name:"octachain shifted by ++++",
 
 var templist =[ 
         {indices:[95,29,66,70],distributeby:true, 
-            edgemodel:new edgemodel({
+            edgemodel:new edgemodel({coloringfunctionindex:1,
                 coloringfunctionname:"redspikepulse",scaleposition:.5})},
         {indices:[83,34,91,43],distributeby:true, 
-            edgemodel:new edgemodel({
+            edgemodel:new edgemodel({coloringfunctionindex:2,
                 coloringfunctionname:"greenspikepulse",shiftposition:.5,scaleposition:.5})},
         {indices:[21,51,87,62],distributeby:true, 
-            edgemodel:new edgemodel({
+            edgemodel:new edgemodel({coloringfunctionindex:3,
                 coloringfunctionname:"bluespikepulse",direction:1,shiftposition:0,scaleposition:1,scaletime:1})}
     ]
 
@@ -744,17 +864,23 @@ const rotatingocta = new hdlomodel(
 
 // +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
 
+
 const cycle = new hdlomodel(
     {name:'cycle',
     listofedmodels:
     [{indices:
         [67,95,39,64,92,36],
         distributeby:true,
-        edgemodel:new edgemodel({coloringfunction:"testgauss"})}],fordisplayQ:true,addToRegistryQ:true})
+        addToRegistryQ:true,
+        forexportQ:true,
+        edgemodel:new edgemodel({coloringfunctionindex:1,coloringfunction:"testgauss"})}],fordisplayQ:true,addToRegistryQ:true})
 
 
 const cyclestemplate = cycle.applyactions(shiftcyclesright,
-    {fordisplayQ:false, addToRegistryQ:false, name:'cycles template',
+    {fordisplayQ:false, 
+        addToRegistryQ:true,
+        forexportQ:true,
+        name:'cycles template',
     })
 
 registercolorfunction("testgauss",
@@ -762,7 +888,8 @@ registercolorfunction("testgauss",
 
     const cycles = cyclestemplate.permute(qOne,
     {name:"cycles",
-    colorpermutations:{1:"testgauss"},fordisplayQ:true})
+    colorpermutations:{1:"testgauss"},
+    fordisplayQ:true})
 
 defaultmodel ='basicModel'
 defaultmodel ='octahedron'
@@ -1043,23 +1170,4 @@ defaultmodel = 'four cycles';
 
 */
 
-
-const fs = require('fs');
-
-function writeArrayToFile(arrays, filename) {
-  // Get dimensions
-  const rows = arrays.length;
-  const cols = arrays[0].length;
-  
-  // Create header with dimensions
-  let content = `${rows} ${cols}\n`;
-  
-  // Write each row of data
-  for (let i = 0; i < rows; i++) {
-    content += arrays[i].join(' ') + '\n';
-  }
-  
-  // Write to file
-  fs.writeFileSync(filename, content, 'utf8');
-  console.log(`Data written to ${filename}`);
-}
+ 
