@@ -1,7 +1,13 @@
+////////////////////////////////////
+//
+// colorfunctionclass instances do one thing:
+// return its colorfunction(position) 
+// colorfunction may incorporate other information such as time
+// (in some other manner than already linearly encoded in position)
+// sound, or other data.
+//
 #include <FastLED.h>
 #include "models.h"
-
-//typedef CRGB (*ColorFunction)(float);
 
 ////////////////////////////////////
 //

@@ -17,6 +17,13 @@ extern std::array<std::array<int, 6>, 120> cyclesdata;
 // array of pointers
 const int nummodels = 6;
 extern colormodel* ourcolormodels[6];
+extern String modelNames[6]; // Model names matching ourcolormodels order
 
 void initializemodels();
+
+// Sequence initialization - will be auto-generated
+// Requires modelsequence to be registered first
+class modelsequence; // Forward declaration
+void initializeSequences(modelsequence* seq);
+
 #endif // HDLO_MODELS_H

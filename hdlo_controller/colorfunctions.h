@@ -1,3 +1,14 @@
+////////////////////////////////////////////
+//
+//
+//   colorfunctions.h
+//
+// a colorfunction has one responsibility: return a CRGB at a given position
+// It is free to make additional use of time or other data, but that's its business.
+// 
+// In this file, declare the functions; in the cpp file, they are organized
+// into an array, colorFunctionArray and colorFunctionNames 
+//
 #ifndef COLORFUNCTIONS_H
 #define COLORFUNCTIONS_H
 

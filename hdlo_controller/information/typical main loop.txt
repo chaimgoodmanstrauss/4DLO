@@ -1,3 +1,11 @@
+////////////////////
+//
+//
+//  A typical set up and loop 
+//
+//
+
+
 #include "teensy4controller.h"
 #include "ledconstants.h"
 #include "edgesetup.h"
@@ -5,6 +13,7 @@
 #include "models.h"
 #include "hdlo_models.h"
 #include "modelsequence.h"
+#include "sequences.h"
 
 int count = 0;
 
@@ -12,24 +21,16 @@ int count = 0;
 modelsequence mainSequence;
 
 void setup() {
-  
-  // Prepare serial output, if we wish to use it for debugging or monitoring data.
   Serial.begin(9600);
-  Serial.println("Yo the HDLO LED contoller ");
-  Serial.println("We are using "+String(numberofleds)+" on "+String(numberofpins)+" pins.");
+  Serial.println("HDLO LED controller with model sequences");
+  Serial.println("Using "+String(numberofleds)+" LEDs on "+String(numberofpins)+" pins.");
 
-  octocontroller.begin(); //initialize the octocontroller 
-  // create our teensycontroller 
+  octocontroller.begin();
   teensycontroller = new CTeensy4Controller<RGB, WS2811_800kHz>(&octocontroller);
 
-  // Initialize FastLED
   FastLED.addLeds(teensycontroller, rgbarray, numberofpins * ledsperstrip);
-  // set various parameters
   FastLED.setBrightness(120);
   
-  bool animateinitializationq = true;
-
-  /////////////
   initedgedata();
   initializemodels();
   
@@ -45,22 +46,33 @@ void setup() {
     }
   }
   
+  // Create model names array (must match order in ourcolormodels)
+  String modelNames[nummodels] = {
+    "flowoctahedron",
+    "flowoctahedroncompound1", 
+    "octachainshiftedby",
+    "cycle",
+    "cyclestemplate",
+    "cycles"
+  };
+  
   // Register models and color functions for name-based lookup
-  // Note: modelNames comes from hdlo_models.h - auto-generated
   mainSequence.registerModels(ourcolormodels, nummodels, modelNames);
   mainSequence.registerColorFunctions(colorFunctionArray, numcolorfunctions, colorFunctionNames);
   
-  // Initialize sequences - all definitions come from hdlo_models.cpp
-  initializeSequences(&mainSequence);
+  // Load the default sequence (now using names internally!)
+  // Options: loadDefaultSequence, loadSequence1, loadSequence2, loadSequence3
+  // Or use: mainSequence.loadSequenceByIndex(0); // 0-3
+  mainSequence.loadDefaultSequence(); // Uses registered models and names
+  currentSequenceIndex = 0;
+  lastSequenceChange = millis();
   
-  Serial.println("Registry has " + String(mainSequence.getRegistrySize()) + " sequences");
+  // Initialize and start the sequence
+  mainSequence.begin(colorFunctionArray);
   
-  // Start the registry-based cycling
-  mainSequence.beginRegistry();
-  
-  Serial.println("Setup complete. Registry cycling started.");
+  Serial.println("Setup complete. Starting sequence with " + 
+                 String(mainSequence.getTotalSteps()) + " steps.");
 }
-
 
 void loop() {
   unsigned long currentTime = millis();

@@ -761,6 +761,17 @@ function writeModelsToFile(modelRegistry) {
     
     bodycontent+="}\n";
 
+    for(let i=0; i<nummodels;i++){
+        String modelNames[6] = {
+  "flowoctahedron",
+  "flowoctahedroncompound1", 
+  "octachainshiftedby",
+  "cycle",
+  "cyclestemplate",
+  "cycles"
+};
+    }
+
     // Create a blob and download link
     let blob = new Blob([headercontent], { type: 'text/plain' });
     let url = URL.createObjectURL(blob);

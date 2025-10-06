@@ -1,3 +1,13 @@
+////////////////////////////////////////////
+//
+//
+//   models.h
+//
+// a model organizes the edge and color information;
+// for our convenience, a model has a name. 
+// Mainly how
+
+
 #ifndef MODELS_H
 #define MODELS_H
 

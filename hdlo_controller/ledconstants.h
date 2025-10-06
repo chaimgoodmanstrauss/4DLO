@@ -1,7 +1,40 @@
+//////////////////////////////
+//
+//  ledconstants.h
+//
+// Here we specify the details of how the strands are arranged. 
+//
+
+//  led #(1) on strand #strandnumber,  corresponds to 
+// strandtable[strandnumber*ledsperstrip], 
+// and led #(n) corresponds to strandtable[strandnumber*ledsperstrip+(n-1)]
+          
+// The maximum number of segments per strand. 
+// This may increase as we incorporate vertices.
+
+
 
 const int numberofpins = 2;// this will be derived from the array
   byte pinList[numberofpins] = {6,8}; // this is derived from the array
   const int ledsperstrip = 300; // the max number of leds per strip
+const int maxedgesperstrand = 6;
+
+const int stranddata[numberofpins][maxedgesperstrand][3] = 
+{
+  {//strand #1
+    {72,3, 1}, //{the length of the segment mapped to edge 2, pointed forwards
+    {36,4,-1},
+    {36,11,1}},
+
+  { 
+    {100,5,-1},
+    {200,6,1}
+    }
+};
+
+// in edgesetup, strandtable is created from this information
+// strandtable is used to convert between LED coords and a position on an edge
+
 
   const int numberofleds = numberofpins*ledsperstrip;
 

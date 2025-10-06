@@ -218,27 +218,8 @@ Serial.println(" cosine = " +String(cosangle));
 //              relative direction (1= in agreement, -1 = reversed)
 //             }
 // 
-// In c, stranddata is an array, and there may be a lot of unused entries 
-//  -- these are all 0'ed out.
 
-//  led #(1) on strand #strandnumber,  corresponds to 
-// strandtable[strandnumber*ledsperstrip], 
-// and led #(n) corresponds to strandtable[strandnumber*ledsperstrip+(n-1)]
-          
-// The maximum number of segments per strand. 
-// This may increase as we incorporate vertices.
-const int maxedgesperstrand = 6;
-
-const int stranddata[numberofpins][maxedgesperstrand][3] = 
-{
-  {//strand #1
-    {150,3, 1}, //{the length of the segment mapped to edge 2, pointed forwards
-    {150,4,-1}},
-  { 
-    {100,5,-1},
-    {200,6,1}
-    }
-};
+// We define stranddata in ledconstants.h where it is more convenient
 
 const int positionresolution = 10000;
 //const int temp = ledsperstrip * numberofpins;
@@ -308,7 +289,7 @@ void initedgedata(){
       positiononedge(lednumber,res,edgetype,1);
     }
   }*/
-  Serial.println("hello");
+  Serial.println("constructing the strand table...");
     constructstrandtable();
   //for(int i = 0; i<ledsperstrip * numberofpins;i++){
     //if(strandtable)
@@ -317,10 +298,10 @@ void initedgedata(){
 
   //let's take a look at what we've got:
 
-  for(int i = 0; i<numberofpins; i++){
-    Serial.println("pin # "+String(i)+":");
-    for(int j = 0; j<ledsperstrip;j++){
-      Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
-    }
-  }
+  // for(int i = 0; i<numberofpins; i++){
+  //   Serial.println("pin # "+String(i)+":");
+  //   for(int j = 0; j<ledsperstrip;j++){
+  //     Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
+  //   }
+  // }
 }

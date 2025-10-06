@@ -754,3 +754,14 @@ void initializemodels(){
   ourcolormodels[4] = new colormodel(cyclestemplatedata, "cyclestemplate");
   ourcolormodels[5] = new colormodel(cyclesdata, "cycles");
 }
+
+String modelNames[6] = {
+  "flowoctahedron",
+  "flowoctahedroncompound1", 
+  "octachainshiftedby",
+  "cycle",
+  "cyclestemplate",
+  "cycles"
+};
+
+
