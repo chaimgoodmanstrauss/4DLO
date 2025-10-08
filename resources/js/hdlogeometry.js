@@ -35,6 +35,8 @@ const qmK = new quat(0,0,0,-1.0)
 
 const qO = new quat(0,0,1,1).normalize()
 
+const q1I = new quat(1,1,0,0).normalize()
+const q1mI = new quat(1,-1,0,0).normalize()
 
 // named qActions
 
@@ -57,4 +59,7 @@ const shiftcyclesright = [
     new qAction(qO.mult(qO), qO.mult(qW).mult(qO)),
    new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW)),
     new qAction(qO.mult(qO), qO.mult(qW).mult(qO).mult(qW).mult(qW))
+]
+
+const rots4X = [qOneOne,new qAction(q1I,q1I),new qAction(qI,qI),new qAction(q1mI,q1mI)
 ]

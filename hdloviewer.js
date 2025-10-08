@@ -33,8 +33,8 @@
  
 
 import GUI from './resources/lib/lilgui.js';
-import {FrequencyAnalyzer,} from './sound.js'
-const ourFrequencyAnalyzer=new FrequencyAnalyzer();
+//import {FrequencyAnalyzer,} from './sound.js'
+//const ourFrequencyAnalyzer=new FrequencyAnalyzer();
 
 var ourguiparams = {};
 
@@ -281,7 +281,10 @@ function updatethedrawing(){
 						// but the vertices are numbered lengthwise. i%50/50 is the length 
 						// along a tube
 						var colorvalue = ourmodeldata.evaluate(edgeindex,stepnumber);
-						
+						// if coloringfunctionname is an int,
+						// then we will be applying defaultcoloringfunctions[coloringfunctionname]
+
+
 						ourmeshregistry[edgeindex].geometry.attributes.color.array.set(colorvalue,i*4)}
 
 			}
@@ -346,13 +349,6 @@ function updatethedrawing(){
 
 
 
-//const geometry1 = new THREE.SphereGeometry(.1, 32, 16 ); 
-//const material1 = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); 
-//const sphere1 = new THREE.Mesh( geometry1, material1 ); scene.add( sphere1 );
-
-// Somewhere, there needs to be an init();
-
-
 initthethreejsscene()
 let  materials = createMaterials()
     
@@ -361,17 +357,16 @@ setupthemeshes();
 	// now draw the drawing for the first time
 theModelChanged();
 
-// //const content = writeArrayToFile(data, 'array_data.txt');
-// Object.keys(ourModelRegistry).map(key=>
-// {writeTwoDArrayToFile(
-	
-// 	ourModelRegistry[key].edgemodels.map(x=>x.toArray()),
-// 	'model '+ourModelRegistry[key].name+'.txt'
-// )
-// }
-// ) 
 
-writeModelsToFile(ourModelRegistry)
+
+////////////
+// If we are printing out the models to a file that 
+// the teensy hdlo controller manages, uncomment this 
+// (which is defined and managed around line 720 of modeldata.js)
+
+///writeModelsToFile(ourModelRegistry)
+
+// or comment to turn this off
 
 function animate() {
             requestAnimationFrame(animate);

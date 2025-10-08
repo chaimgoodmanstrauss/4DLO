@@ -18,7 +18,7 @@ modelsequence::modelsequence()
     currentSequenceStartStep(0),
     currentSequenceNumSteps(0) {
   // Initialize function arrays to nullptr
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < numcolorfunctions; i++) {
     currentFunctions[i] = nullptr;
     nextFunctions[i] = nullptr;
   }
@@ -58,14 +58,15 @@ int modelsequence::findColorFunctionByName(String name) {
   return -1;
 }
 
-bool modelsequence::addStep(colormodel* model, std::array<int, 4> colorFuncIndices,
-                            unsigned long duration, TransitionType trans,
-                            unsigned long transDur) {
+// Internal method - works with milliseconds
+bool modelsequence::addStepInternal(colormodel* model, std::array<int, numcolorfunctions> colorFuncIndices,
+                                    unsigned long durationMs, TransitionType trans,
+                                    unsigned long transDurMs) {
   if(numSteps >= MAX_STEPS) {
     return false; // Sequence is full
   }
   
-  steps[numSteps] = SequenceStep(model, colorFuncIndices, duration, trans, transDur);
+  steps[numSteps] = SequenceStep(model, colorFuncIndices, durationMs, trans, transDurMs);
   numSteps++;
   
   // Update the current registry entry's step count
@@ -76,9 +77,10 @@ bool modelsequence::addStep(colormodel* model, std::array<int, 4> colorFuncIndic
   return true;
 }
 
-bool modelsequence::addStepByName(String modelName, std::array<String, 4> colorFuncNames,
-                                  unsigned long duration, TransitionType trans,
-                                  unsigned long transDur) {
+// Public method - accepts SECONDS, converts to milliseconds
+bool modelsequence::addStepByName(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
+                                  float durationSeconds, TransitionType trans,
+                                  float transDurSeconds) {
   // Find model by name
   int modelIdx = findModelByName(modelName);
   if(modelIdx < 0) {
@@ -87,8 +89,8 @@ bool modelsequence::addStepByName(String modelName, std::array<String, 4> colorF
   }
   
   // Find color functions by name
-  std::array<int, 4> colorFuncIndices;
-  for(int i = 0; i < 4; i++) {
+  std::array<int, numcolorfunctions> colorFuncIndices;
+  for(int i = 0; i < numcolorfunctions; i++) {
     colorFuncIndices[i] = findColorFunctionByName(colorFuncNames[i]);
     if(colorFuncIndices[i] < 0) {
       Serial.println("Error: Color function '" + colorFuncNames[i] + "' not found");
@@ -96,8 +98,12 @@ bool modelsequence::addStepByName(String modelName, std::array<String, 4> colorF
     }
   }
   
-  // Add the step using indices
-  return addStep(modelArray[modelIdx], colorFuncIndices, duration, trans, transDur);
+  // Convert seconds to milliseconds
+  unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+  unsigned long transDurMs = (unsigned long)(transDurSeconds * 1000.0f);
+  
+  // Add the step using internal method
+  return addStepInternal(modelArray[modelIdx], colorFuncIndices, durationMs, trans, transDurMs);
 }
 
 void modelsequence::loadSequence(int index) {
@@ -109,7 +115,7 @@ void modelsequence::loadSequence(int index) {
   // Clear any existing steps
   numSteps = 0;
   
-  // Note: Actual sequence definitions are loaded from hdlo_models.cpp
+  // Note: Actual sequence definitions are loaded from sequences.cpp
   // via the initializeSequences() function which calls addStepByName()
   Serial.println("Warning: loadSequence called but sequences should be initialized via initializeSequences()");
 }
@@ -128,7 +134,7 @@ void modelsequence::begin(ColorFunction* colorFunctionArray) {
   inTransition = false;
   
   // Load color functions for the first step
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < numcolorfunctions; i++) {
     int funcIdx = steps[currentStepIndex].colorFunctionIndices[i];
     currentFunctions[i] = colorFunctionArray[funcIdx];
     steps[currentStepIndex].model->setColorFunction(i, "", colorFunctionArray[funcIdx]);
@@ -157,7 +163,7 @@ void modelsequence::update(unsigned long currentTime, ColorFunction* colorFuncti
       stepStartTime = currentTime;
       
       // Update color functions
-      for(int i = 0; i < 4; i++) {
+      for(int i = 0; i < numcolorfunctions; i++) {
         int funcIdx = steps[currentStepIndex].colorFunctionIndices[i];
         currentFunctions[i] = colorFunctionArray[funcIdx];
         steps[currentStepIndex].model->setColorFunction(i, "", colorFunctionArray[funcIdx]);
@@ -168,7 +174,7 @@ void modelsequence::update(unsigned long currentTime, ColorFunction* colorFuncti
       transitionStartTime = currentTime;
       
       // Load next functions
-      for(int i = 0; i < 4; i++) {
+      for(int i = 0; i < numcolorfunctions; i++) {
         int funcIdx = steps[nextStepIndex].colorFunctionIndices[i];
         nextFunctions[i] = colorFunctionArray[funcIdx];
       }
@@ -192,7 +198,7 @@ void modelsequence::update(unsigned long currentTime, ColorFunction* colorFuncti
       stepStartTime = currentTime;
       
       // Copy next functions to current
-      for(int i = 0; i < 4; i++) {
+      for(int i = 0; i < numcolorfunctions; i++) {
         currentFunctions[i] = nextFunctions[i];
         steps[currentStepIndex].model->setColorFunction(i, "", nextFunctions[i]);
       }
@@ -265,7 +271,8 @@ float modelsequence::getTransitionProgress() const {
 
 // Sequence Registry Methods
 
-bool modelsequence::startNewSequence(String name, unsigned long duration, bool enabled) {
+// Internal method - works with milliseconds
+bool modelsequence::startNewSequenceInternal(String name, unsigned long durationMs, bool enabled) {
   if(numRegistryEntries >= MAX_REGISTRY_ENTRIES) {
     Serial.println("Error: Registry is full");
     return false;
@@ -275,10 +282,16 @@ bool modelsequence::startNewSequence(String name, unsigned long duration, bool e
   int startStep = numSteps;
   
   // Store registry entry (numSteps will be updated when steps are added)
-  registry[numRegistryEntries] = SequenceRegistryEntry(startStep, 0, name, duration, enabled);
+  registry[numRegistryEntries] = SequenceRegistryEntry(startStep, 0, name, durationMs, enabled);
   numRegistryEntries++;
   
   return true;
+}
+
+// Public method - accepts SECONDS, converts to milliseconds
+bool modelsequence::startNewSequence(String name, float durationSeconds, bool enabled) {
+  unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+  return startNewSequenceInternal(name, durationMs, enabled);
 }
 
 void modelsequence::clearRegistry() {

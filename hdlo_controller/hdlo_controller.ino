@@ -20,7 +20,7 @@ void setup() {
 
   octocontroller.begin(); //initialize the octocontroller 
   // create our teensycontroller 
-  teensycontroller = new CTeensy4Controller<RGB, WS2811_800kHz>(&octocontroller);
+  teensycontroller = new CTeensy4Controller<GRB, WS2811_800kHz>(&octocontroller);
 
   // Initialize FastLED
   FastLED.addLeds(teensycontroller, rgbarray, numberofpins * ledsperstrip);
@@ -31,26 +31,56 @@ void setup() {
 
   /////////////
   initedgedata();
+  
+  // Initialize base models (these will auto-register)
   initializemodels();
   
   // Override colorfunction 0 to be constantly dark
   colorFunctionArray[0] = constantlyDark;
   
   // Initialize all models with color functions
-  for(int modelIdx = 0; modelIdx < nummodels; modelIdx++) {
+  // Note: Now we use the global registry instead of ourcolormodels
+  for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
+    colormodel* model = colormodel::getModelRegistry()[modelIdx];
     for(int funcIdx = 0; funcIdx < numcolorfunctions; funcIdx++) {
-      ourcolormodels[modelIdx]->setColorFunction(funcIdx, 
-                                                  colorFunctionNames[funcIdx], 
-                                                  colorFunctionArray[funcIdx]);
+      model->setColorFunction(funcIdx, 
+                              colorFunctionNames[funcIdx], 
+                              colorFunctionArray[funcIdx]);
     }
   }
   
-  // Register models and color functions for name-based lookup
-  // Note: modelNames comes from hdlo_models.h - auto-generated
-  mainSequence.registerModels(ourcolormodels, nummodels, modelNames);
+  // Create merged models using string names - SO EASY!
+  colormodel::mergeModels("flowoctahedron", "octachain", "flow_octa_merged");
+  colormodel::mergeModels("cycle", "cycles", "cycle_merged");
+  colormodel::mergeModels("cube", "hypercube", "cube_hyper_merged");
+  
+  // Create permuted models using string names
+  String perms1[] = {"rotate30", "reflect"};
+  colormodel::applyEdgePermutationSequence("flowoctahedron", perms1, 2, "flow_rotated_reflected");
+  
+  String perms2[] = {"invert"};
+  colormodel::applyEdgePermutationSequence("allcycles", perms2, 1, "allcycles_inverted");
+  
+  // Set color functions for all newly created models
+  for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
+    colormodel* model = colormodel::getModelRegistry()[modelIdx];
+    for(int funcIdx = 0; funcIdx < numcolorfunctions; funcIdx++) {
+      model->setColorFunction(funcIdx, 
+                              colorFunctionNames[funcIdx], 
+                              colorFunctionArray[funcIdx]);
+    }
+  }
+  
+  // Print the registry to see all models
+  colormodel::printRegistry();
+  
+  // Register the global registry with modelsequence
+  mainSequence.registerModels(colormodel::getModelRegistry(), 
+                              colormodel::getNumRegisteredModels(), 
+                              colormodel::getModelNameRegistry());
   mainSequence.registerColorFunctions(colorFunctionArray, numcolorfunctions, colorFunctionNames);
   
-  // Initialize sequences - all definitions come from hdlo_models.cpp
+  // Initialize sequences - all definitions come from sequences.cpp
   initializeSequences(&mainSequence);
   
   Serial.println("Registry has " + String(mainSequence.getRegistrySize()) + " sequences");
@@ -70,6 +100,21 @@ void loop() {
   
   // Update the sequence state (handles transitions within the current sequence)
   mainSequence.update(currentTime, colorFunctionArray);
+
+
+  // Get direct access to the current model
+  colormodel* currentModel = mainSequence.getCurrentModel();
+  if(currentModel == nullptr) {
+    // Handle error case
+    Serial.println("Error: No current model available");
+    delay(10);
+    return;
+  }
+  
+  // Get the edge model data array
+  const std::array<std::array<int, 6>, 120>& edgeModelData = currentModel->getEdgeModels();
+  
+
   
   // Light up the LEDs using the sequence
   for(int i = 0; i < numberofleds; i++) {
@@ -85,6 +130,19 @@ void loop() {
     // Convert position from integer (0-10000) to float (0.0-1.0)
     float position = positionInt / 10000.0;
     
+    int direction = edgeModelData[edgeType][1];      // 1 or -1
+    float shiftposition = edgeModelData[edgeType][2]/10000.;    
+    float scaleposition = edgeModelData[edgeType][3]/10000.;   
+    float shifttime = edgeModelData[edgeType][4]/10000.;      
+    float scaletime = edgeModelData[edgeType][5]/10000.;     
+    
+    position = scaleposition*position+shiftposition+.2*scaletime*(currentTime/1000.)+shifttime;
+    
+    if(direction < 0) {
+      position = 1.0 - position;  // Reverse the position if direction is negative
+    }
+
+
     // Get the color from the sequence
     rgbarray[i] = mainSequence.getColor(edgeType, position);
   }

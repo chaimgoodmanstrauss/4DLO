@@ -1,3 +1,0 @@
-
-sed -f rules2.txt edgedata.txt >edges.txt
-awk '{print (NR-1) ": " $0}' edges.txt> edgeswlinenums.txt

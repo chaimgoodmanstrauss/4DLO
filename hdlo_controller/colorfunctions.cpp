@@ -18,12 +18,20 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
   constantlyDark,  // 0 - constantly dark
   rainbow,         // 1
   bluetored,       // 2
-  staticblue       // 3
+  staticblue,       // 3
+  pulsingblue,
+  pulsingwhite,
+  staticred,
+  cylon
 };
 
 String colorFunctionNames[numcolorfunctions] = {
   "dark",
   "rainbow",
   "bluetored", 
-  "staticblue"
+  "staticblue",
+  "pulsingblue",
+  "pulsingwhite",
+  "staticred",
+  "cylon"
 };

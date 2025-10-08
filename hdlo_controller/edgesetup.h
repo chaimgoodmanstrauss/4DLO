@@ -76,8 +76,16 @@ const float angled = acos(23. / 27.);  // ~ 31.586°;
 
 // NOTE: LEDs are numbered in the human fashion, 1,2,3...
 
-float positiononedge(int lednumber, int numberofleds, int edgetype, int sign) {
+// these are the types of each kind of edge:
+const int edgeclasses[120]={4,5,5,5,4,4,5,5,4,5,4,5,4,3,6,3,6,3,1,1,6,2,5,5,4,0,4,2,0,5,1,6,3,1,4,4,0,2,5,4,5,4,5,3,6,5,3,6,4,4,5,5,3,1,1,6,4,3,3,6,6,2,4,5,0,5,2,5,0,4,1,3,6,1,4,4,5,5,4,4,2,0,5,3,3,6,6,2,4,4,5,0,2,5,4,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+const int edgedirections[120]={};
 
+float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
+  
+  int edgeclass = edgeclasses[edgeindex];
+  
   float position;
   // this is the value we wish to return, the position upstairs on the edge, represented as a value in (0,1).
   // Each hdlo model returns a color value on the corresponding edge-- here we just use the position.
@@ -93,12 +101,12 @@ float positiononedge(int lednumber, int numberofleds, int edgetype, int sign) {
   endpt[0] = endpt[1] = endpt[2] = endpt[3] = liftedpt[0] = liftedpt[1] = liftedpt[2] = liftedpt[3] = 0;
   float delta;
   float adjt = t;
-  switch (edgetype) {
-    case 0:
-    case 1:
-    case 2:
+  switch (edgeclass) {
+    case 0: // 1 to (1111)/2 (8 of these)
+    case 1: //(1111)/2 to (-111)/2 (8 of these)
+    case 2: // (-111)/2 to -1 (8 of these)
     // The coordinates will be |adjt,adjt,adjt|
-      switch (edgetype) {
+      switch (edgeclass) {
         case 0:  //1  to (1111)/2
           adjt = t/3.;// adjt in [0,1/3] 
           endpt[0] = 1;
@@ -121,14 +129,14 @@ float positiononedge(int lednumber, int numberofleds, int edgetype, int sign) {
       liftedpt[0] = (1 - delta) / (1 + delta);
       liftedpt[1] = liftedpt[2] = liftedpt[3] = 2 * adjt / (1 + delta);
       break;
-    case 3:
-    case 4:
-    case 5:
-    case 6:
+    case 3: // (--11)/2 to (-111)/2 (12, the outer cube)
+    case 4: //(-111)/2 to I (24, the crosses)
+    case 5: //I to (11--)/2 (24, the cupolas)
+    case 6: //(11--)/2 to (1---)/2 (12 the inner cuber)
 
       float a = anglea, a2 = a*.5,  b = angleb, c = anglec, d = angled;
 
-      switch (edgetype) {
+      switch (edgeclass) {
         case 3:  //(-a/2<adjt<a/2)
           adjt = -a2 + t * a;
           //from (--11)/2 to (-111)/2
@@ -185,9 +193,11 @@ float positiononedge(int lednumber, int numberofleds, int edgetype, int sign) {
   if(sign<0){
     position = 1-position;
   }
-/*
-Serial.print(" led "+String(lednumber)+" on edge "+String(edgetype)+" has position "+String(position,5));
-Serial.print("   ");
+
+  //Reverse again if the direction is reversed***
+
+Serial.println(" led "+String(lednumber)+" on edge "+String(edgeindex)+" of class "+ String(edgeclass)+" has position "+String(position,5));
+/*Serial.print("   ");
 Serial.print("Adjusted t:" + String(adjt));
 Serial.print(" The end point (" + String(endpt[0]) + ", " + String(endpt[1]) + ", " + String(endpt[2]) + ", " + String(endpt[3]) + "); The lifted pt: (" + String(liftedpt[0]) + ", " + String(liftedpt[1]) + ", " + String(liftedpt[2]) + ", " + String(liftedpt[3]) + ")");
 Serial.print(" lifted from " + String(temppt[0]) + ", " + String(temppt[1]) + ", " + String(temppt[2]) + ")");
@@ -291,17 +301,13 @@ void initedgedata(){
   }*/
   Serial.println("constructing the strand table...");
     constructstrandtable();
-  //for(int i = 0; i<ledsperstrip * numberofpins;i++){
-    //if(strandtable)
-    //Serial.print(" led # "+String(i)+" maps to ")
-  //}
-
+  
   //let's take a look at what we've got:
 
-  // for(int i = 0; i<numberofpins; i++){
-  //   Serial.println("pin # "+String(i)+":");
-  //   for(int j = 0; j<ledsperstrip;j++){
-  //     Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
-  //   }
-  // }
+   for(int i = 0; i<numberofpins; i++){
+     Serial.println("pin # "+String(i)+":");
+     for(int j = 0; j<ledsperstrip;j++){
+       Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
+     }
+   }
 }

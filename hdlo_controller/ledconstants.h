@@ -14,22 +14,40 @@
 
 
 
-const int numberofpins = 2;// this will be derived from the array
-  byte pinList[numberofpins] = {6,8}; // this is derived from the array
+const int numberofpins = 3;// this will be derived from the array
+  byte pinList[numberofpins] = {3,4,5}; // this is derived from the array
   const int ledsperstrip = 300; // the max number of leds per strip
-const int maxedgesperstrand = 6;
+const int maxedgesperstrand = 20;
 
+
+/// Here is where we work out how the pins correspond to specific edges in the 24-cell: 
 const int stranddata[numberofpins][maxedgesperstrand][3] = 
-{
-  {//strand #1
-    {72,3, 1}, //{the length of the segment mapped to edge 2, pointed forwards
-    {36,4,-1},
-    {36,11,1}},
+{ //a cycle is 67,95,39,64,92,36, all positive direction
+  
+    {//strand #1
+    {56,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
+    {5,100,1},
+    {72,95,1},
+    {5,100,1},
+    {30,39,1},
+    {5,100,1},
+    {30,64,1},
+    {5,100,1},
+    {30,92,1},
+    },
+    
 
-  { 
-    {100,5,-1},
-    {200,6,1}
-    }
+  { //strand #2// the equator of flow octahedron//21,51,87,62
+    {72,21, 1},
+    {72,51,1},
+    {72,87,1},
+    {72,62,1}},
+
+{ //strand #3// parts of the hypercube//59,37,38,56
+    {72,59, 1}, 
+    {72,37,1},
+    {72,75,-1},
+    {72,85,-1}},
 };
 
 // in edgesetup, strandtable is created from this information
@@ -50,11 +68,12 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
 
   DMAMEM int displayMemory[ledsperstrip * numberofpins * 3 / 4];
   int drawingMemory[ledsperstrip * numberofpins * 3 / 4];
-  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_RGB | WS2811_800kHz, numberofpins, pinList);
+  
+  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_GRB | WS2811_800kHz, numberofpins, pinList);
 
 
 // Now set up a pointer that will point to a  CTeensy4Controller
 // This pcontroller allows the Fast LED library to make use of the teensy.
 // We create the actual pcontroller that this points to in the setup loop. 
 // We use templates set the color space (RGB) and the speed (800 khz, the standard for WS2811's),
-CTeensy4Controller<RGB, WS2811_800kHz> *teensycontroller;
+CTeensy4Controller<GRB, WS2811_800kHz> *teensycontroller;

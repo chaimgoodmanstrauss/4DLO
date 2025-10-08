@@ -241,6 +241,13 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
   greenpulse:function(x,t){return gaussiancolorfunction(x,t,.4,".01",.3,.3,.2,1,.5)},
   bluepulse:function(x,t){return gaussiancolorfunction(x,t,.65,".01",.3,.3,.2,1,.7)},
   
+  crazy:function(x,t){
+    return cyclecolorfunction(x,Math.sin(t),
+        {hue0:.4,hueW:1,saturation:(Math.sin(.232*x+2*t)),brightness:.7})},
+
+  pulse:function(x,t){
+    return cyclecolorfunction(x,t,
+      {hue0:.4,hueW:1,saturation:.5,brightness:.7})},
   
   // draw some. 
 
@@ -253,8 +260,25 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
 }
 }
 
-ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
+/*ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
 ourColorFunctionRegistry[1]=ourColorFunctionRegistry.green
 ourColorFunctionRegistry[2]=ourColorFunctionRegistry.blue
+*/
 
+var temp=0
+const defaultcolorfunctions=[
+  "huewheel",
+  //"crazy",
+  "bluespikepulse",
+  "yellowspikepulse",
+  
+  "redspikepulse",
+  "spikepulse5",
+  "basiccycle",
 
+].map(name=>{
+  ourColorFunctionRegistry[temp]=
+    ourColorFunctionRegistry[name];
+    temp++;
+  return ourColorFunctionRegistry[name]
+})
