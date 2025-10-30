@@ -11,8 +11,8 @@ void initializeSequences(modelsequence* seq) {
   // Clear any existing steps
   seq->clearRegistry();
 
-  seq->startNewSequence("twenny-fer cell", 40, true);
-  //seq->addStepByName("twentyfourcell", {"rainbow", "bluetored","bluetored","rainbow"}, 20, FADE, 1);
+  seq->startNewSequence("twenny-fer cell", 400, true);
+  seq->addStepByName("twentyfourcell", { "pulsingblue","rainbow","rainbow","rainbow"}, 400, FADE, 1);
   seq->addStepByName("altcycles", {"rainbow","cylon","staticred", "rainbow",}, 20, FADE, 4);
   seq->addStepByName("cycles", {"dark","rainbow","bluetored","rainbow","pulsingwhite"}, 20, FADE, 4);
 

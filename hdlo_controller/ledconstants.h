@@ -14,9 +14,9 @@
 
 
 
-const int numberofpins = 3;// this will be derived from the array
-  byte pinList[numberofpins] = {3,4,5}; // this is derived from the array
-  const int ledsperstrip = 300; // the max number of leds per strip
+const int numberofpins = 1;// this will be derived from the array
+  byte pinList[numberofpins] = {6}; // this is derived from the array
+  const int ledsperstrip = 500; // the max number of leds per strip
 const int maxedgesperstrand = 20;
 
 
@@ -25,18 +25,18 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
 { //a cycle is 67,95,39,64,92,36, all positive direction
   
     {//strand #1
-    {56,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
+    {100,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
     {5,100,1},
-    {72,95,1},
+    {100,95,1},
     {5,100,1},
-    {30,39,1},
+    {100,39,1},
     {5,100,1},
-    {30,64,1},
+    {100,64,1},
     {5,100,1},
     {30,92,1},
     },
     
-
+/*
   { //strand #2// the equator of flow octahedron//21,51,87,62
     {72,21, 1},
     {72,51,1},
@@ -47,7 +47,7 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
     {72,59, 1}, 
     {72,37,1},
     {72,75,-1},
-    {72,85,-1}},
+    {72,85,-1}},*/
 };
 
 // in edgesetup, strandtable is created from this information

@@ -233,6 +233,7 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
   yellow:function(x,t){return [1,1,0,1]},
   cyan:function(x,t){return[0,1,1,1]},
   orange:function(x,t){return[1,.5,0,1]},
+  purple:function(x,t){return[.6,0,1,1]},
 
   // using the gaussian 
   purplepulse:function(x,t){return gaussiancolorfunction(x,t,.9,".01",.3,.3,1,1)},
@@ -259,8 +260,8 @@ ourColorFunctionRegistry={...ourColorFunctionRegistry,...{// these can be functi
   spikepulse6:function(x,t){return spikecolorfunction(x,t/5,.75,.4,.2,1)},
 }
 }
-
-/*ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
+/*
+ourColorFunctionRegistry[0]=ourColorFunctionRegistry.red
 ourColorFunctionRegistry[1]=ourColorFunctionRegistry.green
 ourColorFunctionRegistry[2]=ourColorFunctionRegistry.blue
 */
@@ -268,13 +269,25 @@ ourColorFunctionRegistry[2]=ourColorFunctionRegistry.blue
 var temp=0
 const defaultcolorfunctions=[
   "huewheel",
+ 
   //"crazy",
+   "huewheel",
   "bluespikepulse",
   "yellowspikepulse",
-  
+  "purplepulse",
   "redspikepulse",
+  "spikepulse4",
   "spikepulse5",
+  "spikepulse",
   "basiccycle",
+   "red",
+  "green",
+  "huewheel",
+  "blue",
+  "cyan",
+  "purple",
+  "yellow",
+  "white",
 
 ].map(name=>{
   ourColorFunctionRegistry[temp]=

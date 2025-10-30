@@ -852,6 +852,49 @@ const basichdlomodel = new hdlomodel({name:'basicModel'})
 
 basichdlomodel.name = 'basicModel'
 
+// The unit
+
+const theunit = new hdlomodel(
+    {name:"theUnit",
+        fordisplayQ:true,
+        addToRegistryQ:true,
+        listofedmodels:[
+        
+            {indices:[-64,24,-33],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:1, coloringfunctionname:1})},
+                
+            {indices:[-90,-80,48],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:2, coloringfunctionname:2})},
+                
+            {indices:[29,71,85],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:3, coloringfunctionname:3})},
+                
+            {indices:[-0/*!!*/,9,39,62],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:4, coloringfunctionname:4})},
+                
+            {indices:[46,-18,57,23],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:5, coloringfunctionname:5})},
+                
+            {indices:[79,-55,41,95],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:6, coloringfunctionname:6})},
+                
+            {indices:[-74,-7,14],distributeby:true,
+                edgemodel:new edgemodel({
+                    coloringfunctionindex:7, coloringfunctionname:7})},
+               
+        ]
+    }
+)
+
+defaultmodel ='theUnit'
+
+
 // a basic octahedron, with flow from one end (at to the other. This is positio
 
     const baseflowingoctahedron = new hdlomodel(
@@ -910,7 +953,6 @@ const altcycles = cycle.applyactions(shiftcyclesright,
     })
 
 
-defaultmodel ='cycle'
 
 const allcycles = cycles.applyactions(rots4X,
     {   fordisplayQ:true, 
@@ -919,7 +961,6 @@ const allcycles = cycles.applyactions(rots4X,
         name:'all cycles',
     })
 
-console.log('hi')
 
 new hdlomodel(
     {name:'cycle',

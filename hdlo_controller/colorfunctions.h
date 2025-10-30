@@ -12,11 +12,13 @@
 #ifndef COLORFUNCTIONS_H
 #define COLORFUNCTIONS_H
 
+const int numcolorfunctions = 100;// for now!
+
 #include <FastLED.h>
 #include <Arduino.h>
 #include "models.h"
 
-const int MAXBRIGHTNESS = 20;
+const int MAXBRIGHTNESS = 160;
 
 
 // color functions
@@ -25,7 +27,7 @@ const int MAXBRIGHTNESS = 20;
 
 inline CRGB rainbow(float position) {
   return //CRGB(0,0,0);
-  CHSV(position * 255, 255, MAXBRIGHTNESS);
+  CHSV(((int)(position * 255)), 255, MAXBRIGHTNESS);
 }
 
 inline CRGB bluetored(float position) {
@@ -58,7 +60,7 @@ inline CRGB constantlyDark(float position) {
 }
 
 // Color function array
-const int numcolorfunctions = 10;// for now!
+
 extern ColorFunction colorFunctionArray[numcolorfunctions];
 extern String colorFunctionNames[numcolorfunctions];
 
