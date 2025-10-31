@@ -9,14 +9,14 @@
 #include <SerialFlash.h>
 #include <FastLED.h>
 
-#define LED_PIN     3
+#define LED_PIN     24
 #define LED_PIN2    2
-#define NUM_LEDS    60
+#define NUM_LEDS    260
 #define NUM_LEDS2    8
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2811
 #define COLOR_ORDER GRB
-#define COOLING 40
+#define COOLING 20
 
 CRGB leds[NUM_LEDS];
 CRGB leds2[NUM_LEDS2];

@@ -1,7 +1,7 @@
 ///////////////////////////
 // Named Edge Permutations
 // This file contains the actual permutation data
-// It can be auto-generated or hand-coded
+// Permutations automatically register themselves when created
 
 #include "edgepermutations.h"
 
@@ -55,21 +55,9 @@ std::array<int, 120> cyclicShift12Perm = {{
     112,113,114,115,116,117,118,119,0,1,2,3,4,5,6,7,8,9,10,11
 }};
 
-// Array of edge permutations
-const int numEdgePermutations = 5;
-
-EdgePermutation edgePermutationArray[numEdgePermutations] = {
-    EdgePermutation("identity", identityPerm),
-    EdgePermutation("rotate30", rotate30Perm),
-    EdgePermutation("reflect", reflectPerm),
-    EdgePermutation("invert", invertPerm),
-    EdgePermutation("cyclicshift12", cyclicShift12Perm)
-};
-
-String edgePermutationNames[numEdgePermutations] = {
-    "identity",
-    "rotate30",
-    "reflect",
-    "invert",
-    "cyclicshift12"
-};
+// Create permutation objects - they automatically register themselves
+EdgePermutation identityPermutation("identity", identityPerm, true);
+EdgePermutation rotate30Permutation("rotate30", rotate30Perm, true);
+EdgePermutation reflectPermutation("reflect", reflectPerm, true);
+EdgePermutation invertPermutation("invert", invertPerm, true);
+EdgePermutation cyclicShift12Permutation("cyclicshift12", cyclicShift12Perm, true);

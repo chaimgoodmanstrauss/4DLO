@@ -155,28 +155,23 @@ colormodel* colormodel::applyEdgePermutationSequence(const String* permNames, in
   
   // Apply each permutation in sequence - NEVER register intermediate models
   for(int p = 0; p < numPerms; p++) {
-    // Find the permutation by name
-    bool found = false;
-    for(int i = 0; i < numEdgePermutations; i++) {
-      if(edgePermutationNames[i].equalsIgnoreCase(permNames[p])) {
-        // Create new model WITHOUT registering (pass false)
-        colormodel* nextModel = currentModel->applyEdgePermutation(
-          edgePermutationArray[i], 
-          "", 
-          false  // Don't register any intermediate models
-        );
-        
-        // Delete the intermediate model (safe - it wasn't registered)
-        delete currentModel;
-        currentModel = nextModel;
-        
-        found = true;
-        Serial.println("Applied permutation: " + permNames[p]);
-        break;
-      }
-    }
+    // Find the permutation by name using the new registry system
+    EdgePermutation* perm = EdgePermutation::findPermutationByName(permNames[p]);
     
-    if(!found) {
+    if(perm != nullptr) {
+      // Create new model WITHOUT registering (pass false)
+      colormodel* nextModel = currentModel->applyEdgePermutation(
+        *perm, 
+        "", 
+        false  // Don't register any intermediate models
+      );
+      
+      // Delete the intermediate model (safe - it wasn't registered)
+      delete currentModel;
+      currentModel = nextModel;
+      
+      Serial.println("Applied permutation: " + permNames[p]);
+    } else {
       Serial.println("Warning: Permutation '" + permNames[p] + "' not found");
     }
   }

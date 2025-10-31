@@ -9,9 +9,9 @@
 #include <SerialFlash.h>
 #include <FastLED.h>
 
-#define LED_PIN     3
+#define LED_PIN     24
 #define LED_PIN2    2
-#define NUM_LEDS    60
+#define NUM_LEDS    432
 #define NUM_LEDS2    8
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2811
@@ -60,7 +60,7 @@ void loop() {
       heat[i*3+2] = qsub8( heat[i*3+2],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
     }
     for( int k= NUM_LEDS - 1; k >= 2; k--) {
-      heat[k*3+2] = (heat[(k - 1)*3+2] + heat[(k - 2)*3+2] + heat[(k - 2)*3+2] ) / 3;
+       heat[k*3+2] = (heat[(k - 1)*3+2] + heat[(k - 2)*3+2] + heat[(k - 2)*3+2] ) / 3;
     }
     for( int k= NUM_LEDS - 1; k >= 2; k--) {
       heat[k*3] = (heat[(k - 1)*3] + heat[(k - 2)*3] + heat[(k - 2)*3] ) / 3;

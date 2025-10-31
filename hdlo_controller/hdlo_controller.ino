@@ -11,6 +11,13 @@ int count = 0;
 // Create a modelsequence instance
 modelsequence mainSequence;
 
+// Create stateful color function instances (global scope so they persist)
+Fire2012ColorFunction* fire2012Standard = nullptr;
+Fire2012ColorFunction* fire2012Blue = nullptr;
+Fire2012ColorFunction* fire2012Green = nullptr;
+AudioReactiveColorFunction* audioReactive = nullptr;
+VUMeterColorFunction* vuMeter = nullptr;
+
 void setup() {
   
   // Prepare serial output, if we wish to use it for debugging or monitoring data.
@@ -31,6 +38,38 @@ void setup() {
 
   /////////////
   initedgedata();
+  
+  // Initialize stateful color functions BEFORE initializing models
+  Serial.println("Initializing stateful color functions...");
+  
+  // Create Fire2012 instances with different palettes
+  fire2012Standard = new Fire2012ColorFunction("fire2012", 55, 120, false, HeatColors_p);
+  registerStatefulColorFunction(8, fire2012Standard);
+  
+  // Blue fire
+  CRGBPalette16 bluePalette = CRGBPalette16(
+    CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White
+  );
+  fire2012Blue = new Fire2012ColorFunction("fire2012_blue", 45, 100, false, bluePalette);
+  registerStatefulColorFunction(9, fire2012Blue);
+  
+  // Green fire
+  CRGBPalette16 greenPalette = CRGBPalette16(
+    CRGB::Black, CRGB::Green, CRGB::LimeGreen, CRGB::Yellow
+  );
+  fire2012Green = new Fire2012ColorFunction("fire2012_green", 50, 110, false, greenPalette);
+  registerStatefulColorFunction(10, fire2012Green);
+  
+  // Audio reactive function (if you have audio connected to A0)
+  audioReactive = new AudioReactiveColorFunction("audio", A0, 100, 0.95);
+  registerStatefulColorFunction(11, audioReactive);
+  
+  // VU Meter function (if you have audio connected to A0)
+  vuMeter = new VUMeterColorFunction("vumeter", A0, 100);
+  registerStatefulColorFunction(12, vuMeter);
+  
+  Serial.println("Stateful color functions initialized.");
+  Serial.println("NOTE: Audio functions require audio input on pin A0");
   
   // Initialize base models (these will auto-register)
   initializemodels();
@@ -89,18 +128,22 @@ void setup() {
   mainSequence.beginRegistry();
   
   Serial.println("Setup complete. Registry cycling started.");
+  Serial.println("OPTIMIZATION: Stateful functions only update when actually used!");
 }
 
 
 void loop() {
   unsigned long currentTime = millis();
   
+  // *** OPTIMIZED: Begin new frame (increments frame counter) ***
+  // This allows stateful functions to track if they've been updated this frame
+  StatefulColorFunction::beginFrame();
+  
   // Update registry - automatically switches sequences based on individual durations
   mainSequence.updateRegistry(currentTime);
   
   // Update the sequence state (handles transitions within the current sequence)
   mainSequence.update(currentTime, colorFunctionArray);
-
 
   // Get direct access to the current model
   colormodel* currentModel = mainSequence.getCurrentModel();
@@ -114,9 +157,8 @@ void loop() {
   // Get the edge model data array
   const std::array<std::array<int, 6>, 120>& edgeModelData = currentModel->getEdgeModels();
   
-
-  
   // Light up the LEDs using the sequence
+  // NOTE: Stateful functions will automatically update when first accessed
   for(int i = 0; i < numberofleds; i++) {
     int edgeType = strandtable[i][1];
     int positionInt = strandtable[i][0];
@@ -142,8 +184,8 @@ void loop() {
       position = 1.0 - position;  // Reverse the position if direction is negative
     }
 
-
     // Get the color from the sequence
+    // This is where lazy updating happens - only used functions update
     rgbarray[i] = mainSequence.getColor(edgeType, position);
   }
   
@@ -158,6 +200,10 @@ void loop() {
                    "/" + String(mainSequence.getTotalSteps()) + 
                    " - " + mainSequence.getCurrentModelName() +
                    (mainSequence.isInTransition() ? " (transitioning)" : ""));
+    
+    // Debug: Print which stateful functions were active
+    printActiveStatefulFunctions();
+    
     lastPrint = currentTime;
   }
   

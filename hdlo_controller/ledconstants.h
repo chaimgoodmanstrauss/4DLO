@@ -15,8 +15,8 @@
 
 
 const int numberofpins = 1;// this will be derived from the array
-  byte pinList[numberofpins] = {6}; // this is derived from the array
-  const int ledsperstrip = 500; // the max number of leds per strip
+  byte pinList[numberofpins] = {24}; // this is derived from the array
+  const int ledsperstrip = 260; // the max number of leds per strip
 const int maxedgesperstrand = 20;
 
 
@@ -25,15 +25,15 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
 { //a cycle is 67,95,39,64,92,36, all positive direction
   
     {//strand #1
-    {100,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
+    {40,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
     {5,100,1},
-    {100,95,1},
+    {40,95,1},
     {5,100,1},
-    {100,39,1},
+    {40,39,1},
     {5,100,1},
-    {100,64,1},
+    {40,64,1},
     {5,100,1},
-    {30,92,1},
+    {40,92,1},
     },
     
 /*
