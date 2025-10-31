@@ -1,3 +1,16 @@
+////////////////////////////////////////////
+//
+// HDLO LED Controller
+//
+// STATEFUL COLOR FUNCTIONS: All stateful functions (fire effects, audio reactive, etc.)
+// are automatically instantiated and registered by calling initializeStatefulColorFunctions()
+// in setup(). No manual instantiation needed!
+//
+// The system uses lazy evaluation - stateful functions only update when actually used
+// in the current frame, saving CPU time.
+//
+////////////////////////////////////////////
+
 #include "teensy4controller.h"
 #include "ledconstants.h"
 #include "edgesetup.h"
@@ -11,18 +24,11 @@ int count = 0;
 // Create a modelsequence instance
 modelsequence mainSequence;
 
-// Create stateful color function instances (global scope so they persist)
-Fire2012ColorFunction* fire2012Standard = nullptr;
-Fire2012ColorFunction* fire2012Blue = nullptr;
-Fire2012ColorFunction* fire2012Green = nullptr;
-AudioReactiveColorFunction* audioReactive = nullptr;
-VUMeterColorFunction* vuMeter = nullptr;
-
 void setup() {
   
   // Prepare serial output, if we wish to use it for debugging or monitoring data.
   Serial.begin(9600);
-  Serial.println("Yo the HDLO LED contoller ");
+  Serial.println("Yo, It is the HDLO LED contoller!");
   Serial.println("We are using "+String(numberofleds)+" on "+String(numberofpins)+" pins.");
 
   octocontroller.begin(); //initialize the octocontroller 
@@ -32,83 +38,21 @@ void setup() {
   // Initialize FastLED
   FastLED.addLeds(teensycontroller, rgbarray, numberofpins * ledsperstrip);
   // set various parameters
-  FastLED.setBrightness(120);
+  FastLED.setBrightness(120); // STILL TODO: regulate the overall power consumption.
   
   bool animateinitializationq = true;
 
   /////////////
   initedgedata();
   
-  // Initialize stateful color functions BEFORE initializing models
-  Serial.println("Initializing stateful color functions...");
-  
-  // Create Fire2012 instances with different palettes
-  fire2012Standard = new Fire2012ColorFunction("fire2012", 55, 120, false, HeatColors_p);
-  registerStatefulColorFunction(8, fire2012Standard);
-  
-  // Blue fire
-  CRGBPalette16 bluePalette = CRGBPalette16(
-    CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White
-  );
-  fire2012Blue = new Fire2012ColorFunction("fire2012_blue", 45, 100, false, bluePalette);
-  registerStatefulColorFunction(9, fire2012Blue);
-  
-  // Green fire
-  CRGBPalette16 greenPalette = CRGBPalette16(
-    CRGB::Black, CRGB::Green, CRGB::LimeGreen, CRGB::Yellow
-  );
-  fire2012Green = new Fire2012ColorFunction("fire2012_green", 50, 110, false, greenPalette);
-  registerStatefulColorFunction(10, fire2012Green);
-  
-  // Audio reactive function (if you have audio connected to A0)
-  audioReactive = new AudioReactiveColorFunction("audio", A0, 100, 0.95);
-  registerStatefulColorFunction(11, audioReactive);
-  
-  // VU Meter function (if you have audio connected to A0)
-  vuMeter = new VUMeterColorFunction("vumeter", A0, 100);
-  registerStatefulColorFunction(12, vuMeter);
-  
-  Serial.println("Stateful color functions initialized.");
-  Serial.println("NOTE: Audio functions require audio input on pin A0");
+  // AUTO-INITIALIZE all stateful color functions (fire effects, audio, etc.)
+  initializeStatefulColorFunctions();
   
   // Initialize base models (these will auto-register)
   initializemodels();
   
-  // Override colorfunction 0 to be constantly dark
-  colorFunctionArray[0] = constantlyDark;
   
-  // Initialize all models with color functions
-  // Note: Now we use the global registry instead of ourcolormodels
-  for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
-    colormodel* model = colormodel::getModelRegistry()[modelIdx];
-    for(int funcIdx = 0; funcIdx < numcolorfunctions; funcIdx++) {
-      model->setColorFunction(funcIdx, 
-                              colorFunctionNames[funcIdx], 
-                              colorFunctionArray[funcIdx]);
-    }
-  }
-  
-  // Create merged models using string names - SO EASY!
-  colormodel::mergeModels("flowoctahedron", "octachain", "flow_octa_merged");
-  colormodel::mergeModels("cycle", "cycles", "cycle_merged");
-  colormodel::mergeModels("cube", "hypercube", "cube_hyper_merged");
-  
-  // Create permuted models using string names
-  String perms1[] = {"rotate30", "reflect"};
-  colormodel::applyEdgePermutationSequence("flowoctahedron", perms1, 2, "flow_rotated_reflected");
-  
-  String perms2[] = {"invert"};
-  colormodel::applyEdgePermutationSequence("allcycles", perms2, 1, "allcycles_inverted");
-  
-  // Set color functions for all newly created models
-  for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
-    colormodel* model = colormodel::getModelRegistry()[modelIdx];
-    for(int funcIdx = 0; funcIdx < numcolorfunctions; funcIdx++) {
-      model->setColorFunction(funcIdx, 
-                              colorFunctionNames[funcIdx], 
-                              colorFunctionArray[funcIdx]);
-    }
-  }
+  initializefancymodels();
   
   // Print the registry to see all models
   colormodel::printRegistry();

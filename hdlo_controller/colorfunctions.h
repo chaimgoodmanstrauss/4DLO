@@ -479,4 +479,8 @@ CRGB getColorFromFunction(int index, float position);
 // Print which stateful functions were updated this frame (for debugging)
 void printActiveStatefulFunctions();
 
+// AUTO-INITIALIZATION: Call this once in setup() to automatically create and register
+// all stateful color functions. No manual instantiation needed!
+void initializeStatefulColorFunctions();
+
 #endif  // COLORFUNCTIONS_H

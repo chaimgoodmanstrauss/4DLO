@@ -366,6 +366,8 @@ theModelChanged();
 
 ///writeModelsToFile(ourModelRegistry)
 
+///writePermutationsToFile()
+
 // or comment to turn this off
 
 function animate() {

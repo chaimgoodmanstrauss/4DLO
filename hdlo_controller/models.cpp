@@ -9,6 +9,7 @@
 #include <FastLED.h>
 #include "models.h"
 #include "edgepermutations.h"
+#include "colorfunctions.h"
 
 ////////////////////////////////////
 //
@@ -287,3 +288,30 @@ colormodel* colormodel::mergeModels(String model1Name, String model2Name, String
   
   return mergeModels(model1, model2, newName);
 }
+
+
+//==========================================
+
+void initializefancymodels(){
+
+  // Create merged models using string names - SO EASY!
+  colormodel::mergeModels("flowoctahedron", "octachain", "flow_octa_merged");
+  colormodel::mergeModels("cycle", "cycles", "cycle_merged");
+  colormodel::mergeModels("cube", "hypercube", "cube_hyper_merged");
+  
+  // Create permuted models using string names
+  String perms1[] = {"rotate30", "reflect"};
+  colormodel::applyEdgePermutationSequence("flowoctahedron", perms1, 2, "flow_rotated_reflected");
+  
+  String perms2[] = {"invert"};
+  colormodel::applyEdgePermutationSequence("allcycles", perms2, 1, "allcycles_inverted");
+  
+  // Set color functions for all newly created models
+  for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
+    colormodel* model = colormodel::getModelRegistry()[modelIdx];
+    for(int funcIdx = 0; funcIdx < numcolorfunctions; funcIdx++) {
+      model->setColorFunction(funcIdx, 
+                              colorFunctionNames[funcIdx], 
+                              colorFunctionArray[funcIdx]);
+    }
+  }}

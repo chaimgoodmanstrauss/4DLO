@@ -96,4 +96,5 @@ private:
     static void printRegistry();
 };
 
+void  initializefancymodels();
 #endif // MODELS_H
