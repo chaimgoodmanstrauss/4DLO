@@ -315,7 +315,7 @@ private:
     byte peakLevel;
     byte currentLevel;
     byte peakHold;
-    int peakHoldTime;
+    unsigned long peakHoldTime;
     unsigned long lastPeakTime;
     
 public:
@@ -386,7 +386,7 @@ public:
     }
     
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
-    void setPeakHoldTime(int ms) { peakHoldTime = ms; }
+    void setPeakHoldTime(unsigned long ms) { peakHoldTime = ms; }
     byte getCurrentLevel() const { return currentLevel; }
 };
 
