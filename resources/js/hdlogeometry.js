@@ -54,6 +54,7 @@ const qmIOneOne = new qAction(qmI,qOne)
 
 //these preserve a right handed collection of cycles
 
+// moving along a cycle is qW. 
 const shiftcyclesright = [
     qOneOne,
     new qAction(qO.mult(qO), qO.mult(qW).mult(qO)),

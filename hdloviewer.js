@@ -366,7 +366,12 @@ theModelChanged();
 
 ///writeModelsToFile(ourModelRegistry)
 
-///writePermutationsToFile()
+writeSeveralActionsAsPermutationsToAFile([[
+	
+
+	
+]])
+
 
 // or comment to turn this off
 

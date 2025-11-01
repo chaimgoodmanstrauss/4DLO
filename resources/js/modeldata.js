@@ -86,6 +86,37 @@ const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
 ]*/
 
 
+// just for the printing functions here:
+function strfrom(n){
+    switch(n){
+        case 1:{return "+"}; break;
+        case -1:{return "-"}; break;
+        case 0:{return "0"}; break;
+        case -0:{return "0"}; break;
+        case -.5:{return "-"}; break;   
+        case .5:{return "+"}; break;
+        default :{return n.toString()}; break;
+        }
+        
+}
+
+function printvert(q){
+    return strfrom(q.r)+strfrom(q.i)+strfrom(q.j)+strfrom(q.k)
+}
+
+const vertexids = vertices.map(v=>printvert(v))
+
+function vertexindexpermutation(aqaction){
+     
+    return vertgroup.map(
+        m=>{return vertexids.findIndex(
+            v=>v==printvert(aqaction.inverse().composeon(m).acton(qOne)))})
+            // WHY inverse?
+
+        }
+///////////////
+
+
 
 var qone =qOne.positivize() // TBD: is qOne (still) messed up? What was the issue?
 
@@ -137,6 +168,8 @@ function generateidforedgeaction(q){
 
 const edgeids = edgegroup.map(q=>generateidforedgeaction(q))
 
+const allids = edgeids.concat(vertexids)
+
 
 // This function returns the index of the edge action. 
 // If an action doesn't map 
@@ -168,10 +201,45 @@ function getactiononedgegroupaspermutationofindices(q){
 }
 
 
-function writeSeveralActionsAsPermutationsToAFile(qActionList){
+function writeoutperm(aqaction){
     var content = ""
+    var edgeperms = getactiononedgegroupaspermutationofindices(aqaction)
+    content+=(edgeperms.map(p=>(p.oldindex * p.directionchange).toString())).join(",")
+    content+=","+vertexindexpermutation(aqaction).map(i=>(i+96).toString()).join(",")
+    return content
+}
 
+function writeSeveralActionsAsPermutationsToAFile(qActionList){
+    var content = "" // our output.
 
+    // first the head
+    content+="////// Named Permutations\n\n #include \"edgepermutations.h\"\n\n"
+
+    content+="//// define each permutation:\n"
+   qActionList.map(item=>{
+    content+="std::array<int, 120> "+item[1]+"Perm = {{\n";
+    content+=writeoutperm(item[0])+"}};\n\n"
+    }
+    )
+
+    content+="\n"
+
+    
+    content+="//// now register everything:\n"
+    qActionList.map(item=>{
+    content+="EdgePermutation identityPermutation(\""+item[1]+"\", "+item[1]+"Perm);\n"
+    })
+
+    // Create a blob and download link
+    let blob = new Blob([content], { type: 'text/plain' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'named_permutations.h';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+  //  return content;
 }
 
 
