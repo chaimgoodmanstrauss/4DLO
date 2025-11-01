@@ -1,3 +1,11 @@
+////////////////////////////////////////////
+//
+//   modelsequence.cpp (UPDATED)
+//
+// Implementation of the cleaned-up modelsequence class
+// No more pointer arrays - everything uses string names!
+//
+
 #include "modelsequence.h"
 
 modelsequence::modelsequence() 
@@ -6,67 +14,44 @@ modelsequence::modelsequence()
     stepStartTime(0),
     transitionStartTime(0),
     inTransition(false),
-    modelArray(nullptr),
-    numModels(0),
-    modelNames(nullptr),
-    colorFunctionArray(nullptr),
-    numColorFunctions(0),
-    colorFunctionNames(nullptr),
+    currentModel(nullptr),
+    nextModel(nullptr),
     numRegistryEntries(0),
     currentRegistryIndex(0),
     registryStartTime(0),
     currentSequenceStartStep(0),
     currentSequenceNumSteps(0) {
-  // Initialize function arrays to nullptr
+  // Initialize function arrays
   for(int i = 0; i < numcolorfunctions; i++) {
     currentFunctions[i] = nullptr;
     nextFunctions[i] = nullptr;
   }
 }
 
-void modelsequence::registerModels(colormodel** models, int count, String* names) {
-  modelArray = models;
-  numModels = count;
-  modelNames = names;
+// Resolve model name to pointer using the model registry
+colormodel* modelsequence::resolveModel(const String& name) {
+  return colormodel::findModelByName(name);
 }
 
-void modelsequence::registerColorFunctions(ColorFunction* functions, int count, String* names) {
-  colorFunctionArray = functions;
-  numColorFunctions = count;
-  colorFunctionNames = names;
-}
-
-int modelsequence::findModelByName(String name) {
-  if(modelNames == nullptr) return -1;
-  
-  for(int i = 0; i < numModels; i++) {
-    if(modelNames[i].equalsIgnoreCase(name)) {
-      return i;
-    }
+// Resolve color function name to function pointer
+ColorFunction modelsequence::resolveColorFunction(const String& name) {
+  int index = findColorFunctionByName(name);
+  if(index >= 0 && index < numcolorfunctions) {
+    return colorFunctionArray[index];
   }
-  return -1;
-}
-
-int modelsequence::findColorFunctionByName(String name) {
-  if(colorFunctionNames == nullptr) return -1;
-  
-  for(int i = 0; i < numColorFunctions; i++) {
-    if(colorFunctionNames[i].equalsIgnoreCase(name)) {
-      return i;
-    }
-  }
-  return -1;
+  return nullptr;
 }
 
 // Internal method - works with milliseconds
-bool modelsequence::addStepInternal(colormodel* model, std::array<int, numcolorfunctions> colorFuncIndices,
+bool modelsequence::addStepInternal(String model, std::array<String, numcolorfunctions> funcNames,
                                     unsigned long durationMs, TransitionType trans,
                                     unsigned long transDurMs) {
   if(numSteps >= MAX_STEPS) {
-    return false; // Sequence is full
+    Serial.println("Error: Sequence is full (max " + String(MAX_STEPS) + " steps)");
+    return false;
   }
   
-  steps[numSteps] = SequenceStep(model, colorFuncIndices, durationMs, trans, transDurMs);
+  steps[numSteps] = SequenceStep(model, funcNames, durationMs, trans, transDurMs);
   numSteps++;
   
   // Update the current registry entry's step count
@@ -77,72 +62,56 @@ bool modelsequence::addStepInternal(colormodel* model, std::array<int, numcolorf
   return true;
 }
 
-// Public method - accepts SECONDS, converts to milliseconds
-bool modelsequence::addStepByName(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
-                                  float durationSeconds, TransitionType trans,
-                                  float transDurSeconds) {
-  // Find model by name
-  int modelIdx = findModelByName(modelName);
-  if(modelIdx < 0) {
-    Serial.println("Error: Model '" + modelName + "' not found");
-    return false;
-  }
-  
-  // Find color functions by name
-  std::array<int, numcolorfunctions> colorFuncIndices;
-  for(int i = 0; i < numcolorfunctions; i++) {
-    colorFuncIndices[i] = findColorFunctionByName(colorFuncNames[i]);
-    if(colorFuncIndices[i] < 0) {
-      Serial.println("Error: Color function '" + colorFuncNames[i] + "' not found");
-      return false;
-    }
-  }
-  
+// Public method - accepts SECONDS, uses string names directly
+bool modelsequence::addStep(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
+                            float durationSeconds, TransitionType trans,
+                            float transDurSeconds) {
   // Convert seconds to milliseconds
   unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
   unsigned long transDurMs = (unsigned long)(transDurSeconds * 1000.0f);
   
   // Add the step using internal method
-  return addStepInternal(modelArray[modelIdx], colorFuncIndices, durationMs, trans, transDurMs);
+  return addStepInternal(modelName, colorFuncNames, durationMs, trans, transDurMs);
 }
 
-void modelsequence::loadSequence(int index) {
-  if(!hasRegisteredModels()) {
-    Serial.println("Error: Cannot load sequence - models not registered");
-    return;
-  }
-  
-  // Clear any existing steps
-  numSteps = 0;
-  
-  // Note: Actual sequence definitions are loaded from sequences.cpp
-  // via the initializeSequences() function which calls addStepByName()
-  Serial.println("Warning: loadSequence called but sequences should be initialized via initializeSequences()");
-}
-
-void modelsequence::begin(ColorFunction* colorFunctionArray) {
+void modelsequence::begin() {
   if(currentSequenceNumSteps == 0) {
-    // Use all steps
+    // Use all steps if no specific sequence selected
     currentSequenceStartStep = 0;
     currentSequenceNumSteps = numSteps;
   }
   
-  if(currentSequenceNumSteps == 0) return;
+  if(currentSequenceNumSteps == 0) {
+    Serial.println("Error: No steps in sequence");
+    return;
+  }
   
   currentStepIndex = currentSequenceStartStep;
   stepStartTime = millis();
   inTransition = false;
   
+  // Resolve and cache the model and functions for the first step
+  SequenceStep& firstStep = steps[currentStepIndex];
+  currentModel = resolveModel(firstStep.modelName);
+  
+  if(currentModel == nullptr) {
+    Serial.println("Error: Model '" + firstStep.modelName + "' not found!");
+    return;
+  }
+  
   // Load color functions for the first step
   for(int i = 0; i < numcolorfunctions; i++) {
-    int funcIdx = steps[currentStepIndex].colorFunctionIndices[i];
-    currentFunctions[i] = colorFunctionArray[funcIdx];
-    steps[currentStepIndex].model->setColorFunction(i, "", colorFunctionArray[funcIdx]);
+    currentFunctions[i] = resolveColorFunction(firstStep.colorFunctionNames[i]);
+    if(currentModel != nullptr && currentFunctions[i] != nullptr) {
+      currentModel->setColorFunction(i, firstStep.colorFunctionNames[i], currentFunctions[i]);
+    }
   }
+  
+  Serial.println("Started step: " + firstStep.modelName);
 }
 
-void modelsequence::update(unsigned long currentTime, ColorFunction* colorFunctionArray) {
-  if(currentSequenceNumSteps == 0) return;
+void modelsequence::update(unsigned long currentTime) {
+  if(currentSequenceNumSteps == 0 || currentModel == nullptr) return;
   
   SequenceStep& currentStep = steps[currentStepIndex];
   unsigned long elapsed = currentTime - stepStartTime;
@@ -157,27 +126,50 @@ void modelsequence::update(unsigned long currentTime, ColorFunction* colorFuncti
       nextStepIndex = currentSequenceStartStep;
     }
     
+    SequenceStep& nextStep = steps[nextStepIndex];
+    
     if(currentStep.transitionType == INSTANT || currentStep.transitionDuration == 0) {
       // Instant transition
       currentStepIndex = nextStepIndex;
       stepStartTime = currentTime;
       
+      // Resolve next model
+      currentModel = resolveModel(nextStep.modelName);
+      if(currentModel == nullptr) {
+        Serial.println("Error: Model '" + nextStep.modelName + "' not found!");
+        return;
+      }
+      
       // Update color functions
       for(int i = 0; i < numcolorfunctions; i++) {
-        int funcIdx = steps[currentStepIndex].colorFunctionIndices[i];
-        currentFunctions[i] = colorFunctionArray[funcIdx];
-        steps[currentStepIndex].model->setColorFunction(i, "", colorFunctionArray[funcIdx]);
+        currentFunctions[i] = resolveColorFunction(nextStep.colorFunctionNames[i]);
+        if(currentModel != nullptr && currentFunctions[i] != nullptr) {
+          currentModel->setColorFunction(i, nextStep.colorFunctionNames[i], currentFunctions[i]);
+        }
       }
+      
+      Serial.println("Instant switch to: " + nextStep.modelName);
     } else {
       // Start transition
       inTransition = true;
       transitionStartTime = currentTime;
       
+      // Resolve next model
+      nextModel = resolveModel(nextStep.modelName);
+      if(nextModel == nullptr) {
+        Serial.println("Error: Model '" + nextStep.modelName + "' not found!");
+        return;
+      }
+      
       // Load next functions
       for(int i = 0; i < numcolorfunctions; i++) {
-        int funcIdx = steps[nextStepIndex].colorFunctionIndices[i];
-        nextFunctions[i] = colorFunctionArray[funcIdx];
+        nextFunctions[i] = resolveColorFunction(nextStep.colorFunctionNames[i]);
+        if(nextModel != nullptr && nextFunctions[i] != nullptr) {
+          nextModel->setColorFunction(i, nextStep.colorFunctionNames[i], nextFunctions[i]);
+        }
       }
+      
+      Serial.println("Starting transition to: " + nextStep.modelName);
     }
   }
   
@@ -197,38 +189,34 @@ void modelsequence::update(unsigned long currentTime, ColorFunction* colorFuncti
       
       stepStartTime = currentTime;
       
-      // Copy next functions to current
+      // Swap models and functions
+      currentModel = nextModel;
       for(int i = 0; i < numcolorfunctions; i++) {
         currentFunctions[i] = nextFunctions[i];
-        steps[currentStepIndex].model->setColorFunction(i, "", nextFunctions[i]);
       }
+      
+      Serial.println("Transition complete to: " + steps[currentStepIndex].modelName);
     }
   }
 }
 
 CRGB modelsequence::getColor(int edgeindex, float position) {
-  if(currentSequenceNumSteps == 0) return CRGB::Black;
-  
-  SequenceStep& currentStep = steps[currentStepIndex];
+  if(currentSequenceNumSteps == 0 || currentModel == nullptr) return CRGB::Black;
   
   if(!inTransition) {
     // Just return current model color
-    return currentStep.model->getcolorfunction(edgeindex, position);
+    return currentModel->getcolorfunction(edgeindex, position);
   }
   
   // We're in transition - blend colors
   float progress = getTransitionProgress();
-  int nextStepIndex = currentStepIndex + 1;
   
-  // Wrap within current sequence
-  if(nextStepIndex >= currentSequenceStartStep + currentSequenceNumSteps) {
-    nextStepIndex = currentSequenceStartStep;
-  }
+  if(nextModel == nullptr) return currentModel->getcolorfunction(edgeindex, position);
   
-  SequenceStep& nextStep = steps[nextStepIndex];
+  SequenceStep& currentStep = steps[currentStepIndex];
   
-  CRGB currentColor = currentStep.model->getcolorfunction(edgeindex, position);
-  CRGB nextColor = nextStep.model->getcolorfunction(edgeindex, position);
+  CRGB currentColor = currentModel->getcolorfunction(edgeindex, position);
+  CRGB nextColor = nextModel->getcolorfunction(edgeindex, position);
   
   if(currentStep.transitionType == FADE) {
     // Linear blend
@@ -248,13 +236,26 @@ CRGB modelsequence::getColor(int edgeindex, float position) {
 
 String modelsequence::getCurrentModelName() {
   if(currentSequenceNumSteps == 0) return "No models";
-  return steps[currentStepIndex].model->getModelName();
+  return steps[currentStepIndex].modelName;
 }
 
 void modelsequence::reset() {
   currentStepIndex = currentSequenceStartStep;
   stepStartTime = millis();
   inTransition = false;
+  
+  // Re-resolve the first step
+  if(currentSequenceNumSteps > 0) {
+    SequenceStep& firstStep = steps[currentStepIndex];
+    currentModel = resolveModel(firstStep.modelName);
+    
+    for(int i = 0; i < numcolorfunctions; i++) {
+      currentFunctions[i] = resolveColorFunction(firstStep.colorFunctionNames[i]);
+      if(currentModel != nullptr && currentFunctions[i] != nullptr) {
+        currentModel->setColorFunction(i, firstStep.colorFunctionNames[i], currentFunctions[i]);
+      }
+    }
+  }
 }
 
 float modelsequence::getTransitionProgress() const {
@@ -274,7 +275,7 @@ float modelsequence::getTransitionProgress() const {
 // Internal method - works with milliseconds
 bool modelsequence::startNewSequenceInternal(String name, unsigned long durationMs, bool enabled) {
   if(numRegistryEntries >= MAX_REGISTRY_ENTRIES) {
-    Serial.println("Error: Registry is full");
+    Serial.println("Error: Registry is full (max " + String(MAX_REGISTRY_ENTRIES) + " sequences)");
     return false;
   }
   
@@ -285,6 +286,7 @@ bool modelsequence::startNewSequenceInternal(String name, unsigned long duration
   registry[numRegistryEntries] = SequenceRegistryEntry(startStep, 0, name, durationMs, enabled);
   numRegistryEntries++;
   
+  Serial.println("Started new sequence: " + name);
   return true;
 }
 
@@ -298,6 +300,7 @@ void modelsequence::clearRegistry() {
   numRegistryEntries = 0;
   currentRegistryIndex = 0;
   numSteps = 0;  // Also clear all steps
+  Serial.println("Registry cleared");
 }
 
 SequenceRegistryEntry modelsequence::getRegistryEntry(int index) const {
@@ -310,11 +313,6 @@ SequenceRegistryEntry modelsequence::getRegistryEntry(int index) const {
 void modelsequence::beginRegistry() {
   if(numRegistryEntries == 0) {
     Serial.println("Error: No sequences in registry");
-    return;
-  }
-  
-  if(!hasRegisteredModels()) {
-    Serial.println("Error: Cannot begin registry - models not registered");
     return;
   }
   
@@ -334,7 +332,7 @@ void modelsequence::beginRegistry() {
   currentSequenceNumSteps = registry[currentRegistryIndex].numSteps;
   
   // Initialize the sequence
-  begin(colorFunctionArray);
+  begin();
   registryStartTime = millis();
   
   Serial.println("Registry started with: " + registry[currentRegistryIndex].name + 
@@ -342,7 +340,7 @@ void modelsequence::beginRegistry() {
 }
 
 bool modelsequence::updateRegistry(unsigned long currentTime) {
-  if(numRegistryEntries == 0 || !hasRegisteredModels()) {
+  if(numRegistryEntries == 0) {
     return false;
   }
   
@@ -365,7 +363,7 @@ bool modelsequence::updateRegistry(unsigned long currentTime) {
     currentSequenceNumSteps = registry[currentRegistryIndex].numSteps;
     
     // Initialize the new sequence
-    begin(colorFunctionArray);
+    begin();
     registryStartTime = currentTime;
     
     Serial.println("Switched to: " + registry[currentRegistryIndex].name + 

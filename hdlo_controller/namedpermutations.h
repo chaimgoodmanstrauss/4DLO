@@ -2,6 +2,7 @@
 // Named Edge Permutations
 // This file contains the actual permutation data
 // Permutations automatically register themselves when created
+// TBD Generate this file automatically from the HDLO.js world.
 
 #include "edgepermutations.h"
 

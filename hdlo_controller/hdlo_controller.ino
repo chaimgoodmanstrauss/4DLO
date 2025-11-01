@@ -1,155 +1,175 @@
 ////////////////////////////////////////////
 //
-// HDLO LED Controller
+//   hdlo_controller.ino (UPDATED)
 //
-// STATEFUL COLOR FUNCTIONS: All stateful functions (fire effects, audio reactive, etc.)
-// are automatically instantiated and registered by calling initializeStatefulColorFunctions()
-// in setup(). No manual instantiation needed!
+// Example main sketch using the new cleaned-up system
+// No more pointer registration needed!
 //
-// The system uses lazy evaluation - stateful functions only update when actually used
-// in the current frame, saving CPU time.
-//
-////////////////////////////////////////////
 
+#include <OctoWS2811.h>
+#include <FastLED.h>
 #include "teensy4controller.h"
 #include "ledconstants.h"
 #include "edgesetup.h"
-#include "colorfunctions.h"
+#include "paletteregistry.h"    // NEW: Add this include
 #include "models.h"
 #include "hdlo_models.h"
+#include "colorfunctions.h"
 #include "modelsequence.h"
+#include "sequences.h"
+#include "edgepermutations.h"
+#include "namedpermutations.h"
 
-int count = 0;
-
-// Create a modelsequence instance
-modelsequence mainSequence;
+// Global sequence object
+modelsequence* mainSequence;
 
 void setup() {
-  
-  // Prepare serial output, if we wish to use it for debugging or monitoring data.
-  Serial.begin(9600);
-  Serial.println("Yo, It is the HDLO LED contoller!");
-  Serial.println("We are using "+String(numberofleds)+" on "+String(numberofpins)+" pins.");
+    Serial.begin(115200);
+    while (!Serial && millis() < 3000); // Wait for serial monitor
+    
+    Serial.println("=== HDLO Controller Starting ===");
+    
+    // Step 1: Initialize edge data
+    Serial.println("Initializing edge data...");
+    initedgedata();
+    
+    // Step 2: Initialize OctoWS2811
+    Serial.println("Initializing OctoWS2811...");
+    octocontroller.begin();
+    teensycontroller = new CTeensy4Controller<GRB, WS2811_800kHz>(&octocontroller);
+    FastLED.setBrightness(MAXBRIGHTNESS);
+    FastLED.addLeds(teensycontroller, rgbarray, numberofleds);
+    
+    // Step 3: Initialize the palette registry 
+    Serial.println("Initializing palette registry...");
+    PaletteRegistry::initialize();
+    //PaletteRegistry::printRegistry();  // Optional: see available palettes
+    
+    // Step 4: Initialize color functions
+    Serial.println("Initializing color functions...");
+    initializeStatefulColorFunctions();
+    
 
-  octocontroller.begin(); //initialize the octocontroller 
-  // create our teensycontroller 
-  teensycontroller = new CTeensy4Controller<GRB, WS2811_800kHz>(&octocontroller);
+    // Step 5: Initialize edge permutations
+    Serial.println("Initializing edge permutations...");
+    //EdgePermutation::printRegistry();  // Optional: see available permutations
+    
 
-  // Initialize FastLED
-  FastLED.addLeds(teensycontroller, rgbarray, numberofpins * ledsperstrip);
-  // set various parameters
-  FastLED.setBrightness(120); // STILL TODO: regulate the overall power consumption.
-  
-  bool animateinitializationq = true;
-
-  /////////////
-  initedgedata();
-  
-  // AUTO-INITIALIZE all stateful color functions (fire effects, audio, etc.)
-  initializeStatefulColorFunctions();
-  
-  // Initialize base models (these will auto-register)
-  initializemodels();
-  
-  
-  initializefancymodels();
-  
-  // Print the registry to see all models
-  colormodel::printRegistry();
-  
-  // Register the global registry with modelsequence
-  mainSequence.registerModels(colormodel::getModelRegistry(), 
-                              colormodel::getNumRegisteredModels(), 
-                              colormodel::getModelNameRegistry());
-  mainSequence.registerColorFunctions(colorFunctionArray, numcolorfunctions, colorFunctionNames);
-  
-  // Initialize sequences - all definitions come from sequences.cpp
-  initializeSequences(&mainSequence);
-  
-  Serial.println("Registry has " + String(mainSequence.getRegistrySize()) + " sequences");
-  
-  // Start the registry-based cycling
-  mainSequence.beginRegistry();
-  
-  Serial.println("Setup complete. Registry cycling started.");
-  Serial.println("OPTIMIZATION: Stateful functions only update when actually used!");
+    // Step 6: Initialize models
+    Serial.println("Initializing models...");
+    initializemodels();
+    initializefancymodels();
+    colormodel::printRegistry();  // Optional: see available models
+    
+    // Step 7: Create and initialize sequences (NEW - SIMPLIFIED!)
+    Serial.println("Initializing sequences...");
+    mainSequence = new modelsequence();
+    initializeSequences(mainSequence);
+    
+    // Step 8: Start the sequence registry
+    Serial.println("Starting sequence registry...");
+    mainSequence->beginRegistry();
+    
+    Serial.println("=== Setup Complete ===");
+    Serial.println("Current sequence: " + mainSequence->getCurrentRegistryName());
+    Serial.println();
 }
 
-
 void loop() {
-  unsigned long currentTime = millis();
-  
-  // *** OPTIMIZED: Begin new frame (increments frame counter) ***
-  // This allows stateful functions to track if they've been updated this frame
-  StatefulColorFunction::beginFrame();
-  
-  // Update registry - automatically switches sequences based on individual durations
-  mainSequence.updateRegistry(currentTime);
-  
-  // Update the sequence state (handles transitions within the current sequence)
-  mainSequence.update(currentTime, colorFunctionArray);
-
-  // Get direct access to the current model
-  colormodel* currentModel = mainSequence.getCurrentModel();
-  if(currentModel == nullptr) {
-    // Handle error case
-    Serial.println("Error: No current model available");
-    delay(10);
-    return;
-  }
-  
-  // Get the edge model data array
-  const std::array<std::array<int, 6>, 120>& edgeModelData = currentModel->getEdgeModels();
-  
-  // Light up the LEDs using the sequence
-  // NOTE: Stateful functions will automatically update when first accessed
-  for(int i = 0; i < numberofleds; i++) {
-    int edgeType = strandtable[i][1];
-    int positionInt = strandtable[i][0];
+    // Update frame counter for lazy evaluation
+    StatefulColorFunction::beginFrame();
     
-    // Skip if this LED is not mapped to an edge
-    if(edgeType == 0 && positionInt == 0) {
-      rgbarray[i] = CRGB(0, 0, 0);
-      continue;
+    // Update the sequence registry (handles sequence switching)
+    unsigned long currentTime = millis();
+    if(mainSequence->updateRegistry(currentTime)) {
+        Serial.println("Switched to sequence: " + mainSequence->getCurrentRegistryName());
     }
     
-    // Convert position from integer (0-10000) to float (0.0-1.0)
-    float position = positionInt / 10000.0;
+    // Update the current sequence
+    mainSequence->update(currentTime);
     
-    int direction = edgeModelData[edgeType][1];      // 1 or -1
-    float shiftposition = edgeModelData[edgeType][2]/10000.;    
-    float scaleposition = edgeModelData[edgeType][3]/10000.;   
-    float shifttime = edgeModelData[edgeType][4]/10000.;      
-    float scaletime = edgeModelData[edgeType][5]/10000.;     
-    
-    position = scaleposition*position+shiftposition+.2*scaletime*(currentTime/1000.)+shifttime;
-    
-    if(direction < 0) {
-      position = 1.0 - position;  // Reverse the position if direction is negative
+    // Apply the colors to the LED array
+    for(int ledindex = 0; ledindex < numberofleds; ledindex++) {
+        // Get edge and position from strand table
+        int edgeindex = strandtable[ledindex][1];
+        float position = strandtable[ledindex][0] / (float)positionresolution;
+        
+        // Get color from the sequence
+        CRGB color = mainSequence->getColor(edgeindex, position);
+        
+        // Apply to LED array
+        rgbarray[ledindex] = color;
     }
+    
+    // Show the LEDs
+    FastLED.show();
+    
+    // Optional: Print active stateful functions or whatever else every 1000 frames
+    static int frameCount = 0;
+    if(++frameCount % 1000 == 0) {
+      //  printActiveStatefulFunctions();
+    }
+    
+    // Optional: Handle serial commands for runtime control -- pretty cool little feature 
+    // Claude added on its own.
+    handleSerialCommands();
+}
 
-    // Get the color from the sequence
-    // This is where lazy updating happens - only used functions update
-    rgbarray[i] = mainSequence.getColor(edgeType, position);
-  }
-  
-  // Update the LED display
-  FastLED.show();
-  
-  // Optional: Print status every 2 seconds
-  static unsigned long lastPrint = 0;
-  if(currentTime - lastPrint > 2000) {
-    Serial.println("Sequence: " + mainSequence.getCurrentRegistryName() + 
-                   " | Step " + String(mainSequence.getCurrentStep() + 1) + 
-                   "/" + String(mainSequence.getTotalSteps()) + 
-                   " - " + mainSequence.getCurrentModelName() +
-                   (mainSequence.isInTransition() ? " (transitioning)" : ""));
-    
-    // Debug: Print which stateful functions were active
-    printActiveStatefulFunctions();
-    
-    lastPrint = currentTime;
-  }
-  
-  delay(10);
+// Optional: Add serial commands for runtime control
+void handleSerialCommands() {
+    if(Serial.available()) {
+        String command = Serial.readStringUntil('\n');
+        command.trim();
+        
+        if(command == "next") {
+            // Force switch to next sequence
+            Serial.println("Forcing switch to next sequence...");
+            // You could add a forceNextSequence() method to modelsequence
+        }
+        else if(command == "palettes") {
+            // Show all palettes
+            PaletteRegistry::printRegistry();
+        }
+        else if(command == "models") {
+            // Show all models
+            colormodel::printRegistry();
+        }
+        else if(command == "sequences") {
+            // Show current sequence info
+            Serial.println("Current sequence: " + mainSequence->getCurrentRegistryName());
+            Serial.println("Step: " + String(mainSequence->getCurrentStep()) + 
+                          " of " + String(mainSequence->getTotalSteps()));
+        }
+        else if(command.startsWith("cycle")) {
+            // Cycle all palettes
+            cycleAllPalettes();
+            Serial.println("Cycled all palettes");
+        }
+        else if(command.startsWith("random")) {
+            // Randomize all palettes
+            randomizeAllPalettes();
+            Serial.println("Randomized all palettes");
+        }
+        else if(command.startsWith("switch ")) {
+            // Switch a specific function to a specific palette
+            // Format: "switch fire2012 ocean"
+            int spacePos = command.indexOf(' ', 7);
+            if(spacePos > 0) {
+                String funcName = command.substring(7, spacePos);
+                String paletteName = command.substring(spacePos + 1);
+                switchPalette(funcName, paletteName);
+            }
+        }
+        else if(command == "help") {
+            Serial.println("Commands:");
+            Serial.println("  next - Force next sequence");
+            Serial.println("  palettes - List all palettes");
+            Serial.println("  models - List all models");
+            Serial.println("  sequences - Show sequence info");
+            Serial.println("  cycle - Cycle all palettes");
+            Serial.println("  random - Randomize palettes");
+            Serial.println("  switch [function] [palette] - Switch specific function palette");
+            Serial.println("  help - Show this help");
+        }
+    }
 }

@@ -1,15 +1,9 @@
 ////////////////////////////////////////////
 //
-//
 //   colorfunctions.h
 //
-// a colorfunction has one responsibility: return a CRGB at a given position
-// It is free to make additional use of time or other data, but that's its business.
-//
-// ARCHITECTURE:
-// - Simple stateless functions: Defined as inline functions
-// - Complex stateful functions: Defined as classes inheriting from StatefulColorFunction
-// - OPTIMIZATION: Stateful functions only update when actually used in a frame
+// Color function system with automatic palette management
+// Uses PaletteRegistry for centralized palette handling
 //
 #ifndef COLORFUNCTIONS_H
 #define COLORFUNCTIONS_H
@@ -17,6 +11,7 @@
 #include <FastLED.h>
 #include <Arduino.h>
 #include "models.h"
+#include "paletteregistry.h"
 
 const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
@@ -24,21 +19,14 @@ const int MAXBRIGHTNESS = 160;
 /////////////////////////////////////////
 // STATEFUL COLOR FUNCTION BASE CLASS
 //
-// For color functions that need to maintain state and update over time
-// (e.g., fire effects, particle systems, cellular automata)
-//
-// LAZY UPDATE SYSTEM:
-// - Functions only update when first accessed in a frame
-// - Saves CPU by not updating unused effects
-//
 
 class StatefulColorFunction {
 protected:
     String name;
     unsigned long lastUpdateTime;
-    unsigned int updateInterval;  // Milliseconds between updates
-    unsigned long currentFrameNumber;  // Track which frame we last updated
-    static unsigned long globalFrameNumber;  // Increments each loop iteration
+    unsigned int updateInterval;
+    unsigned long currentFrameNumber;
+    static unsigned long globalFrameNumber;
     
 public:
     StatefulColorFunction(String functionName, unsigned int updateIntervalMs = 20)
@@ -47,40 +35,30 @@ public:
     
     virtual ~StatefulColorFunction() {}
     
-    // Must be implemented by derived classes
     virtual CRGB getColor(float position) = 0;
     
-    // Update internal state - called automatically when first accessed in a frame
     void updateIfNeeded(unsigned long currentTime) {
-        // Check if we've already updated this frame
         if (currentFrameNumber == globalFrameNumber) {
-            return;  // Already updated this frame
+            return;
         }
         
-        // Check if enough time has passed
         if (currentTime - lastUpdateTime >= updateInterval) {
             updateState();
             lastUpdateTime = currentTime;
         }
         
-        // Mark this frame as updated
         currentFrameNumber = globalFrameNumber;
     }
     
-    // Override this to implement state updates
     virtual void updateState() = 0;
-    
-    // Reset to initial state
     virtual void reset() = 0;
     
     String getName() const { return name; }
     
-    // Call at the start of each loop iteration
     static void beginFrame() {
         globalFrameNumber++;
     }
     
-    // For debugging: check if function updated this frame
     bool wasUpdatedThisFrame() const {
         return currentFrameNumber == globalFrameNumber;
     }
@@ -89,23 +67,17 @@ public:
 /////////////////////////////////////////
 // FIRE2012 COLOR FUNCTION
 //
-// Implements the Fire2012 effect from FastLED as an edge color function
-//
 
 class Fire2012ColorFunction : public StatefulColorFunction {
 private:
-    static const int NUM_LEDS = 128;  // Virtual LED array size
+    static const int NUM_LEDS = 128;
     byte heat[NUM_LEDS];
-    
-    // Fire2012 parameters
     int cooling;
     int sparking;
     bool gReverseDirection;
-    CRGBPalette16 palette;
+    String paletteName;
     
-    // Fire2012 algorithm adapted from FastLED examples
     void updateFire() {
-        // Step 1: Cool down every cell a little
         for(int i = 0; i < NUM_LEDS; i++) {
             int cooldown = random8(0, ((cooling * 10) / NUM_LEDS) + 2);
             if(cooldown > heat[i]) {
@@ -115,12 +87,10 @@ private:
             }
         }
         
-        // Step 2: Heat from each cell drifts 'up' and diffuses a little
         for(int k = NUM_LEDS - 1; k >= 2; k--) {
             heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
         }
         
-        // Step 3: Randomly ignite new 'sparks' near the bottom
         if(random8() < sparking) {
             int y = random8(7);
             heat[y] = qadd8(heat[y], random8(160, 255));
@@ -132,17 +102,16 @@ public:
                           int coolingValue = 55,
                           int sparkingValue = 120,
                           bool reverseDirection = false,
-                          CRGBPalette16 firePalette = HeatColors_p)
-        : StatefulColorFunction(functionName, 20),  // Update every 20ms
+                          String palette = "fire")
+        : StatefulColorFunction(functionName, 20),
           cooling(coolingValue),
           sparking(sparkingValue),
           gReverseDirection(reverseDirection),
-          palette(firePalette) {
+          paletteName(palette) {
         reset();
     }
     
     void reset() override {
-        // Initialize heat array to zero
         for(int i = 0; i < NUM_LEDS; i++) {
             heat[i] = 0;
         }
@@ -154,34 +123,32 @@ public:
     }
     
     CRGB getColor(float position) override {
-        // Map position (0-1) to LED index
         int ledIndex = (int)(position * (NUM_LEDS - 1));
         ledIndex = constrain(ledIndex, 0, NUM_LEDS - 1);
         
-        // Reverse direction if needed
         if(gReverseDirection) {
             ledIndex = (NUM_LEDS - 1) - ledIndex;
         }
         
-        // Map heat to color using palette
         byte temperature = heat[ledIndex];
-        CRGB color = ColorFromPalette(palette, temperature);
         
-        return color;
+        // Get palette from registry
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("fire"); // Fallback
+        }
+        
+        return ColorFromPalette(*palette, temperature);
     }
     
-    // Setters for runtime adjustment
     void setCooling(int value) { cooling = constrain(value, 0, 255); }
     void setSparking(int value) { sparking = constrain(value, 0, 255); }
     void setDirection(bool reverse) { gReverseDirection = reverse; }
-    void setPalette(CRGBPalette16 newPalette) { palette = newPalette; }
+    void setPaletteName(String name) { paletteName = name; }
 };
 
 /////////////////////////////////////////
 // AUDIO REACTIVE COLOR FUNCTION
-//
-// Responds to audio input with dynamic colors
-// Requires audio input on analog pin
 //
 
 class AudioReactiveColorFunction : public StatefulColorFunction {
@@ -196,24 +163,18 @@ private:
     int historyIndex;
     byte currentLevel;
     float decay;
+    String paletteName;
+    bool useHSV;
     
-    // Simple peak detection
     byte readAudioLevel() {
         int sample = analogRead(audioPin);
-        
-        // Map 10-bit ADC (0-1023) to 0-255
-        // Center around 512 (silence) and take absolute value
         int centered = abs(sample - 512);
         byte level = map(centered, 0, 512, 0, 255);
-        
-        // Apply sensitivity
         level = constrain(level * sensitivity / 100, 0, 255);
-        
         return level;
     }
     
     byte getSmoothedLevel() {
-        // Average recent history for smoother response
         int sum = 0;
         for(int i = 0; i < HISTORY_SIZE; i++) {
             sum += audioHistory[i];
@@ -225,13 +186,17 @@ public:
     AudioReactiveColorFunction(String functionName = "audio", 
                                int pin = A0,
                                int sens = 100,
-                               float decayRate = 0.95)
-        : StatefulColorFunction(functionName, 10),  // Update every 10ms for responsiveness
+                               float decayRate = 0.95,
+                               String palette = "rainbow",
+                               bool hsvMode = false)
+        : StatefulColorFunction(functionName, 10),
           audioPin(pin),
           sensitivity(sens),
           historyIndex(0),
           currentLevel(0),
-          decay(decayRate) {
+          decay(decayRate),
+          paletteName(palette),
+          useHSV(hsvMode) {
         reset();
     }
     
@@ -247,26 +212,20 @@ public:
     }
     
     void updateState() override {
-        // Read audio level
         byte newLevel = readAudioLevel();
         
-        // Update history
         audioHistory[historyIndex] = newLevel;
         historyIndex = (historyIndex + 1) % HISTORY_SIZE;
         
-        // Get smoothed level
         currentLevel = getSmoothedLevel();
         
-        // Update LED array - create expanding wave from center
         int center = NUM_LEDS / 2;
         int spread = (currentLevel * NUM_LEDS) / (255 * 2);
         
-        // Decay all LEDs
         for(int i = 0; i < NUM_LEDS; i++) {
             brightness[i] = brightness[i] * decay;
         }
         
-        // Add new peak
         for(int i = 0; i < spread; i++) {
             int pos1 = center + i;
             int pos2 = center - i;
@@ -286,25 +245,32 @@ public:
         
         byte value = brightness[index];
         
-        // Map to color - low frequencies = red, high = blue
-        byte hue = map(value, 0, 255, 0, 160);  // Red to blue spectrum
-        
-        return CHSV(hue, 255, value);
+        if(useHSV) {
+            byte hue = map(value, 0, 255, 0, 160);
+            return CHSV(hue, 255, value);
+        } else {
+            CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+            if(palette == nullptr) {
+                palette = PaletteRegistry::findByName("rainbow");
+            }
+            
+            CRGB color = ColorFromPalette(*palette, value);
+            color.nscale8(value);
+            
+            return color;
+        }
     }
     
-    // Setters for runtime adjustment
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
     void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
     void setAudioPin(int pin) { audioPin = pin; }
-    
-    // Getter for current audio level (for debugging)
+    void setPaletteName(String name) { paletteName = name; }
+    void setHSVMode(bool mode) { useHSV = mode; }
     byte getCurrentLevel() const { return currentLevel; }
 };
 
 /////////////////////////////////////////
 // VU METER COLOR FUNCTION
-//
-// Classic VU meter style audio visualization
 //
 
 class VUMeterColorFunction : public StatefulColorFunction {
@@ -317,11 +283,15 @@ private:
     byte peakHold;
     unsigned long peakHoldTime;
     unsigned long lastPeakTime;
+    bool useClassicColors;
+    CRGB peakColor;
     
 public:
     VUMeterColorFunction(String functionName = "vumeter",
                         int pin = A0,
-                        int sens = 100)
+                        int sens = 100,
+                        bool classic = true,
+                        CRGB peakCol = CRGB::White)
         : StatefulColorFunction(functionName, 10),
           audioPin(pin),
           sensitivity(sens),
@@ -329,7 +299,9 @@ public:
           currentLevel(0),
           peakHold(0),
           peakHoldTime(500),
-          lastPeakTime(0) {
+          lastPeakTime(0),
+          useClassicColors(classic),
+          peakColor(peakCol) {
         reset();
     }
     
@@ -341,7 +313,6 @@ public:
     }
     
     void updateState() override {
-        // Read audio level
         int sample = analogRead(audioPin);
         int centered = abs(sample - 512);
         byte level = map(centered, 0, 512, 0, 255);
@@ -349,37 +320,32 @@ public:
         
         currentLevel = level;
         
-        // Update peak
         if(level > peakHold) {
             peakHold = level;
             lastPeakTime = millis();
         }
         
-        // Peak hold decay
         if(millis() - lastPeakTime > peakHoldTime) {
             peakHold = max(0, peakHold - 2);
         }
     }
     
     CRGB getColor(float position) override {
-        // Calculate which "LED" we're at
         byte ledLevel = position * 255;
-        
-        // Color based on position: green (low) -> yellow (mid) -> red (high)
         CRGB color = CRGB::Black;
         
         if(ledLevel <= currentLevel) {
-            // Active portion of meter
-            if(position < 0.5) {
-                color = CRGB::Green;  // Low levels = green
-            } else if(position < 0.75) {
-                color = CRGB::Yellow;  // Mid levels = yellow
-            } else {
-                color = CRGB::Red;  // High levels = red
+            if(useClassicColors) {
+                if(position < 0.5) {
+                    color = CRGB::Green;
+                } else if(position < 0.75) {
+                    color = CRGB::Yellow;
+                } else {
+                    color = CRGB::Red;
+                }
             }
         } else if(abs(ledLevel - peakHold) < 5) {
-            // Peak indicator
-            color = CRGB::White;
+            color = peakColor;
         }
         
         return color;
@@ -387,24 +353,192 @@ public:
     
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
     void setPeakHoldTime(unsigned long ms) { peakHoldTime = ms; }
+    void setClassicMode(bool classic) { useClassicColors = classic; }
+    void setPeakColor(CRGB color) { peakColor = color; }
     byte getCurrentLevel() const { return currentLevel; }
+};
+
+/////////////////////////////////////////
+// PLASMA COLOR FUNCTION
+//
+
+class PlasmaColorFunction : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    float phase1, phase2, phase3;
+    float speed1, speed2, speed3;
+    float scale1, scale2, scale3;
+    String paletteName;
+    
+public:
+    PlasmaColorFunction(String functionName = "plasma",
+                       float spd1 = 0.02, float spd2 = 0.03, float spd3 = 0.01,
+                       float scl1 = 4.0, float scl2 = 3.0, float scl3 = 5.0,
+                       String palette = "plasma")
+        : StatefulColorFunction(functionName, 20),
+          phase1(0), phase2(0), phase3(0),
+          speed1(spd1), speed2(spd2), speed3(spd3),
+          scale1(scl1), scale2(scl2), scale3(scl3),
+          paletteName(palette) {
+        reset();
+    }
+    
+    void reset() override {
+        phase1 = phase2 = phase3 = 0;
+    }
+    
+    void updateState() override {
+        phase1 += speed1;
+        phase2 += speed2;
+        phase3 += speed3;
+    }
+    
+    CRGB getColor(float position) override {
+        float value = sin(position * scale1 + phase1);
+        value += sin(position * scale2 + phase2);
+        value += sin(position * scale3 + phase3);
+        
+        value = (value + 3.0) * 255.0 / 6.0;
+        byte index = constrain(value, 0, 255);
+        
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("plasma");
+        }
+        
+        return ColorFromPalette(*palette, index);
+    }
+    
+    void setPaletteName(String name) { paletteName = name; }
+    void setSpeeds(float s1, float s2, float s3) { 
+        speed1 = s1; speed2 = s2; speed3 = s3; 
+    }
+    void setScales(float s1, float s2, float s3) { 
+        scale1 = s1; scale2 = s2; scale3 = s3; 
+    }
+};
+
+/////////////////////////////////////////
+// PARTICLE SYSTEM COLOR FUNCTION
+//
+
+class ParticleColorFunction : public StatefulColorFunction {
+private:
+    static const int MAX_PARTICLES = 20;
+    static const int NUM_LEDS = 128;
+    
+    struct Particle {
+        float position;
+        float velocity;
+        byte life;
+        byte hue;
+        
+        Particle() : position(0), velocity(0), life(0), hue(0) {}
+    };
+    
+    Particle particles[MAX_PARTICLES];
+    float gravity;
+    int emissionRate;
+    int emissionCounter;
+    String paletteName;
+    bool randomColors;
+    
+    void emitParticle() {
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life == 0) {
+                particles[i].position = 0;
+                particles[i].velocity = random8(20, 80) / 100.0;
+                particles[i].life = 255;
+                particles[i].hue = randomColors ? random8() : (i * 255 / MAX_PARTICLES);
+                break;
+            }
+        }
+    }
+    
+public:
+    ParticleColorFunction(String functionName = "particles",
+                         float grav = -0.01,
+                         int emitRate = 3,
+                         String palette = "rainbow",
+                         bool randColors = true)
+        : StatefulColorFunction(functionName, 20),
+          gravity(grav),
+          emissionRate(emitRate),
+          emissionCounter(0),
+          paletteName(palette),
+          randomColors(randColors) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            particles[i] = Particle();
+        }
+        emissionCounter = 0;
+    }
+    
+    void updateState() override {
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life > 0) {
+                particles[i].velocity += gravity;
+                particles[i].position += particles[i].velocity;
+                
+                particles[i].life = max(0, particles[i].life - 5);
+                
+                if(particles[i].position < 0 || particles[i].position > 1) {
+                    particles[i].life = 0;
+                }
+            }
+        }
+        
+        emissionCounter++;
+        if(emissionCounter >= emissionRate) {
+            emissionCounter = 0;
+            emitParticle();
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        CRGB totalColor = CRGB::Black;
+        
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life > 0) {
+                float distance = abs(particles[i].position - position);
+                if(distance < 0.05) {
+                    float influence = (0.05 - distance) * 20;
+                    influence *= particles[i].life / 255.0;
+                    
+                    CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+                    if(palette == nullptr) {
+                        palette = PaletteRegistry::findByName("rainbow");
+                    }
+                    
+                    CRGB particleColor = ColorFromPalette(*palette, particles[i].hue);
+                    particleColor.nscale8(influence * 255);
+                    
+                    totalColor += particleColor;
+                }
+            }
+        }
+        
+        return totalColor;
+    }
+    
+    void setPaletteName(String name) { paletteName = name; }
+    void setGravity(float g) { gravity = g; }
+    void setEmissionRate(int rate) { emissionRate = max(1, rate); }
+    void setRandomColors(bool random) { randomColors = random; }
 };
 
 /////////////////////////////////////////
 // COLOR FUNCTION REGISTRY
 //
-// Manages both stateless and stateful color functions
-//
 
-// Color function array (stateless functions as simple function pointers)
 extern ColorFunction colorFunctionArray[numcolorfunctions];
 extern String colorFunctionNames[numcolorfunctions];
-
-// Stateful color function registry
 extern StatefulColorFunction* statefulColorFunctions[numcolorfunctions];
 extern int numStatefulColorFunctions;
 
-// Function to register a stateful color function
 void registerStatefulColorFunction(int index, StatefulColorFunction* func);
 
 /////////////////////////////////////////
@@ -453,13 +587,9 @@ inline CRGB constantlyDark(float position) {
     return CRGB(0, 0, 0);
 }
 
-// Wrapper for stateful color functions to be used as ColorFunction
-// This allows stateful functions to be called through the standard interface
-// OPTIMIZATION: Only updates when first accessed in a frame
 inline CRGB callStatefulColorFunction(int index, float position) {
     if (index >= 0 && index < numcolorfunctions && 
         statefulColorFunctions[index] != nullptr) {
-        // Lazy update: only update if needed
         statefulColorFunctions[index]->updateIfNeeded(millis());
         return statefulColorFunctions[index]->getColor(position);
     }
@@ -467,20 +597,25 @@ inline CRGB callStatefulColorFunction(int index, float position) {
 }
 
 /////////////////////////////////////////
-// HELPER FUNCTIONS FOR COLOR FUNCTION MANAGEMENT
+// HELPER FUNCTIONS
 //
 
-// Find a color function by name
 int findColorFunctionByName(String name);
-
-// Get color from either stateless or stateful function
 CRGB getColorFromFunction(int index, float position);
-
-// Print which stateful functions were updated this frame (for debugging)
 void printActiveStatefulFunctions();
-
-// AUTO-INITIALIZATION: Call this once in setup() to automatically create and register
-// all stateful color functions. No manual instantiation needed!
 void initializeStatefulColorFunctions();
+
+/////////////////////////////////////////
+// PALETTE SWITCHING FUNCTIONS
+//
+
+// Switch a specific function to use a different palette
+void switchPalette(String functionName, String paletteName);
+
+// Cycle all palettized functions to the next palette in the registry
+void cycleAllPalettes();
+
+// Randomize all palettes - each function gets a different random palette
+void randomizeAllPalettes();
 
 #endif  // COLORFUNCTIONS_H

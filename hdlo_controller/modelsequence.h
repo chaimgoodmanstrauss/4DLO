@@ -27,25 +27,25 @@ struct SequenceRegistryEntry {
     : startStepIndex(start), numSteps(count), name(n), duration(dur), enabled(en) {}
 };
 
-// Structure for a single sequence step
+// Structure for a single sequence step - now uses strings instead of indices
 struct SequenceStep {
-  colormodel* model;                    // Pointer to the color model
-  std::array<int, numcolorfunctions> colorFunctionIndices; // Indices for color functions to use
-  unsigned long duration;               // Duration in milliseconds
-  TransitionType transitionType;        // Type of transition to next step
-  unsigned long transitionDuration;     // Transition duration in milliseconds
+  String modelName;                      // Name of the color model
+  std::array<String, numcolorfunctions> colorFunctionNames; // Names of color functions
+  unsigned long duration;                // Duration in milliseconds
+  TransitionType transitionType;         // Type of transition to next step
+  unsigned long transitionDuration;      // Transition duration in milliseconds
   
   SequenceStep() 
-    : model(nullptr), 
-      colorFunctionIndices{},  // Empty braces = zero-initialize all elements
+    : modelName(""), 
+      colorFunctionNames{},
       duration(5000), 
       transitionType(INSTANT),
       transitionDuration(0) {}
       
-  SequenceStep(colormodel* m, std::array<int, numcolorfunctions> funcIndices, unsigned long dur, 
-               TransitionType trans = INSTANT, unsigned long transDur = 0)
-    : model(m), 
-      colorFunctionIndices(funcIndices),
+  SequenceStep(String model, std::array<String, numcolorfunctions> funcNames, 
+               unsigned long dur, TransitionType trans = INSTANT, unsigned long transDur = 0)
+    : modelName(model), 
+      colorFunctionNames(funcNames),
       duration(dur),
       transitionType(trans),
       transitionDuration(transDur) {}
@@ -53,8 +53,8 @@ struct SequenceStep {
 
 class modelsequence {
 private:
-  static const int MAX_STEPS = 20;
-  static const int MAX_REGISTRY_ENTRIES = 10;
+  static const int MAX_STEPS = 100;  // Increased for more complex sequences
+  static const int MAX_REGISTRY_ENTRIES = 20;  // More sequences allowed
   
   SequenceStep steps[MAX_STEPS];
   int numSteps;
@@ -63,33 +63,26 @@ private:
   unsigned long transitionStartTime;
   bool inTransition;
   
-  // Color function arrays for current and next steps
-  ColorFunction currentFunctions[numcolorfunctions];
-  ColorFunction nextFunctions[numcolorfunctions];
-  
-  // Storage for name lookups
-  colormodel** modelArray;
-  int numModels;
-  String* modelNames;
-  
-  ColorFunction* colorFunctionArray;
-  int numColorFunctions;
-  String* colorFunctionNames;
+  // Cached pointers for current step (resolved at runtime)
+  colormodel* currentModel;
+  colormodel* nextModel;
+  std::array<ColorFunction, numcolorfunctions> currentFunctions;
+  std::array<ColorFunction, numcolorfunctions> nextFunctions;
   
   // Sequence registry
   SequenceRegistryEntry registry[MAX_REGISTRY_ENTRIES];
   int numRegistryEntries;
   int currentRegistryIndex;
   unsigned long registryStartTime;
-  int currentSequenceStartStep;  // Track where current sequence starts
-  int currentSequenceNumSteps;   // Track how many steps in current sequence
+  int currentSequenceStartStep;
+  int currentSequenceNumSteps;
   
-  // Helper methods for name lookup
-  int findModelByName(String name);
-  int findColorFunctionByName(String name);
+  // Resolve model and function names to actual pointers
+  colormodel* resolveModel(const String& name);
+  ColorFunction resolveColorFunction(const String& name);
   
   // Internal methods that work with milliseconds
-  bool addStepInternal(colormodel* model, std::array<int, numcolorfunctions> colorFuncIndices, 
+  bool addStepInternal(String model, std::array<String, numcolorfunctions> funcNames, 
                        unsigned long durationMs, TransitionType trans, 
                        unsigned long transDurMs);
   bool startNewSequenceInternal(String name, unsigned long durationMs, bool enabled);
@@ -97,23 +90,10 @@ private:
 public:
   modelsequence();
   
-  // Check if models are registered
-  bool hasRegisteredModels() const { return modelArray != nullptr && numModels > 0; }
-  
-  // Register model and color function arrays for name lookup
-  void registerModels(colormodel** models, int count, String* names);
-  void registerColorFunctions(ColorFunction* functions, int count, String* names);
-  
-  // Add a step to the sequence (by name) - accepts SECONDS
-  bool addStepByName(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
-                     float durationSeconds, TransitionType trans = INSTANT,
-                     float transDurSeconds = 0);
-  
-  // Load predefined sequences (using registered models)
-  void loadSequence(int index);
-  
-  // Load sequence by index (alias for consistency)
-  void loadSequenceByIndex(int index) { loadSequence(index); }
+  // Add a step to the sequence - accepts SECONDS and string names directly
+  bool addStep(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
+               float durationSeconds, TransitionType trans = INSTANT,
+               float transDurSeconds = 0);
   
   // Sequence registry management - accepts SECONDS
   bool startNewSequence(String name, float durationSeconds, bool enabled = true);
@@ -129,10 +109,10 @@ public:
   String getCurrentRegistryName() const;
   
   // Initialize the sequence (call before first use)
-  void begin(ColorFunction* colorFunctionArray);
+  void begin();
   
   // Update the sequence (call in loop)
-  void update(unsigned long currentTime, ColorFunction* colorFunctionArray);
+  void update(unsigned long currentTime);
   
   // Get color for a specific edge and position
   CRGB getColor(int edgeindex, float position);
@@ -140,25 +120,11 @@ public:
   // Get current model name for debugging
   String getCurrentModelName();
   
-  // NEW METHOD: Get direct access to current model
-  colormodel* getCurrentModel() {
-    if(currentSequenceNumSteps == 0 || currentStepIndex >= numSteps) {
-      return nullptr;
-    }
-    return steps[currentStepIndex].model;
-  }
+  // Get direct access to current model
+  colormodel* getCurrentModel() { return currentModel; }
   
-  // NEW METHOD: Get next model (useful during transitions)
-  colormodel* getNextModel() {
-    if(currentSequenceNumSteps == 0) return nullptr;
-    
-    int nextStepIndex = currentStepIndex + 1;
-    if(nextStepIndex >= currentSequenceStartStep + currentSequenceNumSteps) {
-      nextStepIndex = currentSequenceStartStep;
-    }
-    
-    return steps[nextStepIndex].model;
-  }
+  // Get next model (useful during transitions)
+  colormodel* getNextModel() { return nextModel; }
   
   // Reset sequence to beginning
   void reset();
