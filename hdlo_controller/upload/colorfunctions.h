@@ -965,9 +965,6 @@ void initializeStatefulColorFunctions();
 // Switch a specific function to use a different palette
 void switchPalette(String functionName, String paletteName);
 
-// Get the current palette name for a given function
-String getCurrentPaletteName(String functionName);
-
 // Cycle all palettized functions to the next palette in the registry
 void cycleAllPalettes();
 

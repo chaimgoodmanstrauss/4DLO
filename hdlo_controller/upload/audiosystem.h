@@ -1,0 +1,222 @@
+////////////////////////////////////////////
+//
+//   audiosystem.h
+//
+// Centralized audio input system with FFT analysis
+// Supports multiple audio sources: Microphone or SD Card playback
+//
+
+#ifndef AUDIOSYSTEM_H
+#define AUDIOSYSTEM_H
+
+#include <Arduino.h>
+#include <Audio.h>
+#include <SD.h>
+
+/////////////////////////////////////////
+// AUDIO SOURCE INTERFACE
+//
+// Abstract base class for different audio sources
+//
+
+class AudioSource {
+public:
+    virtual ~AudioSource() {}
+    
+    // Check if audio data is available
+    virtual bool available() = 0;
+    
+    // Update and cache FFT data
+    virtual void update() = 0;
+    
+    // Get overall audio level (0.0 to 1.0+)
+    virtual float getLevel() = 0;
+    
+    // Get peak level with hold
+    virtual float getPeakLevel() = 0;
+    
+    // Get specific frequency band (0-39)
+    virtual float getBand(int bandIndex) = 0;
+    
+    // Get average of a range of bands
+    virtual float getBandRange(int startBand, int endBand) = 0;
+    
+    // Get bass level (average of low frequency bands)
+    virtual float getBass() = 0;
+    
+    // Get mid level
+    virtual float getMid() = 0;
+    
+    // Get treble level
+    virtual float getTreble() = 0;
+    
+    // Get high treble level
+    virtual float getHighTreble() = 0;
+    
+    // Print current levels (debugging)
+    virtual void printLevels() = 0;
+};
+
+/////////////////////////////////////////
+// MICROPHONE SOURCE
+//
+// Live microphone input with FFT analysis
+//
+
+class MicrophoneSource : public AudioSource {
+private:
+    static const int myInput = AUDIO_INPUT_MIC;
+    
+    AudioInputI2S audioInput;
+    AudioAnalyzeFFT1024 myFFT;
+    AudioOutputI2S audioOutput;
+    AudioConnection patchCord1;
+    AudioControlSGTL5000 audioShield;
+    
+    float cachedBands[40];
+    unsigned long lastFFTUpdate;
+    static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
+    
+    float currentLevel;
+    float peakLevel;
+    unsigned long lastPeakTime;
+    static const unsigned long PEAK_HOLD_TIME = 300; // 300ms
+    
+    bool initialized;
+    
+public:
+    MicrophoneSource();
+    ~MicrophoneSource() {}
+    
+    void initialize();
+    bool available() override;
+    void update() override;
+    
+    float getLevel() override { return currentLevel; }
+    float getPeakLevel() override { return peakLevel; }
+    float getBand(int bandIndex) override;
+    float getBandRange(int startBand, int endBand) override;
+    float getBass() override { return getBandRange(0, 9); }
+    float getMid() override { return getBandRange(10, 19); }
+    float getTreble() override { return getBandRange(20, 29); }
+    float getHighTreble() override { return getBandRange(30, 39); }
+    
+    void setMicGain(float gain);
+    void setLineInLevel(float level);
+    void printLevels() override;
+};
+
+/////////////////////////////////////////
+// SD CARD SOURCE
+//
+// Playback from SD card with variable speed and FFT analysis
+//
+
+class SDCardSource : public AudioSource {
+private:
+    AudioPlaySdWav wavPlayer;
+    AudioAnalyzeFFT1024 myFFT;
+    AudioOutputI2S audioOutput;
+    AudioConnection patchCord1; // wavPlayer left -> FFT
+    AudioConnection patchCord2; // wavPlayer left -> output left
+    AudioConnection patchCord3; // wavPlayer right -> output right
+    AudioControlSGTL5000 audioShield;
+    
+    float cachedBands[40];
+    unsigned long lastFFTUpdate;
+    static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
+    
+    float currentLevel;
+    float peakLevel;
+    unsigned long lastPeakTime;
+    static const unsigned long PEAK_HOLD_TIME = 300;
+    
+    String currentFilename;
+    float playbackRate;
+    bool initialized;
+    bool isPlaying;
+    bool loopPlayback;
+    
+public:
+    SDCardSource();
+    ~SDCardSource() {}
+    
+    void initialize();
+    bool playFile(const char* filename);
+    void setPlaybackRate(float rate); // 0.05 = 5%, 1.0 = 100%, 2.0 = 200%
+    void setLooping(bool loop) { loopPlayback = loop; }
+    void stop();
+    void pause();
+    void resume();
+    bool isCurrentlyPlaying() { return isPlaying && wavPlayer.isPlaying(); }
+    
+    bool available() override;
+    void update() override;
+    
+    float getLevel() override { return currentLevel; }
+    float getPeakLevel() override { return peakLevel; }
+    float getBand(int bandIndex) override;
+    float getBandRange(int startBand, int endBand) override;
+    float getBass() override { return getBandRange(0, 9); }
+    float getMid() override { return getBandRange(10, 19); }
+    float getTreble() override { return getBandRange(20, 29); }
+    float getHighTreble() override { return getBandRange(30, 39); }
+    
+    void printLevels() override;
+};
+
+/////////////////////////////////////////
+// AUDIO SYSTEM (Main Interface)
+//
+// Facade that delegates to current audio source
+//
+
+class AudioSystem {
+private:
+    static AudioSource* currentSource;
+    static MicrophoneSource* micSource;
+    static SDCardSource* sdSource;
+    static bool initialized;
+    
+public:
+    // Initialize audio system (call in setup after AudioMemory)
+    static void initialize();
+    
+    // Switch audio sources
+    static void useMicrophone();
+    static bool useSDCard(const char* filename, float rate = 1.0);
+    
+    // SD card controls
+    static void setPlaybackRate(float rate);
+    static void setLooping(bool loop);
+    static void stopPlayback();
+    static void pausePlayback();
+    static void resumePlayback();
+    static bool isPlaying();
+    
+    // Update audio data (call once per frame)
+    static void update();
+    
+    // Audio level access (delegates to current source)
+    static float getLevel() { return currentSource ? currentSource->getLevel() : 0.0f; }
+    static float getPeakLevel() { return currentSource ? currentSource->getPeakLevel() : 0.0f; }
+    static float getBand(int bandIndex) { return currentSource ? currentSource->getBand(bandIndex) : 0.0f; }
+    static float getBandRange(int startBand, int endBand) { 
+        return currentSource ? currentSource->getBandRange(startBand, endBand) : 0.0f; 
+    }
+    static float getBass() { return currentSource ? currentSource->getBass() : 0.0f; }
+    static float getMid() { return currentSource ? currentSource->getMid() : 0.0f; }
+    static float getTreble() { return currentSource ? currentSource->getTreble() : 0.0f; }
+    static float getHighTreble() { return currentSource ? currentSource->getHighTreble() : 0.0f; }
+    
+    // Microphone-specific controls
+    static void setMicGain(float gain);
+    static void setLineInLevel(float level);
+    
+    // Debugging
+    static void printLevels();
+    static bool isInitialized() { return initialized; }
+    static String getCurrentSourceType();
+};
+
+#endif // AUDIOSYSTEM_H

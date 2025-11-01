@@ -35,26 +35,6 @@ void registerStatefulColorFunction(int index, StatefulColorFunction* func) {
     }
 }
 
-// Function to get the current palette name for a given color function
-String getCurrentPaletteName(String functionName) {
-    int funcIndex = findColorFunctionByName(functionName);
-    
-    if(funcIndex < 0 || funcIndex >= numcolorfunctions) {
-        return "";
-    }
-    
-    if(statefulColorFunctions[funcIndex] == nullptr) {
-        // Not a stateful function, no palette to get
-        return "";
-    }
-    
-    // This assumes StatefulColorFunction has a getCurrentPaletteName() method
-    // You may need to add this method to StatefulColorFunction class
-    // For now, return empty string - the palette switching will still work
-    // but won't be able to restore the exact previous palette
-    return "";
-}
-
 /////////////////////////////////////////
 // COLOR FUNCTION ARRAYS
 //
