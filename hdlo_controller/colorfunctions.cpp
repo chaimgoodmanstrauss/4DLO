@@ -68,6 +68,26 @@ CRGB particlesWrapper(float position) {
     return callStatefulColorFunction(14, position);
 }
 
+CRGB freqBandsWrapper(float position) {
+    return callStatefulColorFunction(17, position);
+}
+
+CRGB bassPulseWrapper(float position) {
+    return callStatefulColorFunction(18, position);
+}
+
+CRGB spectrumWrapper(float position) {
+    return callStatefulColorFunction(19, position);
+}
+
+CRGB beatDetectWrapper(float position) {
+    return callStatefulColorFunction(20, position);
+}
+
+CRGB vocalsWrapper(float position) {
+    return callStatefulColorFunction(21, position);
+}
+
 // Color function array definitions
 ColorFunction colorFunctionArray[numcolorfunctions] = {
     constantlyDark,          // 0 - constantly dark
@@ -87,7 +107,12 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
     particlesWrapper,        // 14 - particles
     staticgreen,             // 15
     pulsingred,              // 16
-    // Slots 17-99 available for future functions
+    freqBandsWrapper,        // 17 - frequency band visualizer
+    bassPulseWrapper,        // 18 - bass pulse
+    spectrumWrapper,         // 19 - spectrum analyzer
+    beatDetectWrapper,       // 20 - beat detector
+    vocalsWrapper,           // 21 - vocal highlighter
+    // Slots 22-99 available for future functions
 };
 
 String colorFunctionNames[numcolorfunctions] = {
@@ -108,6 +133,11 @@ String colorFunctionNames[numcolorfunctions] = {
     "particles",
     "staticgreen",
     "pulsingred",
+    "freqbands",
+    "basspulse",
+    "spectrum",
+    "beatdetect",
+    "vocals",
     // Names for remaining slots will be empty strings
 };
 
@@ -249,14 +279,55 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(14, particles);
     
+    // Frequency Band Visualizer (index 17)
+    FrequencyBandVisualizer* freqBands = new FrequencyBandVisualizer(
+        "freqbands",     // name
+        "rainbow"        // palette name from registry
+    );
+    registerStatefulColorFunction(17, freqBands);
+    
+    // Bass Pulse (index 18)
+    BassPulseFunction* bassPulse = new BassPulseFunction(
+        "basspulse",     // name
+        CRGB::Blue       // base color
+    );
+    registerStatefulColorFunction(18, bassPulse);
+    
+    // Spectrum Analyzer (index 19)
+    SpectrumAnalyzer* spectrum = new SpectrumAnalyzer(
+        "spectrum"       // name
+    );
+    registerStatefulColorFunction(19, spectrum);
+    
+    // Beat Detector (index 20)
+    BeatDetector* beatDetect = new BeatDetector(
+        "beatdetect",    // name
+        "lava"           // palette name from registry
+    );
+    registerStatefulColorFunction(20, beatDetect);
+    
+    // Vocal Highlighter (index 21)
+    VocalHighlighter* vocals = new VocalHighlighter(
+        "vocals",        // name
+        0.92,            // decay rate
+        CRGB::Cyan       // vocal color
+    );
+    registerStatefulColorFunction(21, vocals);
+    
     Serial.println("Stateful color functions initialized:");
     Serial.println("  - fire2012 (index 8) - Uses 'fire' palette");
     Serial.println("  - fire2012_blue (index 9) - Uses 'bluefire' palette");
     Serial.println("  - fire2012_green (index 10) - Uses 'greenfire' palette");
-    Serial.println("  - audio (index 11) - Uses 'rainbow' palette, requires audio on pin A0");
-    Serial.println("  - vumeter (index 12) - Classic VU meter colors, requires audio on pin A0");
+    Serial.println("  - audio (index 11) - Uses 'rainbow' palette");
+    Serial.println("  - vumeter (index 12) - Classic VU meter colors");
     Serial.println("  - plasma (index 13) - Uses 'plasma' palette");
     Serial.println("  - particles (index 14) - Uses 'rainbow' palette");
+    Serial.println("  - freqbands (index 17) - Frequency band visualizer");
+    Serial.println("  - basspulse (index 18) - Bass-reactive pulse");
+    Serial.println("  - spectrum (index 19) - Classic spectrum analyzer");
+    Serial.println("  - beatdetect (index 20) - Beat detection flash");
+    Serial.println("  - vocals (index 21) - Vocal frequency highlighter");
+    Serial.println("NOTE: All audio functions use centralized AudioSystem");
     Serial.println("NOTE: Functions only update when actually used (lazy evaluation)");
     
     // Print available palettes
@@ -302,6 +373,12 @@ void switchPalette(String functionName, String paletteName) {
     } else if(funcIndex == 14) {  // Particles
         ParticleColorFunction* particleFunc = static_cast<ParticleColorFunction*>(statefulColorFunctions[funcIndex]);
         particleFunc->setPaletteName(paletteName);
+    } else if(funcIndex == 17) {  // Frequency bands
+        FrequencyBandVisualizer* freqFunc = static_cast<FrequencyBandVisualizer*>(statefulColorFunctions[funcIndex]);
+        freqFunc->setPaletteName(paletteName);
+    } else if(funcIndex == 20) {  // Beat detector
+        BeatDetector* beatFunc = static_cast<BeatDetector*>(statefulColorFunctions[funcIndex]);
+        beatFunc->setPaletteName(paletteName);
     }
     
     Serial.println("Switched " + functionName + " to palette: " + paletteName);
@@ -323,6 +400,8 @@ void cycleAllPalettes() {
     switchPalette("audio", paletteName);
     switchPalette("plasma", paletteName);
     switchPalette("particles", paletteName);
+    switchPalette("freqbands", paletteName);
+    switchPalette("beatdetect", paletteName);
 }
 
 // Randomize all palettes
@@ -338,4 +417,6 @@ void randomizeAllPalettes() {
     switchPalette("audio", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("plasma", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("particles", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("freqbands", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("beatdetect", PaletteRegistry::getNameByIndex(random(numPalettes)));
 }

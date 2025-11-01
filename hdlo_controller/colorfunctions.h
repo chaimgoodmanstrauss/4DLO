@@ -12,6 +12,7 @@
 #include <Arduino.h>
 #include "models.h"
 #include "paletteregistry.h"
+#include "audiosystem.h"  // Centralized audio system with FFT
 
 const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
@@ -149,50 +150,29 @@ public:
 
 /////////////////////////////////////////
 // AUDIO REACTIVE COLOR FUNCTION
+// Uses centralized AudioSystem with FFT
 //
 
 class AudioReactiveColorFunction : public StatefulColorFunction {
 private:
     static const int NUM_LEDS = 128;
-    static const int HISTORY_SIZE = 8;
     
     byte brightness[NUM_LEDS];
-    int audioPin;
     int sensitivity;
-    byte audioHistory[HISTORY_SIZE];
-    int historyIndex;
     byte currentLevel;
     float decay;
     String paletteName;
     bool useHSV;
     
-    byte readAudioLevel() {
-        int sample = analogRead(audioPin);
-        int centered = abs(sample - 512);
-        byte level = map(centered, 0, 512, 0, 255);
-        level = constrain(level * sensitivity / 100, 0, 255);
-        return level;
-    }
-    
-    byte getSmoothedLevel() {
-        int sum = 0;
-        for(int i = 0; i < HISTORY_SIZE; i++) {
-            sum += audioHistory[i];
-        }
-        return sum / HISTORY_SIZE;
-    }
-    
 public:
     AudioReactiveColorFunction(String functionName = "audio", 
-                               int pin = A0,
+                               int pin = A0,  // Kept for compatibility, but unused
                                int sens = 100,
                                float decayRate = 0.95,
                                String palette = "rainbow",
                                bool hsvMode = false)
-        : StatefulColorFunction(functionName, 10),
-          audioPin(pin),
+        : StatefulColorFunction(functionName, 20),
           sensitivity(sens),
-          historyIndex(0),
           currentLevel(0),
           decay(decayRate),
           paletteName(palette),
@@ -204,28 +184,27 @@ public:
         for(int i = 0; i < NUM_LEDS; i++) {
             brightness[i] = 0;
         }
-        for(int i = 0; i < HISTORY_SIZE; i++) {
-            audioHistory[i] = 0;
-        }
-        historyIndex = 0;
         currentLevel = 0;
     }
     
     void updateState() override {
-        byte newLevel = readAudioLevel();
+        // Get audio level from centralized audio system
+        float audioLevel = AudioSystem::getLevel();
         
-        audioHistory[historyIndex] = newLevel;
-        historyIndex = (historyIndex + 1) % HISTORY_SIZE;
+        // Scale by sensitivity and convert to byte (0-255)
+        byte newLevel = constrain(audioLevel * sensitivity * 2550, 0, 255);
+        currentLevel = newLevel;
         
-        currentLevel = getSmoothedLevel();
-        
+        // Create audio-reactive spread effect
         int center = NUM_LEDS / 2;
         int spread = (currentLevel * NUM_LEDS) / (255 * 2);
         
+        // Apply decay to all LEDs
         for(int i = 0; i < NUM_LEDS; i++) {
             brightness[i] = brightness[i] * decay;
         }
         
+        // Add new brightness based on audio level
         for(int i = 0; i < spread; i++) {
             int pos1 = center + i;
             int pos2 = center - i;
@@ -263,7 +242,6 @@ public:
     
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
     void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
-    void setAudioPin(int pin) { audioPin = pin; }
     void setPaletteName(String name) { paletteName = name; }
     void setHSVMode(bool mode) { useHSV = mode; }
     byte getCurrentLevel() const { return currentLevel; }
@@ -271,12 +249,12 @@ public:
 
 /////////////////////////////////////////
 // VU METER COLOR FUNCTION
+// Uses centralized AudioSystem with FFT
 //
 
 class VUMeterColorFunction : public StatefulColorFunction {
 private:
     static const int NUM_LEDS = 128;
-    int audioPin;
     int sensitivity;
     byte peakLevel;
     byte currentLevel;
@@ -288,12 +266,11 @@ private:
     
 public:
     VUMeterColorFunction(String functionName = "vumeter",
-                        int pin = A0,
+                        int pin = A0,  // Kept for compatibility, but unused
                         int sens = 100,
                         bool classic = true,
                         CRGB peakCol = CRGB::White)
-        : StatefulColorFunction(functionName, 10),
-          audioPin(pin),
+        : StatefulColorFunction(functionName, 20),
           sensitivity(sens),
           peakLevel(0),
           currentLevel(0),
@@ -313,13 +290,14 @@ public:
     }
     
     void updateState() override {
-        int sample = analogRead(audioPin);
-        int centered = abs(sample - 512);
-        byte level = map(centered, 0, 512, 0, 255);
-        level = constrain(level * sensitivity / 100, 0, 255);
+        // Get audio level from centralized audio system
+        float audioLevel = AudioSystem::getLevel();
         
+        // Scale by sensitivity and convert to byte (0-255)
+        byte level = constrain(audioLevel * sensitivity * 2550, 0, 255);
         currentLevel = level;
         
+        // Track peak with hold time
         if(level > peakHold) {
             peakHold = level;
             lastPeakTime = millis();
@@ -528,6 +506,381 @@ public:
     void setGravity(float g) { gravity = g; }
     void setEmissionRate(int rate) { emissionRate = max(1, rate); }
     void setRandomColors(bool random) { randomColors = random; }
+};
+
+/////////////////////////////////////////
+// FREQUENCY BAND VISUALIZER
+// Maps different frequency bands to different positions
+//
+
+class FrequencyBandVisualizer : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    static const int NUM_BANDS = 4;  // Bass, Low-mid, Mid, Treble
+    
+    float bandLevels[NUM_BANDS];
+    String paletteName;
+    
+public:
+    FrequencyBandVisualizer(String functionName = "freqbands",
+                           String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          paletteName(palette) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < NUM_BANDS; i++) {
+            bandLevels[i] = 0;
+        }
+    }
+    
+    void updateState() override {
+        // Get frequency bands from AudioSystem
+        bandLevels[0] = AudioSystem::getBass();             // 0-200 Hz
+        bandLevels[1] = AudioSystem::getBandRange(10, 14);  // Low-mid
+        bandLevels[2] = AudioSystem::getBandRange(15, 24);  // Mid
+        bandLevels[3] = AudioSystem::getTreble();           // High
+    }
+    
+    CRGB getColor(float position) override {
+        // Divide LED strip into 4 zones
+        int zone = (int)(position * NUM_BANDS);
+        zone = constrain(zone, 0, NUM_BANDS - 1);
+        
+        // Get brightness for this zone
+        byte brightness = bandLevels[zone] * 255 * 2;  // Scale up
+        
+        // Map to palette
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("rainbow");
+        }
+        
+        byte paletteIndex = zone * (255 / NUM_BANDS);
+        CRGB color = ColorFromPalette(*palette, paletteIndex);
+        color.nscale8(brightness);
+        
+        return color;
+    }
+    
+    void setPaletteName(String name) { paletteName = name; }
+};
+
+/////////////////////////////////////////
+// BASS PULSE FUNCTION
+// Pulses brightness based on bass frequencies
+//
+
+class BassPulseFunction : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    
+    float currentBass;
+    float peakBass;
+    unsigned long lastPeakTime;
+    CRGB baseColor;
+    
+public:
+    BassPulseFunction(String functionName = "basspulse",
+                     CRGB base = CRGB::Blue)
+        : StatefulColorFunction(functionName, 20),
+          currentBass(0),
+          peakBass(0),
+          lastPeakTime(0),
+          baseColor(base) {
+        reset();
+    }
+    
+    void reset() override {
+        currentBass = 0;
+        peakBass = 0;
+        lastPeakTime = 0;
+    }
+    
+    void updateState() override {
+        // Get bass level
+        currentBass = AudioSystem::getBass();
+        
+        // Track peaks
+        if(currentBass > peakBass) {
+            peakBass = currentBass;
+            lastPeakTime = millis();
+        }
+        
+        // Decay peak
+        if(millis() - lastPeakTime > 200) {
+            peakBass *= 0.9;
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        // Scale brightness based on bass level
+        byte brightness = constrain(currentBass * 2550, 0, 255);
+        
+        CRGB color = baseColor;
+        color.nscale8(brightness);
+        
+        // Add white flash on peak
+        if(currentBass > peakBass * 0.9) {
+            color += CRGB(brightness/2, brightness/2, brightness/2);
+        }
+        
+        return color;
+    }
+    
+    void setBaseColor(CRGB color) { baseColor = color; }
+};
+
+/////////////////////////////////////////
+// SPECTRUM ANALYZER
+// Classic spectrum analyzer effect
+//
+
+class SpectrumAnalyzer : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    static const int NUM_BANDS = 20;  // More bands for detailed display
+    
+    float bandHeights[NUM_BANDS];
+    float peakHeights[NUM_BANDS];
+    unsigned long peakTimes[NUM_BANDS];
+    
+public:
+    SpectrumAnalyzer(String functionName = "spectrum")
+        : StatefulColorFunction(functionName, 20) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < NUM_BANDS; i++) {
+            bandHeights[i] = 0;
+            peakHeights[i] = 0;
+            peakTimes[i] = 0;
+        }
+    }
+    
+    void updateState() override {
+        // Sample 20 bands across the spectrum
+        for(int i = 0; i < NUM_BANDS; i++) {
+            // Map band to frequency range
+            int bandIndex = i * 2;  // Spread across 40 available bands
+            float level = AudioSystem::getBand(bandIndex);
+            
+            // Smooth the height
+            bandHeights[i] = bandHeights[i] * 0.7 + level * 0.3;
+            
+            // Track peaks
+            if(bandHeights[i] > peakHeights[i]) {
+                peakHeights[i] = bandHeights[i];
+                peakTimes[i] = millis();
+            }
+            
+            // Decay peaks
+            if(millis() - peakTimes[i] > 300) {
+                peakHeights[i] *= 0.95;
+            }
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        // Determine which band this LED is in
+        int band = (int)(position * NUM_BANDS);
+        band = constrain(band, 0, NUM_BANDS - 1);
+        
+        // Position within band (0.0 to 1.0)
+        float bandPos = fmod(position * NUM_BANDS, 1.0);
+        
+        CRGB color = CRGB::Black;
+        
+        // Check if this position should be lit
+        if(bandPos < bandHeights[band]) {
+            // Color gradient based on height
+            if(bandPos < 0.33) {
+                color = CRGB::Green;
+            } else if(bandPos < 0.66) {
+                color = CRGB::Yellow;
+            } else {
+                color = CRGB::Red;
+            }
+        }
+        
+        // Add white peak indicator
+        if(abs(bandPos - peakHeights[band]) < 0.05) {
+            color = CRGB::White;
+        }
+        
+        return color;
+    }
+};
+
+/////////////////////////////////////////
+// BEAT DETECTOR
+// Detects beats and creates flash effects
+//
+
+class BeatDetector : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    static const int HISTORY_SIZE = 40;
+    
+    float bassHistory[HISTORY_SIZE];
+    int historyIndex;
+    float beatThreshold;
+    bool beatDetected;
+    unsigned long lastBeatTime;
+    float beatBrightness;
+    String paletteName;
+    
+    float getAverageBass() {
+        float sum = 0;
+        for(int i = 0; i < HISTORY_SIZE; i++) {
+            sum += bassHistory[i];
+        }
+        return sum / HISTORY_SIZE;
+    }
+    
+public:
+    BeatDetector(String functionName = "beatdetect",
+                String palette = "fire")
+        : StatefulColorFunction(functionName, 20),
+          historyIndex(0),
+          beatThreshold(1.5),  // Must be 1.5x average
+          beatDetected(false),
+          lastBeatTime(0),
+          beatBrightness(0),
+          paletteName(palette) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < HISTORY_SIZE; i++) {
+            bassHistory[i] = 0;
+        }
+        historyIndex = 0;
+        beatDetected = false;
+        beatBrightness = 0;
+    }
+    
+    void updateState() override {
+        // Get current bass level
+        float currentBass = AudioSystem::getBass();
+        
+        // Store in history
+        bassHistory[historyIndex] = currentBass;
+        historyIndex = (historyIndex + 1) % HISTORY_SIZE;
+        
+        // Calculate average
+        float avgBass = getAverageBass();
+        
+        // Detect beat (current level is much higher than average)
+        unsigned long now = millis();
+        if(currentBass > avgBass * beatThreshold && 
+           now - lastBeatTime > 200) {  // Minimum 200ms between beats
+            beatDetected = true;
+            lastBeatTime = now;
+            beatBrightness = 255;
+        }
+        
+        // Decay brightness after beat
+        if(beatDetected) {
+            beatBrightness *= 0.85;
+            if(beatBrightness < 10) {
+                beatDetected = false;
+            }
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        if(!beatDetected) return CRGB::Black;
+        
+        // Flash effect on beat
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("fire");
+        }
+        
+        byte index = position * 255;
+        CRGB color = ColorFromPalette(*palette, index);
+        color.nscale8(beatBrightness);
+        
+        return color;
+    }
+    
+    void setBeatThreshold(float threshold) { 
+        beatThreshold = constrain(threshold, 1.1, 3.0); 
+    }
+    void setPaletteName(String name) { paletteName = name; }
+};
+
+/////////////////////////////////////////
+// VOCAL HIGHLIGHTER
+// Responds specifically to vocal/mid frequencies
+//
+
+class VocalHighlighter : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    
+    byte brightness[NUM_LEDS];
+    float vocalLevel;
+    float decay;
+    CRGB vocalColor;
+    
+public:
+    VocalHighlighter(String functionName = "vocals",
+                    float decayRate = 0.9,
+                    CRGB color = CRGB::Cyan)
+        : StatefulColorFunction(functionName, 20),
+          vocalLevel(0),
+          decay(decayRate),
+          vocalColor(color) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < NUM_LEDS; i++) {
+            brightness[i] = 0;
+        }
+        vocalLevel = 0;
+    }
+    
+    void updateState() override {
+        // Vocals are typically in the 200-2000 Hz range
+        // That maps to bands 10-19 in our system
+        vocalLevel = AudioSystem::getBandRange(12, 18);
+        
+        // Apply decay to all LEDs
+        for(int i = 0; i < NUM_LEDS; i++) {
+            brightness[i] = brightness[i] * decay;
+        }
+        
+        // Add brightness in center based on vocal level
+        int center = NUM_LEDS / 2;
+        int spread = (int)(vocalLevel * 50);  // Max 50 LEDs spread
+        
+        byte newBrightness = constrain(vocalLevel * 2550, 0, 255);
+        
+        for(int i = -spread; i <= spread; i++) {
+            int pos = center + i;
+            if(pos >= 0 && pos < NUM_LEDS) {
+                brightness[pos] = max(brightness[pos], newBrightness);
+            }
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        int index = (int)(position * (NUM_LEDS - 1));
+        index = constrain(index, 0, NUM_LEDS - 1);
+        
+        CRGB color = vocalColor;
+        color.nscale8(brightness[index]);
+        
+        return color;
+    }
+    
+    void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
+    void setVocalColor(CRGB color) { vocalColor = color; }
 };
 
 /////////////////////////////////////////

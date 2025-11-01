@@ -12,6 +12,7 @@
 #include "ledconstants.h"
 #include "edgesetup.h"
 #include "paletteregistry.h"    // NEW: Add this include
+#include "audiosystem.h"        // NEW: Centralized audio system
 #include "models.h"
 #include "hdlo_models.h"
 #include "colorfunctions.h"
@@ -40,33 +41,38 @@ void setup() {
     FastLED.setBrightness(MAXBRIGHTNESS);
     FastLED.addLeds(teensycontroller, rgbarray, numberofleds);
     
-    // Step 3: Initialize the palette registry 
+    // Step 3: Initialize the audio system (BEFORE color functions!)
+    Serial.println("Initializing audio system...");
+    AudioMemory(12);  // Allocate audio memory blocks FIRST
+    AudioSystem::initialize();
+    
+    // Step 4: Initialize the palette registry 
     Serial.println("Initializing palette registry...");
     PaletteRegistry::initialize();
     //PaletteRegistry::printRegistry();  // Optional: see available palettes
     
-    // Step 4: Initialize color functions
+    // Step 5: Initialize color functions
     Serial.println("Initializing color functions...");
     initializeStatefulColorFunctions();
     
 
-    // Step 5: Initialize edge permutations
+    // Step 6: Initialize edge permutations
     Serial.println("Initializing edge permutations...");
     //EdgePermutation::printRegistry();  // Optional: see available permutations
     
 
-    // Step 6: Initialize models
+    // Step 7: Initialize models
     Serial.println("Initializing models...");
     initializemodels();
     initializefancymodels();
     colormodel::printRegistry();  // Optional: see available models
     
-    // Step 7: Create and initialize sequences (NEW - SIMPLIFIED!)
+    // Step 8: Create and initialize sequences (NEW - SIMPLIFIED!)
     Serial.println("Initializing sequences...");
     mainSequence = new modelsequence();
     initializeSequences(mainSequence);
     
-    // Step 8: Start the sequence registry
+    // Step 9: Start the sequence registry
     Serial.println("Starting sequence registry...");
     mainSequence->beginRegistry();
     
@@ -76,6 +82,9 @@ void setup() {
 }
 
 void loop() {
+    // Update audio system (reads FFT data once per frame)
+    AudioSystem::update();
+    
     // Update frame counter for lazy evaluation
     StatefulColorFunction::beginFrame();
     
@@ -169,7 +178,18 @@ void handleSerialCommands() {
             Serial.println("  cycle - Cycle all palettes");
             Serial.println("  random - Randomize palettes");
             Serial.println("  switch [function] [palette] - Switch specific function palette");
+            Serial.println("  audio - Show audio levels");
+            Serial.println("  gain [0.0-1.0] - Set microphone gain");
             Serial.println("  help - Show this help");
+        }
+        else if(command == "audio") {
+            // Show audio levels
+            AudioSystem::printLevels();
+        }
+        else if(command.startsWith("gain ")) {
+            // Set microphone gain
+            float gain = command.substring(5).toFloat();
+            AudioSystem::setMicGain(gain);
         }
     }
 }
