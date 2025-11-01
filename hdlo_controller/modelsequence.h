@@ -3,6 +3,7 @@
 
 #include "models.h"
 #include "colorfunctions.h"  // For numcolorfunctions constant
+#include "audiosystem.h"      // For audio source control
 #include <array>
 
 // Enum for transition types
@@ -10,6 +11,27 @@ enum TransitionType {
   INSTANT,      // No transition, immediate switch
   FADE,         // Cross-fade between models
   WIPE          // Sequential wipe across edges
+};
+
+// Enum for audio source types
+enum AudioSourceType {
+  AUDIO_KEEP_CURRENT,    // Don't change audio source
+  AUDIO_MICROPHONE,      // Use microphone input
+  AUDIO_SD_CARD          // Use SD card playback
+};
+
+// Structure for audio source configuration
+struct AudioSourceConfig {
+  AudioSourceType type;
+  String filename;       // SD card filename (if type == AUDIO_SD_CARD)
+  float playbackRate;    // Playback rate (0.01 to 4.0)
+  bool looping;          // Loop playback
+  
+  AudioSourceConfig() 
+    : type(AUDIO_KEEP_CURRENT), filename(""), playbackRate(1.0), looping(false) {}
+    
+  AudioSourceConfig(AudioSourceType t, String file = "", float rate = 1.0, bool loop = false)
+    : type(t), filename(file), playbackRate(rate), looping(loop) {}
 };
 
 // Structure for sequence registry entry
@@ -34,21 +56,25 @@ struct SequenceStep {
   unsigned long duration;                // Duration in milliseconds
   TransitionType transitionType;         // Type of transition to next step
   unsigned long transitionDuration;      // Transition duration in milliseconds
+  AudioSourceConfig audioConfig;         // Audio source configuration
   
   SequenceStep() 
     : modelName(""), 
       colorFunctionNames{},
       duration(5000), 
       transitionType(INSTANT),
-      transitionDuration(0) {}
+      transitionDuration(0),
+      audioConfig() {}
       
   SequenceStep(String model, std::array<String, numcolorfunctions> funcNames, 
-               unsigned long dur, TransitionType trans = INSTANT, unsigned long transDur = 0)
+               unsigned long dur, TransitionType trans = INSTANT, unsigned long transDur = 0,
+               AudioSourceConfig audio = AudioSourceConfig())
     : modelName(model), 
       colorFunctionNames(funcNames),
       duration(dur),
       transitionType(trans),
-      transitionDuration(transDur) {}
+      transitionDuration(transDur),
+      audioConfig(audio) {}
 };
 
 class modelsequence {
@@ -84,7 +110,7 @@ private:
   // Internal methods that work with milliseconds
   bool addStepInternal(String model, std::array<String, numcolorfunctions> funcNames, 
                        unsigned long durationMs, TransitionType trans, 
-                       unsigned long transDurMs);
+                       unsigned long transDurMs, AudioSourceConfig audio);
   bool startNewSequenceInternal(String name, unsigned long durationMs, bool enabled);
   
 public:
@@ -93,7 +119,7 @@ public:
   // Add a step to the sequence - accepts SECONDS and string names directly
   bool addStep(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
                float durationSeconds, TransitionType trans = INSTANT,
-               float transDurSeconds = 0);
+               float transDurSeconds = 0, AudioSourceConfig audio = AudioSourceConfig());
   
   // Sequence registry management - accepts SECONDS
   bool startNewSequence(String name, float durationSeconds, bool enabled = true);
@@ -128,6 +154,9 @@ public:
   
   // Reset sequence to beginning
   void reset();
+  
+  // Configure audio source from config
+  void configureAudioSource(const AudioSourceConfig& config);
   
   // Get sequence info
   int getCurrentStep() const { return currentStepIndex - currentSequenceStartStep; }

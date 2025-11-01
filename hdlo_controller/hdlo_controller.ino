@@ -180,6 +180,14 @@ void handleSerialCommands() {
             Serial.println("  switch [function] [palette] - Switch specific function palette");
             Serial.println("  audio - Show audio levels");
             Serial.println("  gain [0.0-1.0] - Set microphone gain");
+            Serial.println("  mic - Switch to microphone input");
+            Serial.println("  play [filename] [rate] - Play SD card file (rate optional, default 1.0)");
+            Serial.println("  rate [0.01-4.0] - Set playback rate (0.05 = 5%)");
+            Serial.println("  loop [on/off] - Enable/disable looping");
+            Serial.println("  stop - Stop playback");
+            Serial.println("  pause - Pause playback");
+            Serial.println("  resume - Resume playback");
+            Serial.println("  source - Show current audio source");
             Serial.println("  help - Show this help");
         }
         else if(command == "audio") {
@@ -190,6 +198,58 @@ void handleSerialCommands() {
             // Set microphone gain
             float gain = command.substring(5).toFloat();
             AudioSystem::setMicGain(gain);
+        }
+        else if(command == "mic") {
+            AudioSystem::useMicrophone();
+            Serial.println("Switched to microphone");
+        }
+        else if(command.startsWith("play ")) {
+            // Parse: play filename [rate]
+            int spacePos = command.indexOf(' ', 5);
+            String filename;
+            float rate = 1.0;
+            
+            if(spacePos > 0) {
+                filename = command.substring(5, spacePos);
+                rate = command.substring(spacePos + 1).toFloat();
+            } else {
+                filename = command.substring(5);
+            }
+            
+            if(AudioSystem::useSDCard(filename.c_str(), rate)) {
+                Serial.println("Playing: " + filename + " at " + String(rate * 100) + "%");
+            } else {
+                Serial.println("Failed to play: " + filename);
+            }
+        }
+        else if(command.startsWith("rate ")) {
+            float rate = command.substring(5).toFloat();
+            AudioSystem::setPlaybackRate(rate);
+        }
+        else if(command.startsWith("loop ")) {
+            String state = command.substring(5);
+            if(state == "on") {
+                AudioSystem::setLooping(true);
+                Serial.println("Looping enabled");
+            } else {
+                AudioSystem::setLooping(false);
+                Serial.println("Looping disabled");
+            }
+        }
+        else if(command == "stop") {
+            AudioSystem::stopPlayback();
+        }
+        else if(command == "pause") {
+            AudioSystem::pausePlayback();
+        }
+        else if(command == "resume") {
+            AudioSystem::resumePlayback();
+        }
+        else if(command == "source") {
+            Serial.println("Current source: " + AudioSystem::getCurrentSourceType());
+            if(AudioSystem::isPlaying()) {
+                Serial.println("Status: Playing");
+            }
         }
     }
 }

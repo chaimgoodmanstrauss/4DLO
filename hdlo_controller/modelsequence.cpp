@@ -45,13 +45,13 @@ ColorFunction modelsequence::resolveColorFunction(const String& name) {
 // Internal method - works with milliseconds
 bool modelsequence::addStepInternal(String model, std::array<String, numcolorfunctions> funcNames,
                                     unsigned long durationMs, TransitionType trans,
-                                    unsigned long transDurMs) {
+                                    unsigned long transDurMs, AudioSourceConfig audio) {
   if(numSteps >= MAX_STEPS) {
     Serial.println("Error: Sequence is full (max " + String(MAX_STEPS) + " steps)");
     return false;
   }
   
-  steps[numSteps] = SequenceStep(model, funcNames, durationMs, trans, transDurMs);
+  steps[numSteps] = SequenceStep(model, funcNames, durationMs, trans, transDurMs, audio);
   numSteps++;
   
   // Update the current registry entry's step count
@@ -65,13 +65,13 @@ bool modelsequence::addStepInternal(String model, std::array<String, numcolorfun
 // Public method - accepts SECONDS, uses string names directly
 bool modelsequence::addStep(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
                             float durationSeconds, TransitionType trans,
-                            float transDurSeconds) {
+                            float transDurSeconds, AudioSourceConfig audio) {
   // Convert seconds to milliseconds
   unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
   unsigned long transDurMs = (unsigned long)(transDurSeconds * 1000.0f);
   
   // Add the step using internal method
-  return addStepInternal(modelName, colorFuncNames, durationMs, trans, transDurMs);
+  return addStepInternal(modelName, colorFuncNames, durationMs, trans, transDurMs, audio);
 }
 
 void modelsequence::begin() {
@@ -106,6 +106,9 @@ void modelsequence::begin() {
       currentModel->setColorFunction(i, firstStep.colorFunctionNames[i], currentFunctions[i]);
     }
   }
+  
+  // Configure audio source for the first step
+  configureAudioSource(firstStep.audioConfig);
   
   Serial.println("Started step: " + firstStep.modelName);
 }
@@ -147,6 +150,9 @@ void modelsequence::update(unsigned long currentTime) {
           currentModel->setColorFunction(i, nextStep.colorFunctionNames[i], currentFunctions[i]);
         }
       }
+      
+      // Configure audio source
+      configureAudioSource(nextStep.audioConfig);
       
       Serial.println("Instant switch to: " + nextStep.modelName);
     } else {
@@ -379,4 +385,30 @@ String modelsequence::getCurrentRegistryName() const {
     return registry[currentRegistryIndex].name;
   }
   return "None";
+}
+
+void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
+  if(config.type == AUDIO_KEEP_CURRENT) {
+    return;  // Don't change audio source
+  }
+  
+  if(config.type == AUDIO_MICROPHONE) {
+    AudioSystem::useMicrophone();
+    Serial.println("Audio: Switched to microphone");
+  }
+  else if(config.type == AUDIO_SD_CARD) {
+    if(config.filename.length() == 0) {
+      Serial.println("Audio: No filename specified for SD card");
+      return;
+    }
+    
+    AudioSystem::setLooping(config.looping);
+    if(AudioSystem::useSDCard(config.filename.c_str(), config.playbackRate)) {
+      Serial.println("Audio: Playing " + config.filename + " at " + 
+                    String(config.playbackRate * 100) + "%" + 
+                    (config.looping ? " (looping)" : ""));
+    } else {
+      Serial.println("Audio: Failed to play " + config.filename);
+    }
+  }
 }
