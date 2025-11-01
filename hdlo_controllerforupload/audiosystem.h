@@ -209,6 +209,14 @@ public:
     static float getTreble() { return currentSource ? currentSource->getTreble() : 0.0f; }
     static float getHighTreble() { return currentSource ? currentSource->getHighTreble() : 0.0f; }
     
+    // Convenience methods with alternative names
+    static float getBassLevel() { return getBass(); }
+    static float getMidLevel() { return getMid(); }
+    static float getHighLevel() { return getHighTreble(); }
+    static float getOverallLevel() { return getLevel(); }
+    static bool getBeatDetected(); // Implemented in cpp file
+    static float getFrequencyBand(int band) { return getBand(band); }
+    
     // Microphone-specific controls
     static void setMicGain(float gain);
     static void setLineInLevel(float level);

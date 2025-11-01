@@ -26,7 +26,8 @@ modelsequence* mainSequence;
 
 void setup() {
     Serial.begin(115200);
-    while (!Serial && millis() < 3000); // Wait for serial monitor
+    // Optional: wait briefly for serial monitor (comment out for production)
+    // while (!Serial && millis() < 3000);
     
     Serial.println("=== HDLO Controller Starting ===");
     
@@ -82,6 +83,13 @@ void setup() {
 }
 
 void loop() {
+    // Safety check
+    if(!mainSequence) {
+        Serial.println("ERROR: mainSequence is NULL!");
+        delay(1000);
+        return;
+    }
+    
     // Update audio system (reads FFT data once per frame)
     AudioSystem::update();
     
@@ -181,8 +189,7 @@ void handleSerialCommands() {
             Serial.println("  audio - Show audio levels");
             Serial.println("  gain [0.0-1.0] - Set microphone gain");
             Serial.println("  mic - Switch to microphone input");
-            Serial.println("  play [filename] [rate] - Play SD card file (rate optional, default 1.0)");
-            Serial.println("  rate [0.01-4.0] - Set playback rate (0.05 = 5%)");
+            Serial.println("  play [filename] - Play SD card file");
             Serial.println("  loop [on/off] - Enable/disable looping");
             Serial.println("  stop - Stop playback");
             Serial.println("  pause - Pause playback");
@@ -204,27 +211,16 @@ void handleSerialCommands() {
             Serial.println("Switched to microphone");
         }
         else if(command.startsWith("play ")) {
-            // Parse: play filename [rate]
-            int spacePos = command.indexOf(' ', 5);
-            String filename;
-            float rate = 1.0;
+            String filename = command.substring(5);
             
-            if(spacePos > 0) {
-                filename = command.substring(5, spacePos);
-                rate = command.substring(spacePos + 1).toFloat();
-            } else {
-                filename = command.substring(5);
-            }
-            
-            if(AudioSystem::useSDCard(filename.c_str(), rate)) {
-                Serial.println("Playing: " + filename + " at " + String(rate * 100) + "%");
+            if(AudioSystem::useSDCard(filename.c_str(), 1.0)) {
+                Serial.println("Playing: " + filename);
             } else {
                 Serial.println("Failed to play: " + filename);
             }
         }
         else if(command.startsWith("rate ")) {
-            float rate = command.substring(5).toFloat();
-            AudioSystem::setPlaybackRate(rate);
+            Serial.println("Error: Playback rate control not supported");
         }
         else if(command.startsWith("loop ")) {
             String state = command.substring(5);

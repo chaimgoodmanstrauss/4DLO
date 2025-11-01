@@ -22,7 +22,7 @@ MicrophoneSource::MicrophoneSource()
       peakLevel(0.0),
       lastPeakTime(0),
       initialized(false) {
-    for(int i = 0; i < 40; i++) {
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
         cachedBands[i] = 0.0;
     }
 }
@@ -53,13 +53,13 @@ void MicrophoneSource::update() {
         lastFFTUpdate = currentTime;
         
         float sum = 0.0;
-        for(int i = 0; i < 40; i++) {
-            int binIndex = (i < 20) ? (i * 5) : (100 + (i - 20) * 10);
+        for(int i = 0; i < NUM_FFT_BANDS; i++) {
+            int binIndex = (i < HIGH_BAND_THRESHOLD) ? (i * LOW_BAND_BIN_MULTIPLIER) : (HIGH_BAND_BIN_OFFSET + (i - HIGH_BAND_THRESHOLD) * HIGH_BAND_BIN_MULTIPLIER);
             cachedBands[i] = myFFT.read(binIndex);
             sum += cachedBands[i];
         }
         
-        currentLevel = sum / 40.0;
+        currentLevel = sum / (float)NUM_FFT_BANDS;
         
         if(currentLevel > peakLevel) {
             peakLevel = currentLevel;
@@ -71,7 +71,7 @@ void MicrophoneSource::update() {
 }
 
 float MicrophoneSource::getBand(int bandIndex) {
-    if(bandIndex >= 0 && bandIndex < 40) {
+    if(bandIndex >= 0 && bandIndex < NUM_FFT_BANDS) {
         return cachedBands[bandIndex];
     }
     return 0.0;
@@ -79,7 +79,7 @@ float MicrophoneSource::getBand(int bandIndex) {
 
 float MicrophoneSource::getBandRange(int startBand, int endBand) {
     if(startBand < 0) startBand = 0;
-    if(endBand >= 40) endBand = 39;
+    if(endBand >= NUM_FFT_BANDS) endBand = FFT_LAST_BAND;
     if(startBand > endBand) return 0.0;
     
     float sum = 0.0;
@@ -94,14 +94,14 @@ float MicrophoneSource::getBandRange(int startBand, int endBand) {
 void MicrophoneSource::setMicGain(float gain) {
     if(!initialized) return;
     gain = constrain(gain, 0.0, 1.0);
-    audioShield.micGain(gain * 63);
+    audioShield.micGain(gain * MAX_MIC_GAIN);
     Serial.println("Mic gain: " + String(gain));
 }
 
 void MicrophoneSource::setLineInLevel(float level) {
     if(!initialized) return;
     level = constrain(level, 0.0, 1.0);
-    audioShield.lineInLevel(level * 15);
+    audioShield.lineInLevel(level * MAX_LINE_IN_LEVEL);
     Serial.println("Line in level: " + String(level));
 }
 
@@ -130,11 +130,10 @@ SDCardSource::SDCardSource()
       currentLevel(0.0),
       peakLevel(0.0),
       lastPeakTime(0),
-      playbackRate(1.0),
       initialized(false),
       isPlaying(false),
       loopPlayback(false) {
-    for(int i = 0; i < 40; i++) {
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
         cachedBands[i] = 0.0;
     }
 }
@@ -176,11 +175,10 @@ bool SDCardSource::playFile(const char* filename) {
 }
 
 void SDCardSource::setPlaybackRate(float rate) {
-    playbackRate = constrain(rate, 0.01, 4.0);
-    // Note: AudioPlaySdWav does not support variable playback rate
-    // This would require using AudioPlaySdResmp instead
-    Serial.println("Warning: Playback rate adjustment not supported by AudioPlaySdWav");
-    Serial.println("Requested rate: " + String(playbackRate * 100) + "% (ignored)");
+    // AudioPlaySdWav does not support variable playback rate
+    // This functionality is not available with the current audio library
+    Serial.println("Error: Playback rate adjustment not supported");
+    Serial.println("Please use AudioPlaySdResmp library for variable speed playback");
 }
 
 void SDCardSource::stop() {
@@ -190,13 +188,19 @@ void SDCardSource::stop() {
 }
 
 void SDCardSource::pause() {
+    // AudioPlaySdWav does not support true pause/resume
+    // This stops playback completely
     wavPlayer.stop();
-    Serial.println("Playback paused");
+    Serial.println("Playback stopped (pause not supported - use 'resume' to restart from beginning)");
 }
 
 void SDCardSource::resume() {
+    // Resume restarts from the beginning since true pause is not supported
     if(currentFilename.length() > 0) {
+        Serial.println("Restarting playback from beginning (true resume not supported)...");
         playFile(currentFilename.c_str());
+    } else {
+        Serial.println("No file to resume");
     }
 }
 
@@ -220,13 +224,13 @@ void SDCardSource::update() {
         lastFFTUpdate = currentTime;
         
         float sum = 0.0;
-        for(int i = 0; i < 40; i++) {
-            int binIndex = (i < 20) ? (i * 5) : (100 + (i - 20) * 10);
+        for(int i = 0; i < NUM_FFT_BANDS; i++) {
+            int binIndex = (i < HIGH_BAND_THRESHOLD) ? (i * LOW_BAND_BIN_MULTIPLIER) : (HIGH_BAND_BIN_OFFSET + (i - HIGH_BAND_THRESHOLD) * HIGH_BAND_BIN_MULTIPLIER);
             cachedBands[i] = myFFT.read(binIndex);
             sum += cachedBands[i];
         }
         
-        currentLevel = sum / 40.0;
+        currentLevel = sum / (float)NUM_FFT_BANDS;
         
         if(currentLevel > peakLevel) {
             peakLevel = currentLevel;
@@ -238,7 +242,7 @@ void SDCardSource::update() {
 }
 
 float SDCardSource::getBand(int bandIndex) {
-    if(bandIndex >= 0 && bandIndex < 40) {
+    if(bandIndex >= 0 && bandIndex < NUM_FFT_BANDS) {
         return cachedBands[bandIndex];
     }
     return 0.0;
@@ -246,7 +250,7 @@ float SDCardSource::getBand(int bandIndex) {
 
 float SDCardSource::getBandRange(int startBand, int endBand) {
     if(startBand < 0) startBand = 0;
-    if(endBand >= 40) endBand = 39;
+    if(endBand >= NUM_FFT_BANDS) endBand = FFT_LAST_BAND;
     if(startBand > endBand) return 0.0;
     
     float sum = 0.0;
@@ -261,7 +265,6 @@ float SDCardSource::getBandRange(int startBand, int endBand) {
 void SDCardSource::printLevels() {
     Serial.println("SD Card Playback Levels:");
     Serial.println("  File: " + currentFilename);
-    Serial.println("  Rate: " + String(playbackRate * 100) + "%");
     Serial.println("  Playing: " + String(isPlaying ? "Yes" : "No"));
     Serial.println("  Overall: " + String(currentLevel, 4));
     Serial.println("  Peak: " + String(peakLevel, 4));
@@ -327,7 +330,7 @@ bool AudioSystem::useSDCard(const char* filename, float rate) {
     }
     
     if(sdSource->playFile(filename)) {
-        sdSource->setPlaybackRate(rate);
+        // Note: Playback rate parameter is ignored - not supported by AudioPlaySdWav
         currentSource = sdSource;
         Serial.println("Switched to SD Card");
         return true;
@@ -398,4 +401,15 @@ String AudioSystem::getCurrentSourceType() {
     if(currentSource == micSource) return "Microphone";
     if(currentSource == sdSource) return "SD Card";
     return "None";
+}
+
+bool AudioSystem::getBeatDetected() {
+    // Simple beat detection based on bass level and peak
+    if(!currentSource) return false;
+    
+    float bass = currentSource->getBass();
+    float peak = currentSource->getPeakLevel();
+    
+    // Detect beat if bass is close to peak (indicating strong low-frequency hit)
+    return (bass > 0.3 && bass > peak * 0.8);
 }

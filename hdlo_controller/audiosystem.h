@@ -13,6 +13,28 @@
 #include <Audio.h>
 #include <SD.h>
 
+// FFT Band Constants
+const int NUM_FFT_BANDS = 40;
+const int FFT_LAST_BAND = 39;
+const int BASS_BAND_START = 0;
+const int BASS_BAND_END = 9;
+const int MID_BAND_START = 10;
+const int MID_BAND_END = 19;
+const int TREBLE_BAND_START = 20;
+const int TREBLE_BAND_END = 29;
+const int HIGH_TREBLE_BAND_START = 30;
+const int HIGH_TREBLE_BAND_END = 39;
+
+// Audio Hardware Constants (SGTL5000)
+const int MAX_MIC_GAIN = 63;
+const int MAX_LINE_IN_LEVEL = 15;
+
+// FFT Bin Mapping
+const int LOW_BAND_BIN_MULTIPLIER = 5;
+const int HIGH_BAND_BIN_OFFSET = 100;
+const int HIGH_BAND_BIN_MULTIPLIER = 10;
+const int HIGH_BAND_THRESHOLD = 20;
+
 /////////////////////////////////////////
 // AUDIO SOURCE INTERFACE
 //
@@ -73,7 +95,7 @@ private:
     AudioConnection patchCord1;
     AudioControlSGTL5000 audioShield;
     
-    float cachedBands[40];
+    float cachedBands[NUM_FFT_BANDS];
     unsigned long lastFFTUpdate;
     static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
     
@@ -96,10 +118,10 @@ public:
     float getPeakLevel() override { return peakLevel; }
     float getBand(int bandIndex) override;
     float getBandRange(int startBand, int endBand) override;
-    float getBass() override { return getBandRange(0, 9); }
-    float getMid() override { return getBandRange(10, 19); }
-    float getTreble() override { return getBandRange(20, 29); }
-    float getHighTreble() override { return getBandRange(30, 39); }
+    float getBass() override { return getBandRange(BASS_BAND_START, BASS_BAND_END); }
+    float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
+    float getTreble() override { return getBandRange(TREBLE_BAND_START, TREBLE_BAND_END); }
+    float getHighTreble() override { return getBandRange(HIGH_TREBLE_BAND_START, HIGH_TREBLE_BAND_END); }
     
     void setMicGain(float gain);
     void setLineInLevel(float level);
@@ -122,7 +144,7 @@ private:
     AudioConnection patchCord3; // wavPlayer right -> output right
     AudioControlSGTL5000 audioShield;
     
-    float cachedBands[40];
+    float cachedBands[NUM_FFT_BANDS];
     unsigned long lastFFTUpdate;
     static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
     
@@ -132,7 +154,6 @@ private:
     static const unsigned long PEAK_HOLD_TIME = 300;
     
     String currentFilename;
-    float playbackRate;
     bool initialized;
     bool isPlaying;
     bool loopPlayback;
@@ -143,7 +164,7 @@ public:
     
     void initialize();
     bool playFile(const char* filename);
-    void setPlaybackRate(float rate); // 0.05 = 5%, 1.0 = 100%, 2.0 = 200%
+    void setPlaybackRate(float rate); // Not supported - prints error message
     void setLooping(bool loop) { loopPlayback = loop; }
     void stop();
     void pause();
@@ -157,10 +178,10 @@ public:
     float getPeakLevel() override { return peakLevel; }
     float getBand(int bandIndex) override;
     float getBandRange(int startBand, int endBand) override;
-    float getBass() override { return getBandRange(0, 9); }
-    float getMid() override { return getBandRange(10, 19); }
-    float getTreble() override { return getBandRange(20, 29); }
-    float getHighTreble() override { return getBandRange(30, 39); }
+    float getBass() override { return getBandRange(BASS_BAND_START, BASS_BAND_END); }
+    float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
+    float getTreble() override { return getBandRange(TREBLE_BAND_START, TREBLE_BAND_END); }
+    float getHighTreble() override { return getBandRange(HIGH_TREBLE_BAND_START, HIGH_TREBLE_BAND_END); }
     
     void printLevels() override;
 };
@@ -208,6 +229,14 @@ public:
     static float getMid() { return currentSource ? currentSource->getMid() : 0.0f; }
     static float getTreble() { return currentSource ? currentSource->getTreble() : 0.0f; }
     static float getHighTreble() { return currentSource ? currentSource->getHighTreble() : 0.0f; }
+    
+    // Convenience methods with alternative names
+    static float getBassLevel() { return getBass(); }
+    static float getMidLevel() { return getMid(); }
+    static float getHighLevel() { return getHighTreble(); }
+    static float getOverallLevel() { return getLevel(); }
+    static bool getBeatDetected(); // Implemented in cpp file
+    static float getFrequencyBand(int band) { return getBand(band); }
     
     // Microphone-specific controls
     static void setMicGain(float gain);

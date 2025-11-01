@@ -146,6 +146,7 @@ public:
     void setSparking(int value) { sparking = constrain(value, 0, 255); }
     void setDirection(bool reverse) { gReverseDirection = reverse; }
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -243,6 +244,7 @@ public:
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
     void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
     void setHSVMode(bool mode) { useHSV = mode; }
     byte getCurrentLevel() const { return currentLevel; }
 };
@@ -262,14 +264,14 @@ private:
     unsigned long peakHoldTime;
     unsigned long lastPeakTime;
     bool useClassicColors;
-    CRGB peakColor;
+    String paletteName;  // Use palette instead of fixed peak color
     
 public:
     VUMeterColorFunction(String functionName = "vumeter",
                         int pin = A0,  // Kept for compatibility, but unused
                         int sens = 100,
-                        bool classic = true,
-                        CRGB peakCol = CRGB::White)
+                        bool classic = false,  // Changed default to use palette
+                        String palette = "rainbow")
         : StatefulColorFunction(functionName, 20),
           sensitivity(sens),
           peakLevel(0),
@@ -278,7 +280,7 @@ public:
           peakHoldTime(500),
           lastPeakTime(0),
           useClassicColors(classic),
-          peakColor(peakCol) {
+          paletteName(palette) {
         reset();
     }
     
@@ -314,6 +316,7 @@ public:
         
         if(ledLevel <= currentLevel) {
             if(useClassicColors) {
+                // Classic VU meter colors
                 if(position < 0.5) {
                     color = CRGB::Green;
                 } else if(position < 0.75) {
@@ -321,9 +324,25 @@ public:
                 } else {
                     color = CRGB::Red;
                 }
+            } else {
+                // Use palette - map position to palette
+                CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+                if(palette == nullptr) {
+                    palette = PaletteRegistry::findByName("rainbow");
+                }
+                byte paletteIndex = position * 255;
+                color = ColorFromPalette(*palette, paletteIndex);
+                // Scale by level for smooth fill
+                byte brightness = (ledLevel * 255) / max(1, currentLevel);
+                color.nscale8(brightness);
             }
         } else if(abs(ledLevel - peakHold) < 5) {
-            color = peakColor;
+            // Peak indicator - use bright color from palette
+            CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+            if(palette == nullptr) {
+                palette = PaletteRegistry::findByName("rainbow");
+            }
+            color = ColorFromPalette(*palette, 255);  // Brightest color
         }
         
         return color;
@@ -332,7 +351,8 @@ public:
     void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
     void setPeakHoldTime(unsigned long ms) { peakHoldTime = ms; }
     void setClassicMode(bool classic) { useClassicColors = classic; }
-    void setPeakColor(CRGB color) { peakColor = color; }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
     byte getCurrentLevel() const { return currentLevel; }
 };
 
@@ -388,6 +408,7 @@ public:
     }
     
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
     void setSpeeds(float s1, float s2, float s3) { 
         speed1 = s1; speed2 = s2; speed3 = s3; 
     }
@@ -503,6 +524,7 @@ public:
     }
     
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
     void setGravity(float g) { gravity = g; }
     void setEmissionRate(int rate) { emissionRate = max(1, rate); }
     void setRandomColors(bool random) { randomColors = random; }
@@ -565,6 +587,7 @@ public:
     }
     
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -579,16 +602,16 @@ private:
     float currentBass;
     float peakBass;
     unsigned long lastPeakTime;
-    CRGB baseColor;
+    String paletteName;  // Use palette instead of fixed base color
     
 public:
     BassPulseFunction(String functionName = "basspulse",
-                     CRGB base = CRGB::Blue)
+                     String palette = "fire")
         : StatefulColorFunction(functionName, 20),
           currentBass(0),
           peakBass(0),
           lastPeakTime(0),
-          baseColor(base) {
+          paletteName(palette) {
         reset();
     }
     
@@ -618,7 +641,14 @@ public:
         // Scale brightness based on bass level
         byte brightness = constrain(currentBass * 2550, 0, 255);
         
-        CRGB color = baseColor;
+        // Get color from palette based on position
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("fire");
+        }
+        
+        byte paletteIndex = position * 255;
+        CRGB color = ColorFromPalette(*palette, paletteIndex);
         color.nscale8(brightness);
         
         // Add white flash on peak
@@ -629,7 +659,8 @@ public:
         return color;
     }
     
-    void setBaseColor(CRGB color) { baseColor = color; }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -645,10 +676,13 @@ private:
     float bandHeights[NUM_BANDS];
     float peakHeights[NUM_BANDS];
     unsigned long peakTimes[NUM_BANDS];
+    String paletteName;  // Use palette instead of hardcoded colors
     
 public:
-    SpectrumAnalyzer(String functionName = "spectrum")
-        : StatefulColorFunction(functionName, 20) {
+    SpectrumAnalyzer(String functionName = "spectrum",
+                    String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          paletteName(palette) {
         reset();
     }
     
@@ -693,25 +727,29 @@ public:
         
         CRGB color = CRGB::Black;
         
-        // Check if this position should be lit
-        if(bandPos < bandHeights[band]) {
-            // Color gradient based on height
-            if(bandPos < 0.33) {
-                color = CRGB::Green;
-            } else if(bandPos < 0.66) {
-                color = CRGB::Yellow;
-            } else {
-                color = CRGB::Red;
-            }
+        // Get palette
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("rainbow");
         }
         
-        // Add white peak indicator
+        // Check if this position should be lit
+        if(bandPos < bandHeights[band]) {
+            // Color from palette based on height within band
+            byte paletteIndex = (bandPos / max(0.01f, bandHeights[band])) * 255;
+            color = ColorFromPalette(*palette, paletteIndex);
+        }
+        
+        // Add bright peak indicator from palette
         if(abs(bandPos - peakHeights[band]) < 0.05) {
-            color = CRGB::White;
+            color = ColorFromPalette(*palette, 255);  // Brightest color
         }
         
         return color;
     }
+    
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -811,6 +849,7 @@ public:
         beatThreshold = constrain(threshold, 1.1, 3.0); 
     }
     void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -825,16 +864,16 @@ private:
     byte brightness[NUM_LEDS];
     float vocalLevel;
     float decay;
-    CRGB vocalColor;
+    String paletteName;  // Use palette instead of fixed color
     
 public:
     VocalHighlighter(String functionName = "vocals",
                     float decayRate = 0.9,
-                    CRGB color = CRGB::Cyan)
+                    String palette = "ocean")
         : StatefulColorFunction(functionName, 20),
           vocalLevel(0),
           decay(decayRate),
-          vocalColor(color) {
+          paletteName(palette) {
         reset();
     }
     
@@ -873,14 +912,22 @@ public:
         int index = (int)(position * (NUM_LEDS - 1));
         index = constrain(index, 0, NUM_LEDS - 1);
         
-        CRGB color = vocalColor;
+        // Get color from palette based on position
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("ocean");
+        }
+        
+        byte paletteIndex = position * 255;
+        CRGB color = ColorFromPalette(*palette, paletteIndex);
         color.nscale8(brightness[index]);
         
         return color;
     }
     
     void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
-    void setVocalColor(CRGB color) { vocalColor = color; }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const { return paletteName; }
 };
 
 /////////////////////////////////////////
@@ -964,6 +1011,9 @@ void initializeStatefulColorFunctions();
 
 // Switch a specific function to use a different palette
 void switchPalette(String functionName, String paletteName);
+
+// Get the current palette name for a given function
+String getCurrentPaletteName(String functionName);
 
 // Cycle all palettized functions to the next palette in the registry
 void cycleAllPalettes();

@@ -35,6 +35,56 @@ void registerStatefulColorFunction(int index, StatefulColorFunction* func) {
     }
 }
 
+// Function to get the current palette name for a given color function
+String getCurrentPaletteName(String functionName) {
+    int funcIndex = findColorFunctionByName(functionName);
+    
+    if(funcIndex < 0 || funcIndex >= numcolorfunctions) {
+        return "";
+    }
+    
+    if(statefulColorFunctions[funcIndex] == nullptr) {
+        // Not a stateful function, no palette to get
+        return "";
+    }
+    
+    // Get palette name based on function type
+    if(funcIndex >= 8 && funcIndex <= 10) {  // Fire functions (8-10)
+        Fire2012ColorFunction* fireFunc = static_cast<Fire2012ColorFunction*>(statefulColorFunctions[funcIndex]);
+        return fireFunc->getPaletteName();
+    } else if(funcIndex == 11) {  // Audio reactive
+        AudioReactiveColorFunction* audioFunc = static_cast<AudioReactiveColorFunction*>(statefulColorFunctions[funcIndex]);
+        return audioFunc->getPaletteName();
+    } else if(funcIndex == 13) {  // Plasma
+        PlasmaColorFunction* plasmaFunc = static_cast<PlasmaColorFunction*>(statefulColorFunctions[funcIndex]);
+        return plasmaFunc->getPaletteName();
+    } else if(funcIndex == 14) {  // Particles
+        ParticleColorFunction* particleFunc = static_cast<ParticleColorFunction*>(statefulColorFunctions[funcIndex]);
+        return particleFunc->getPaletteName();
+    } else if(funcIndex == 17) {  // Frequency bands
+        FrequencyBandVisualizer* freqFunc = static_cast<FrequencyBandVisualizer*>(statefulColorFunctions[funcIndex]);
+        return freqFunc->getPaletteName();
+    } else if(funcIndex == 20) {  // Beat detector
+        BeatDetector* beatFunc = static_cast<BeatDetector*>(statefulColorFunctions[funcIndex]);
+        return beatFunc->getPaletteName();
+    } else if(funcIndex == 12) {  // VU Meter
+        VUMeterColorFunction* vuFunc = static_cast<VUMeterColorFunction*>(statefulColorFunctions[funcIndex]);
+        return vuFunc->getPaletteName();
+    } else if(funcIndex == 18) {  // Bass Pulse
+        BassPulseFunction* bassFunc = static_cast<BassPulseFunction*>(statefulColorFunctions[funcIndex]);
+        return bassFunc->getPaletteName();
+    } else if(funcIndex == 19) {  // Spectrum
+        SpectrumAnalyzer* specFunc = static_cast<SpectrumAnalyzer*>(statefulColorFunctions[funcIndex]);
+        return specFunc->getPaletteName();
+    } else if(funcIndex == 21) {  // Vocals
+        VocalHighlighter* vocalFunc = static_cast<VocalHighlighter*>(statefulColorFunctions[funcIndex]);
+        return vocalFunc->getPaletteName();
+    }
+    
+    // If we add more stateful functions with palettes, add them here
+    return "";
+}
+
 /////////////////////////////////////////
 // COLOR FUNCTION ARRAYS
 //
@@ -246,13 +296,13 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(11, audioReactive);
     
-    // VU Meter (index 12)
+    // VU Meter (index 12) - now with palette support
     VUMeterColorFunction* vuMeter = new VUMeterColorFunction(
         "vumeter",       // name
-        A0,              // audio pin
+        A0,              // audio pin (legacy, unused)
         100,             // sensitivity
-        true,            // use classic colors mode
-        CRGB::White      // peak color
+        false,           // use palette mode (not classic)
+        "rainbow"        // palette name from registry
     );
     registerStatefulColorFunction(12, vuMeter);
     
@@ -286,16 +336,17 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(17, freqBands);
     
-    // Bass Pulse (index 18)
+    // Bass Pulse (index 18) - now with palette support
     BassPulseFunction* bassPulse = new BassPulseFunction(
         "basspulse",     // name
-        CRGB::Blue       // base color
+        "fire"           // palette name from registry
     );
     registerStatefulColorFunction(18, bassPulse);
     
-    // Spectrum Analyzer (index 19)
+    // Spectrum Analyzer (index 19) - now with palette support
     SpectrumAnalyzer* spectrum = new SpectrumAnalyzer(
-        "spectrum"       // name
+        "spectrum",      // name
+        "rainbow"        // palette name from registry
     );
     registerStatefulColorFunction(19, spectrum);
     
@@ -306,11 +357,11 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(20, beatDetect);
     
-    // Vocal Highlighter (index 21)
+    // Vocal Highlighter (index 21) - now with palette support
     VocalHighlighter* vocals = new VocalHighlighter(
         "vocals",        // name
         0.92,            // decay rate
-        CRGB::Cyan       // vocal color
+        "ocean"          // palette name from registry
     );
     registerStatefulColorFunction(21, vocals);
     
@@ -360,28 +411,58 @@ void switchPalette(String functionName, String paletteName) {
         return;
     }
     
-    // Set palette based on function type
-    if(funcIndex >= 8 && funcIndex <= 10) {  // Fire functions
+    // Set palette based on function index
+    // Note: We use index-based checking instead of dynamic_cast because Arduino/Teensy
+    // compiles with -fno-rtti (no Run-Time Type Information)
+    bool success = false;
+    
+    if(funcIndex >= 8 && funcIndex <= 10) {  // Fire functions (8-10)
         Fire2012ColorFunction* fireFunc = static_cast<Fire2012ColorFunction*>(statefulColorFunctions[funcIndex]);
         fireFunc->setPaletteName(paletteName);
+        success = true;
     } else if(funcIndex == 11) {  // Audio reactive
         AudioReactiveColorFunction* audioFunc = static_cast<AudioReactiveColorFunction*>(statefulColorFunctions[funcIndex]);
         audioFunc->setPaletteName(paletteName);
+        success = true;
+    } else if(funcIndex == 12) {  // VU Meter
+        VUMeterColorFunction* vuFunc = static_cast<VUMeterColorFunction*>(statefulColorFunctions[funcIndex]);
+        vuFunc->setPaletteName(paletteName);
+        success = true;
     } else if(funcIndex == 13) {  // Plasma
         PlasmaColorFunction* plasmaFunc = static_cast<PlasmaColorFunction*>(statefulColorFunctions[funcIndex]);
         plasmaFunc->setPaletteName(paletteName);
+        success = true;
     } else if(funcIndex == 14) {  // Particles
         ParticleColorFunction* particleFunc = static_cast<ParticleColorFunction*>(statefulColorFunctions[funcIndex]);
         particleFunc->setPaletteName(paletteName);
+        success = true;
     } else if(funcIndex == 17) {  // Frequency bands
         FrequencyBandVisualizer* freqFunc = static_cast<FrequencyBandVisualizer*>(statefulColorFunctions[funcIndex]);
         freqFunc->setPaletteName(paletteName);
+        success = true;
+    } else if(funcIndex == 18) {  // Bass Pulse
+        BassPulseFunction* bassFunc = static_cast<BassPulseFunction*>(statefulColorFunctions[funcIndex]);
+        bassFunc->setPaletteName(paletteName);
+        success = true;
+    } else if(funcIndex == 19) {  // Spectrum
+        SpectrumAnalyzer* specFunc = static_cast<SpectrumAnalyzer*>(statefulColorFunctions[funcIndex]);
+        specFunc->setPaletteName(paletteName);
+        success = true;
     } else if(funcIndex == 20) {  // Beat detector
         BeatDetector* beatFunc = static_cast<BeatDetector*>(statefulColorFunctions[funcIndex]);
         beatFunc->setPaletteName(paletteName);
+        success = true;
+    } else if(funcIndex == 21) {  // Vocals
+        VocalHighlighter* vocalFunc = static_cast<VocalHighlighter*>(statefulColorFunctions[funcIndex]);
+        vocalFunc->setPaletteName(paletteName);
+        success = true;
     }
     
-    Serial.println("Switched " + functionName + " to palette: " + paletteName);
+    if(success) {
+        Serial.println("Switched " + functionName + " to palette: " + paletteName);
+    } else {
+        Serial.println("Warning: Function '" + functionName + "' does not support palettes");
+    }
 }
 
 // Cycle all palettized functions to the next palette
@@ -402,6 +483,10 @@ void cycleAllPalettes() {
     switchPalette("particles", paletteName);
     switchPalette("freqbands", paletteName);
     switchPalette("beatdetect", paletteName);
+    switchPalette("vumeter", paletteName);
+    switchPalette("basspulse", paletteName);
+    switchPalette("spectrum", paletteName);
+    switchPalette("vocals", paletteName);
 }
 
 // Randomize all palettes
@@ -419,4 +504,8 @@ void randomizeAllPalettes() {
     switchPalette("particles", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("freqbands", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("beatdetect", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("vumeter", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("basspulse", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("spectrum", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("vocals", PaletteRegistry::getNameByIndex(random(numPalettes)));
 }

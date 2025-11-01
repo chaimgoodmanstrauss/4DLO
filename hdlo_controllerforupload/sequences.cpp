@@ -18,9 +18,9 @@ void initializeSequences(modelsequence* seq) {
   // EXAMPLE 1: Microphone with automatic fallback to SD card
   //=================================================================
   
-  // Audio will switch to "ambient.wav" (looping) after 3 seconds of silence
+  // Audio will switch to "ambient.wav" (looping) at 0.8x speed after 3 seconds of silence
   seq->startNewSequence("Reactive with Fallback", 60, true, 
-                       AudioSourceConfig("ambient.wav", 3000));
+                       AudioSourceConfig("ambient.wav", 0.8, 3000));
   
   seq->addStep("flowoctahedron", {
     "dark",
@@ -49,7 +49,7 @@ void initializeSequences(modelsequence* seq) {
   
   // SD card files loop by default
   seq->startNewSequence("Music Sync", 45, true,
-                       AudioSourceConfig(AUDIO_SD_CARD, "track1.wav"));
+                       AudioSourceConfig(AUDIO_SD_CARD, "track1.wav", 1.0));
   
   seq->addStep("flowoctahedron", {
     "dark",
@@ -122,6 +122,7 @@ void initializeSequences(modelsequence* seq) {
   complexAudio.type = AUDIO_MICROPHONE;
   complexAudio.enableFallback = true;
   complexAudio.fallbackFile = "nature_sounds.wav";
+  complexAudio.fallbackRate = 0.5;        // Half speed for ambient effect
   complexAudio.silenceThreshold = 0.02;   // Adjust sensitivity
   complexAudio.silenceTimeout = 8000;     // 8 seconds before switching
   
@@ -167,12 +168,12 @@ void initializeSequences(modelsequence* seq) {
 // Audio Configuration Options:
 // 
 // 1. Simple microphone with fallback:
-//    AudioSourceConfig("filename.wav", silenceTimeoutMs)
+//    AudioSourceConfig("filename.wav", playbackRate, silenceTimeoutMs)
 //    - Fallback file always loops when activated
 //
 // 2. SD card playback:
-//    AudioSourceConfig(AUDIO_SD_CARD, "filename.wav")
-//    - Loops by default (pass false as 3rd param to disable looping)
+//    AudioSourceConfig(AUDIO_SD_CARD, "filename.wav", playbackRate)
+//    - Loops by default (pass false as 4th param to disable looping)
 //
 // 3. Pure microphone (no fallback):
 //    AudioSourceConfig(AUDIO_MICROPHONE)

@@ -53,24 +53,6 @@ FunctionWithPalette modelsequence::parseFunctionSpec(const FunctionSpecInit& spe
   return FunctionWithPalette(spec.functionName, spec.paletteName);
 }
 
-// Helper to safely convert seconds to milliseconds with overflow protection
-static unsigned long safeSecondsToMillis(float seconds, const char* context) {
-  const float MAX_DURATION_SECONDS = 4294967.0f; // Max unsigned long / 1000
-  
-  if(seconds > MAX_DURATION_SECONDS) {
-    Serial.print("Warning: ");
-    Serial.print(context);
-    Serial.print(" duration ");
-    Serial.print(seconds);
-    Serial.print(" seconds exceeds max, capping at ");
-    Serial.print(MAX_DURATION_SECONDS);
-    Serial.println(" seconds");
-    seconds = MAX_DURATION_SECONDS;
-  }
-  
-  return (unsigned long)(seconds * 1000.0f);
-}
-
 // Apply palette overrides for the current step
 void modelsequence::applyPaletteOverrides(const std::array<FunctionWithPalette, numcolorfunctions>& funcs) {
   for(int i = 0; i < numcolorfunctions; i++) {
@@ -133,9 +115,9 @@ bool modelsequence::addStep(String modelName, std::array<String, numcolorfunctio
     funcs[i] = FunctionWithPalette(colorFuncNames[i]);
   }
   
-  // Convert seconds to milliseconds with overflow protection
-  unsigned long durationMs = safeSecondsToMillis(durationSeconds, "Step");
-  unsigned long transDurMs = safeSecondsToMillis(transDurSeconds, "Transition");
+  // Convert seconds to milliseconds
+  unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+  unsigned long transDurMs = (unsigned long)(transDurSeconds * 1000.0f);
   
   // Add the step using internal method
   return addStepInternal(modelName, funcs, durationMs, trans, transDurMs);
@@ -155,9 +137,9 @@ bool modelsequence::addStep(String modelName, std::initializer_list<FunctionSpec
     }
   }
   
-  // Convert seconds to milliseconds with overflow protection
-  unsigned long durationMs = safeSecondsToMillis(durationSeconds, "Step");
-  unsigned long transDurMs = safeSecondsToMillis(transDurSeconds, "Transition");
+  // Convert seconds to milliseconds
+  unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+  unsigned long transDurMs = (unsigned long)(transDurSeconds * 1000.0f);
   
   // Add the step using internal method
   return addStepInternal(modelName, funcs, durationMs, trans, transDurMs);
@@ -281,20 +263,18 @@ void modelsequence::update(unsigned long currentTime) {
 }
 
 CRGB modelsequence::getColor(int edgeindex, float position) {
-  if(currentSequenceNumSteps == 0 || currentModel == nullptr) {
-    return CRGB::Black;
-  }
+  if(currentSequenceNumSteps == 0 || currentModel == nullptr) return CRGB::Black;
   
   if(!inTransition) {
+    // Just return current model color
     return currentModel->getcolorfunction(edgeindex, position);
   }
   
-  // In transition - need both models to be valid
-  if(nextModel == nullptr) {
-    return currentModel->getcolorfunction(edgeindex, position);
-  }
-  
+  // We're in transition - blend colors
   float progress = getTransitionProgress();
+  
+  if(nextModel == nullptr) return currentModel->getcolorfunction(edgeindex, position);
+  
   SequenceStep& currentStep = steps[currentStepIndex];
   
   CRGB currentColor = currentModel->getcolorfunction(edgeindex, position);
@@ -360,9 +340,10 @@ void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
       
     case AUDIO_SD_CARD:
       Serial.println("Playing from SD: " + config.filename + 
+                     " at rate " + String(config.playbackRate) +
                      (config.looping ? " (looping)" : ""));
       AudioSystem::setLooping(config.looping);
-      AudioSystem::useSDCard(config.filename.c_str(), 1.0);
+      AudioSystem::useSDCard(config.filename.c_str(), config.playbackRate);
       break;
       
     case AUDIO_KEEP_CURRENT:
@@ -392,13 +373,15 @@ void modelsequence::updateAudioFallback(unsigned long currentTime) {
     }
   } else {
     // Check if we've been silent long enough to switch to fallback
-    // Protect against unsigned overflow by checking currentTime >= lastAudioActivityTime
+    // Bug #5 Fix: Protect against unsigned overflow
     if(!isUsingFallback && 
-       currentTime >= lastAudioActivityTime &&
+       (currentTime >= lastAudioActivityTime) &&
        (currentTime - lastAudioActivityTime) > currentAudioConfig.silenceTimeout) {
-      Serial.println("Silence timeout, switching to fallback: " + currentAudioConfig.fallbackFile + " (looping)");
+      Serial.println("Silence timeout, switching to fallback: " + currentAudioConfig.fallbackFile + 
+                     " (looping at " + String(currentAudioConfig.fallbackRate) + "x)");
       AudioSystem::setLooping(true);  // Always loop fallback
-      AudioSystem::useSDCard(currentAudioConfig.fallbackFile.c_str(), 1.0);
+      AudioSystem::useSDCard(currentAudioConfig.fallbackFile.c_str(), 
+                             currentAudioConfig.fallbackRate);
       isUsingFallback = true;
     }
   }
@@ -426,7 +409,7 @@ bool modelsequence::startNewSequenceInternal(String name, unsigned long duration
 // Public method - accepts SECONDS, converts to milliseconds
 bool modelsequence::startNewSequence(String name, float durationSeconds, bool enabled,
                                      AudioSourceConfig audio) {
-  unsigned long durationMs = safeSecondsToMillis(durationSeconds, "Sequence");
+  unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
   return startNewSequenceInternal(name, durationMs, enabled, audio);
 }
 
@@ -475,14 +458,6 @@ void modelsequence::beginRegistry() {
 
 bool modelsequence::updateRegistry(unsigned long currentTime) {
   if(numRegistryEntries == 0) return false;
-  
-  // Validate current index
-  if(currentRegistryIndex < 0 || currentRegistryIndex >= numRegistryEntries) {
-    Serial.println("Error: Invalid registry index, resetting to 0");
-    currentRegistryIndex = 0;
-    registryStartTime = currentTime;
-    return false;
-  }
   
   SequenceRegistryEntry& currentEntry = registry[currentRegistryIndex];
   

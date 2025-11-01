@@ -399,3 +399,14 @@ String AudioSystem::getCurrentSourceType() {
     if(currentSource == sdSource) return "SD Card";
     return "None";
 }
+
+bool AudioSystem::getBeatDetected() {
+    // Simple beat detection based on bass level and peak
+    if(!currentSource) return false;
+    
+    float bass = currentSource->getBass();
+    float peak = currentSource->getPeakLevel();
+    
+    // Detect beat if bass is close to peak (indicating strong low-frequency hit)
+    return (bass > 0.3 && bass > peak * 0.8);
+}
