@@ -64,3 +64,13 @@ const shiftcyclesright = [
 
 const rots4X = [qOneOne,new qAction(q1I,q1I),new qAction(qI,qI),new qAction(q1mI,q1mI)
 ]
+
+
+const shiftrightalongacycle = [
+    qOneOne,
+    new qAction(qOne,qWp),
+    new qAction(qOne,qWp.mult(qWp)),
+    new qAction(qOne,qWp.mult(qWp).mult(qWp)),
+    new qAction(qOne,qWp.mult(qWp).mult(qWp).mult(qWp)),
+    new qAction(qOne,qWp.mult(qWp).mult(qWp).mult(qWp).mult(qWp))
+    ]

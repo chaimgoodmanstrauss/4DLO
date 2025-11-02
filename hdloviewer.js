@@ -366,11 +366,7 @@ theModelChanged();
 
 ///writeModelsToFile(ourModelRegistry)
 
-writeSeveralActionsAsPermutationsToAFile([[
-	
-
-	
-]])
+//writeSeveralActionsAsPermutationsToAFile([[new qAction(qOne,qW),"rightW"],[new qAction(new quat(1,1,0,0).normalize(),new quat(1,1,0,0).normalize()),"rot4"]])
 
 
 // or comment to turn this off
