@@ -250,7 +250,7 @@ function writeSeveralActionsAsPermutationsToAFile(qActionList){
     let url = URL.createObjectURL(blob);
     let a = document.createElement('a');
     a.href = url;
-    a.download = 'named_permutations.h';
+    a.download = 'namedpermutations.h';
     a.click();
     URL.revokeObjectURL(url);
     
@@ -842,16 +842,18 @@ function writeModelsToFile(modelRegistry) {
                     if(i<96){
                         var nname = ourModelRegistry[key].edgemodels[i].coloringfunctionname;
                         if(nname == "blank"){nname = "0"}
+                        //Still need to add vertex model information for 
+                        // entries above 96. TBD. For now we just make a stub
                     bodycontent+=
                         nname+","+
                         ourModelRegistry[key].edgemodels[i].direction+","+
                         Math.round(ourModelRegistry[key].edgemodels[i].shiftposition*10000)+","+
                         Math.round(ourModelRegistry[key].edgemodels[i].scaleposition*10000)+","+
                         Math.round(ourModelRegistry[key].edgemodels[i].shifttime*10000)+","+
-                        Math.round(ourModelRegistry[key].edgemodels[i].scaletime*10000)+","
+                        Math.round(ourModelRegistry[key].edgemodels[i].scaletime*10000)+'}},   // edge '+i+'\n'
                     }
-                    else bodycontent+=[0,1,0,10000,0,10000].join(',');
-                bodycontent+='}},   // edge '+i+'\n'
+                    else bodycontent+="0,1,0,10000,0,10000}}, // vertex "+(i-96)+' (line '+i+')\n'
+                
                 }
                 bodycontent+="}};//end of " +name+'data\n\n';
             }
@@ -937,7 +939,23 @@ basichdlomodel.name = 'basicModel'
 
 defaultmodel ='edge'
 
+const test=new hdlomodel({
+    name:'test',
+    listofedmodels:[
+        {indices:[0],edgemodel:new edgemodel(
+            {coloringfunctionindex:1, coloringfunctionname:1})},
+        {indices:[1],edgemodel:new edgemodel(
+            {coloringfunctionindex:2, coloringfunctionname:2})},
+        {indices:[2],edgemodel:new edgemodel(
+            {coloringfunctionindex:3, coloringfunctionname:3})},
+        {indices:[3],edgemodel:new edgemodel(
+            {coloringfunctionindex:4, coloringfunctionname:4})},
+        {indices:[4],edgemodel:new edgemodel(
+            {coloringfunctionindex:5, coloringfunctionname:5})},
+        {indices:[5],edgemodel:new edgemodel(
+            {coloringfunctionindex:6, coloringfunctionname:6})}]})
 
+ 
 const edge=new hdlomodel(
     {name:'edge',
     listofedmodels:[{indices:[95],edgemodel:new edgemodel({coloringfunctionindex:1,
@@ -957,8 +975,11 @@ const generatedeightway=edge.applyactions(rots4X,
 
 
 
+const threeway=edge.applyactions(rots3,
+   {fordisplayQ:true, addToRegistryQ:true, name:'threeway'})
 
-/*
+
+
 // The unit
 
 const theunit = new hdlomodel(
@@ -1036,13 +1057,6 @@ const anoctachain = baseflowingoctahedron.applyactions([qOneOne,qIOne,qMOneOne,q
 //// cycles
 
 // +--- (67) 1 (95) ++++ (39) -+++ (64) -1 (92) ---- (36) +---
-
-const edge=new hdlomodel(
-    {name:'edge',
-    listofedmodels:[{indices:[67],edgemodel:new edgemodel({coloringfunctionindex:1,
-        coloringfunctionname:1})}],fordisplayQ:true,addToRegistryQ:true})
-
- 
 
 const cycle = new hdlomodel(
     {name:'cycle',
@@ -1173,4 +1187,4 @@ const graycode = new hdlomodel(
 ],fordisplayQ:true, 
         addToRegistryQ:true,})
 
- */
+ 

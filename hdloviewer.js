@@ -364,9 +364,17 @@ theModelChanged();
 // the teensy hdlo controller manages, uncomment this 
 // (which is defined and managed around line 720 of modeldata.js)
 
-///writeModelsToFile(ourModelRegistry)
+writeModelsToFile(ourModelRegistry)
 
-//writeSeveralActionsAsPermutationsToAFile([[new qAction(qOne,qW),"rightW"],[new qAction(new quat(1,1,0,0).normalize(),new quat(1,1,0,0).normalize()),"rot4"]])
+const exportpermlist = [
+ [new qAction(qOne,qW),"rightW"],
+ [rots4X[1],"rot4"],
+ [rots3[1],"rot3"],
+ [new qAction(qOne,qI),"onetoi"],
+ ]
+
+ writeSeveralActionsAsPermutationsToAFile(exportpermlist)
+
 
 
 // or comment to turn this off

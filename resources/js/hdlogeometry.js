@@ -22,6 +22,7 @@ const qWi= new quat(.5,-.5,.5,.5)
 const qWj= new quat(.5,.5,-.5,.5)
 const qWk= new quat(.5,.5,.5,-.5)
 
+
 const qI = new quat(0,1,0,0)
 
 const qJ = new quat(0,0,1,0)
@@ -64,6 +65,9 @@ const shiftcyclesright = [
 
 const rots4X = [qOneOne,new qAction(q1I,q1I),new qAction(qI,qI),new qAction(q1mI,q1mI)
 ]
+
+const rots3 = [qOneOne.composeon(rots4X[1]),(new qAction(qW,qW)).composeon(rots4X[1]),(new qAction(qWp,qWp)).composeon(rots4X[1])]
+
 
 
 const shiftrightalongacycle = [

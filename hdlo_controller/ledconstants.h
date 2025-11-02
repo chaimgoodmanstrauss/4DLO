@@ -25,15 +25,17 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
 { //a cycle is 67,95,39,64,92,36, all positive direction
   
     {//strand #1
-    {40,67,1}, //{the length of the segment mapped to edge 2, pointed forwards
-    {5,100,1},
-    {40,95,1},
-    {5,100,1},
-    {40,39,1},
-    {5,100,1},
-    {40,64,1},
-    {5,100,1},
-    {40,92,1},
+    {40,0,1}, //{the length of the segment mapped to edge 2, pointed forwards
+    {4,7,1},
+    {40,1,1}, 
+    {4,7,1},
+    {40,2,1},
+    {4,7,1},
+    {40,3,1},
+    {4,7,1},
+    {40,4,1},
+    {4,7,1},
+    {40,5,1},
     },
     
 /*
