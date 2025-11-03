@@ -364,7 +364,7 @@ theModelChanged();
 // the teensy hdlo controller manages, uncomment this 
 // (which is defined and managed around line 720 of modeldata.js)
 
-writeModelsToFile(ourModelRegistry)
+//writeModelsToFile(ourModelRegistry)
 
 const exportpermlist = [
  [new qAction(qOne,qW),"rightW"],
@@ -374,9 +374,7 @@ const exportpermlist = [
  ]
 
  //writeSeveralActionsAsPermutationsToAFile(exportpermlist)
-
-
-
+ 
 // or comment to turn this off
 
 function animate() {

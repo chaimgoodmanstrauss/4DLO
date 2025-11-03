@@ -129,7 +129,10 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
     spectrumWrapper,         // 19 - spectrum analyzer
     beatDetectWrapper,       // 20 - beat detector
     vocalsWrapper,           // 21 - vocal highlighter
-    // Slots 22-99 available for future functions
+    breathingColor,          // 22 - breathing white
+    simpleColor,             // 23 - simple color palette display
+    // Slots 24-99 available for future functions
+
 };
 
 String colorFunctionNames[numcolorfunctions] = {
@@ -155,6 +158,8 @@ String colorFunctionNames[numcolorfunctions] = {
     "spectrum",
     "beatdetect",
     "vocals",
+    "breathing",      // 22
+    "simplecolor",    // 23
     // Names for remaining slots will be empty strings
 };
 

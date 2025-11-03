@@ -1,0 +1,59 @@
+IN THE audio code, in all public functions that report  sound levels, dampen down the reported sound above a certain level, entirely dampening it to zero at a const MAX_INPUT_VOLUME. Start the ramping at   MAX_INPUT_VOLUME_RAMP below this -- choose suitable values. 
+---
+
+systemize a global brightness component which multiplies the brightness at the final step. The max brightness is to be a const in the led_constants file. 
+
+Generate a good range of tests of colorfunctions and palettes, adapting this script. (Keep the "test" model and always use seven colors, breathing plus six tests. 
+ seq->addStep("test", {
+    "breathing",
+    {"vumeter", "cloud"},
+    {"vumeter", "party"},
+    {"vumeter", "heat"},
+    {"vumeter", "fire"},
+    {"vumeter", "lava"},
+    {"vumeter", "sunset"}
+  }, 10, FADE, 2);
+  
+   seq->addStep("test", {
+    "breathing",
+    {"plasma", "fire"},
+    {"plasma", "ocean"},
+    {"plasma", "rainbow"},
+    {"plasma", "forest"},
+    {"plasma", "lava"},
+    {"plasma", "sunset"}
+  }, 10, FADE, 2);
+
+
+Organize the sequence sensibly. 
+
+----
+
+Remove all serial comments related to color palette change. 
+
+----
+
+
+Remove all evidence of the color functions that have names: 
+    "bluetored", 
+    "staticblue",
+    "pulsingblue",
+    "pulsingwhite",
+    "staticred",
+    "fire2012_blue",
+    "fire2012_green",
+"freqbands","basspulse", "spectrum analyzer"
+
+
+
+
+
+---
+
+Adapt the colors in the file to the color function architecture -- create a function along the same set up as the other color functions. 
+
+-- 
+
+cylon is busted. particles does what? "freqbands",
+    "basspulse",
+    "spectrum" all seem to dampened.

@@ -581,7 +581,7 @@ public:
         zone = constrain(zone, 0, NUM_BANDS - 1);
         
         // Get brightness for this zone
-        byte brightness = bandLevels[zone] * 255 * 2;  // Scale up
+        byte brightness = bandLevels[zone] * 25500*1.3;  // Scale up
         
         // Map to palette
         CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
@@ -650,7 +650,7 @@ public:
     
     CRGB getColor(float position) override {
         // Scale brightness based on bass level
-        byte brightness = constrain(currentBass * 2550, 0, 255);
+        byte brightness = constrain(currentBass * 255000*.1, 0, 255);
         
         // Get color from palette based on position
         CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
@@ -683,7 +683,7 @@ public:
 class SpectrumAnalyzer : public StatefulColorFunction {
 private:
     static const int NUM_LEDS = 128;
-    static const int NUM_BANDS = 20;  // More bands for detailed display
+    static const int NUM_BANDS = 3;  // More bands for detailed display
     
     float bandHeights[NUM_BANDS];
     float peakHeights[NUM_BANDS];
@@ -745,15 +745,23 @@ public:
             palette = PaletteRegistry::findByName("rainbow");
         }
         
+       // FIXED: Scale band heights for visibility
+        float scaledHeight = min(1.0f, bandHeights[band] * 100.0);  // 100× boost, cap at 1.0
+        
         // Check if this position should be lit
-        if(bandPos < bandHeights[band]) {
+        if(bandPos < scaledHeight) {
             // Color from palette based on height within band
-            byte paletteIndex = (bandPos / max(0.01f, bandHeights[band])) * 255;
+            byte paletteIndex = (bandPos / max(0.01f, scaledHeight)) * 255;
             color = ColorFromPalette(*palette, paletteIndex);
+            
+            // FIXED: Add brightness boost based on actual band level
+            byte brightness = constrain(bandHeights[band] * 25500, 50, 255);  // Min 50 for visibility
+            color.nscale8(brightness);
         }
         
         // Add bright peak indicator from palette
-        if(abs(bandPos - peakHeights[band]) < 0.05) {
+        float scaledPeak = min(1.0f, peakHeights[band] * 100.0);  // Match scaling
+        if(abs(bandPos - scaledPeak) < 0.05) {
             color = ColorFromPalette(*palette, 255);  // Brightest color
         }
         
@@ -1002,6 +1010,52 @@ inline CRGB constantlyDark(float position) {
     return CRGB(0, 0, 0);
 }
 
+
+// Breathing function - pulses color 0 from a palette
+inline CRGB breathingColor(float position) {
+    // Get the white palette (or any palette you want)
+    CRGBPalette16* palette = PaletteRegistry::findByName("white");
+    if(palette == nullptr) {
+        // Fallback to first registered palette if white not found
+        palette = PaletteRegistry::getByIndex(0);
+    }
+    
+    // Breathing effect: sine wave for smooth pulsing
+    float breathAmount = (sin(millis() / 1000.0) + 1.0) / 2.0; // 0 to 1
+    
+    // Get color 0 from palette (index 0)
+    CRGB color = ColorFromPalette(*palette, 0);
+    
+    // Apply breathing to brightness
+    color.nscale8(breathAmount * MAXBRIGHTNESS);
+    
+    return color;
+}
+
+// Simple color function - shows the entire palette gradient
+inline CRGB simpleColor(float position) {
+    // Get the white palette
+    CRGBPalette16* palette = PaletteRegistry::findByName("white");
+    if(palette == nullptr) {
+        palette = PaletteRegistry::getByIndex(0);
+    }
+    
+    // Map position (0-1) to palette index (0-255)
+    byte paletteIndex = position * 255;
+    
+    // Get color from palette
+    CRGB color = ColorFromPalette(*palette, paletteIndex);
+    
+    // Scale to max brightness
+    color.nscale8(MAXBRIGHTNESS);
+    
+    return color;
+}
+
+
+
+
+
 inline CRGB callStatefulColorFunction(int index, float position) {
     if (index >= 0 && index < numcolorfunctions && 
         statefulColorFunctions[index] != nullptr) {
@@ -1010,6 +1064,7 @@ inline CRGB callStatefulColorFunction(int index, float position) {
     }
     return CRGB(0, 0, 0);
 }
+
 
 /////////////////////////////////////////
 // HELPER FUNCTIONS

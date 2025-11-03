@@ -142,6 +142,15 @@ DEFINE_GRADIENT_PALETTE( AudioSpectrum_gp ) {
   255,  255,  255,   0    // Yellow
 };
 
+// Simple white palette for testing
+DEFINE_GRADIENT_PALETTE( WhitePalette_gp ) {
+    0,   255, 255, 255,  // White
+   64,   255, 255, 255,  // White
+  128,   255, 255, 255,  // White
+  192,   255, 255, 255,  // White
+  255,   255, 255, 255   // White
+};
+
 } // anonymous namespace
 
 // Initialize the registry with default palettes
@@ -163,6 +172,7 @@ void PaletteRegistry::initialize() {
     registerPalette("ice", CustomIce_gp);
     registerPalette("audiogreen", AudioGreen_gp);
     registerPalette("audiospectrum", AudioSpectrum_gp);
+    registerPalette("white", WhitePalette_gp);
     
     // Also register FastLED built-in palettes
     registerPalette("heat", HeatColors_p);

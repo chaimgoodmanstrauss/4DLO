@@ -73,11 +73,11 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
   DMAMEM int displayMemory[ledsperstrip * numberofpins * 3 / 4];
   int drawingMemory[ledsperstrip * numberofpins * 3 / 4];
   
-  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_RGB | WS2811_800kHz, numberofpins, pinList);
+  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_GRB | WS2811_800kHz, numberofpins, pinList);
 
 
 // Now set up a pointer that will point to a  CTeensy4Controller
 // This pcontroller allows the Fast LED library to make use of the teensy.
 // We create the actual pcontroller that this points to in the setup loop. 
 // We use templates set the color space (RGB) and the speed (800 khz, the standard for WS2811's),
-CTeensy4Controller<RGB, WS2811_800kHz> *teensycontroller;
+CTeensy4Controller<GRB, WS2811_800kHz> *teensycontroller;

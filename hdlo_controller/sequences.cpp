@@ -12,57 +12,38 @@
 
 void initializeSequences(modelsequence* seq) {
   
-  seq->clearRegistry();
- seq->startNewSequence("Live Audio Only", 4000, true,
+seq->clearRegistry();
+seq->startNewSequence("Live Audio Only", 4000, true,
                        AudioSourceConfig(AUDIO_MICROPHONE));
-  /*
-  seq->addStep("test", {
-    "dark",
-    "rainbow",
-    "rainbow",
-    "rainbow",
-    "rainbow",
-    "rainbow",
-    "rainbow",
-    "rainbow",
-    "rainbow",
+
+ 
+  
+
+  
+   
+    seq->addStep("test", {
+    "breathing",
+    "audio",
+    "fire2012",
+    "plasma",
+    "particles",
+    {"audio","lava"},
+    {"audio","ocean"}
+
   }, 100, FADE, 2);
-*/
-
-
-  seq->addStep("test", {
-    "dark",
-    {"audio", "fire"},
-    {"audio", "ocean"},
-    {"audio", "rainbow"},
-    {"audio", "fire"},
-    {"audio", "fire"},
-    {"vumeter", "lava"},
-    {"beatdetect", "sunset"}
-  }, 10, FADE, 2);
   
-
-  seq->addStep("test", {
+/*
+   seq->addStep("test", {
+    "breathing",
+    {"plasma", "fire"},
     "dark",
-    {"audio", "rainbow"},
-    {"freqbands", "rainbow"},
-    {"plasma", "rainbow"},
-    {"audio", "fire"},
-    {"audio", "fire"},
-    {"vumeter", "lava"},
-  }, 10, FADE, 2);
-
-  
-  seq->addStep("test", {
-    "dark",
-    {"plasma", "rainbow"},
     {"plasma", "ocean"},
-    {"plasma", "forest"},
-    {"plasma", "sunset"},
-    {"plasma", "lava"},
-    {"plasma", "ice"},
     {"plasma", "rainbow"},
+    {"plasma", "forest"},
+    {"plasma", "lava"},
+    {"plasma", "sunset"}
   }, 10, FADE, 2);
+*/
 
 }
   

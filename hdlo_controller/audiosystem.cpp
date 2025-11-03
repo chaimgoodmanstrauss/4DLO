@@ -33,7 +33,7 @@ void MicrophoneSource::initialize() {
     audioShield.enable();
     audioShield.inputSelect(myInput);
     audioShield.volume(0.5);
-    audioShield.micGain(20); 
+    audioShield.micGain(30); 
 
     initialized = true;
     Serial.println("Microphone source initialized");
