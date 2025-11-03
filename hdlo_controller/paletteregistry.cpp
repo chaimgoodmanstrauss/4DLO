@@ -121,6 +121,27 @@ DEFINE_GRADIENT_PALETTE( CustomIce_gp ) {
    255, 255, 255, 255   // White
 };
 
+// Audio-specific palettes for better visualization
+DEFINE_GRADIENT_PALETTE( AudioGreen_gp ) {
+    0,    0,   32,   0,   // Very dark green
+   32,    0,   64,   0,   // Dark green  
+   64,    0,   96,   0,   // Medium dark green
+   96,    0,  128,   0,   // Medium green
+  128,    0,  160,   0,   // Bright green
+  160,   32,  192,   0,   // Light green
+  192,   64,  224,   0,   // Yellow-green
+  224,  128,  255,  32,   // Light yellow-green
+  255,  192,  255,  64    // Yellow
+};
+
+DEFINE_GRADIENT_PALETTE( AudioSpectrum_gp ) {
+    0,    0,   0,   128,  // Blue
+   64,    0,  128,  64,   // Teal
+  128,    0,  255,   0,   // Green
+  192,  128,  255,   0,   // Yellow-green
+  255,  255,  255,   0    // Yellow
+};
+
 } // anonymous namespace
 
 // Initialize the registry with default palettes
@@ -140,6 +161,8 @@ void PaletteRegistry::initialize() {
     registerPalette("rainbow", CustomRainbow_gp);
     registerPalette("lava", CustomLava_gp);
     registerPalette("ice", CustomIce_gp);
+    registerPalette("audiogreen", AudioGreen_gp);
+    registerPalette("audiospectrum", AudioSpectrum_gp);
     
     // Also register FastLED built-in palettes
     registerPalette("heat", HeatColors_p);

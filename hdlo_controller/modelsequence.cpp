@@ -6,6 +6,7 @@
 //
 
 #include "modelsequence.h"
+#include "models.h"
 
 // External function declarations
 extern void switchPalette(String functionName, String paletteName);
@@ -73,12 +74,29 @@ static unsigned long safeSecondsToMillis(float seconds, const char* context) {
 
 // Apply palette overrides for the current step
 void modelsequence::applyPaletteOverrides(const std::array<FunctionWithPalette, numcolorfunctions>& funcs) {
+  // Clear any previous edge palette settings
+  for(int edge = 0; edge < 120; edge++) {
+    setEdgePalette(edge, "", "");
+  }
+  
   for(int i = 0; i < numcolorfunctions; i++) {
     if(funcs[i].functionName != "" && funcs[i].paletteName != "") {
       // Store the original palette before overriding
       originalPalettes[i] = getCurrentPaletteName(funcs[i].functionName);
-      // Apply the palette override
-      switchPalette(funcs[i].functionName, funcs[i].paletteName);
+      
+      // Set up edge-specific palettes
+      // Assuming edges are distributed evenly across segments
+      // Adjust this mapping based on your actual edge-to-segment mapping
+      int edgesPerSegment = 120 / numcolorfunctions;
+      for(int e = 0; e < edgesPerSegment; e++) {
+        int edgeIndex = i * edgesPerSegment + e;
+        if(edgeIndex < 120) {
+          setEdgePalette(edgeIndex, funcs[i].functionName, funcs[i].paletteName);
+        }
+      }
+      
+      // Still do the global switch as a fallback
+      // switchPalette(funcs[i].functionName, funcs[i].paletteName);
     }
   }
 }
@@ -196,6 +214,10 @@ void modelsequence::begin() {
     if(currentFunctions[i] == nullptr && firstStep.functions[i].functionName != "") {
       Serial.println("Warning: Function '" + firstStep.functions[i].functionName + "' not found!");
     }
+    // Apply the function to the model's prototype
+    if(currentFunctions[i] != nullptr) {
+      currentModel->setColorFunction(i, firstStep.functions[i].functionName, currentFunctions[i]);
+    }
   }
   
   Serial.println("Sequence started: " + currentModel->getModelName() + " for " + 
@@ -271,6 +293,10 @@ void modelsequence::update(unsigned long currentTime) {
       currentFunctions[i] = resolveColorFunction(newStep.functions[i].functionName);
       if(currentFunctions[i] == nullptr && newStep.functions[i].functionName != "") {
         Serial.println("Warning: Function '" + newStep.functions[i].functionName + "' not found!");
+      }
+      // Apply the function to the model's prototype
+      if(currentFunctions[i] != nullptr) {
+        currentModel->setColorFunction(i, newStep.functions[i].functionName, currentFunctions[i]);
       }
     }
     

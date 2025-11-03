@@ -357,16 +357,8 @@ public:
 };
 ```
 
-**Why override getPaletteName() and setPalette()?**
-These virtual methods enable **automatic integration** with the palette system. Once you override them:
-- `getCurrentPaletteName("myfunction")` automatically works
-- `switchPalette("myfunction", "ocean")` automatically works  
-- `cycleAllPalettes()` automatically cycles your function
-- `randomizeAllPalettes()` automatically randomizes your function
 
-**No manual type-checking code needed!**
-
-### Registering Your Stateful Function
+### Registering Your Stateful Color Function
 
 ```cpp
 // In colorfunctions.cpp - Add wrapper function

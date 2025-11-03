@@ -38,7 +38,7 @@ void setup() {
     // Step 2: Initialize OctoWS2811
     Serial.println("Initializing OctoWS2811...");
     octocontroller.begin();
-    teensycontroller = new CTeensy4Controller<GRB, WS2811_800kHz>(&octocontroller);
+    teensycontroller = new CTeensy4Controller<RGB, WS2811_800kHz>(&octocontroller);
     FastLED.setBrightness(MAXBRIGHTNESS);
     FastLED.addLeds(teensycontroller, rgbarray, numberofleds);
     
@@ -65,7 +65,7 @@ void setup() {
     // Step 7: Initialize models
     Serial.println("Initializing models...");
     initializemodels();
-    initializefancymodels();
+    initializefancymodels();// this also initializes the color functions for the models
     colormodel::printRegistry();  // Optional: see available models
     
     // Step 8: Create and initialize sequences (NEW - SIMPLIFIED!)

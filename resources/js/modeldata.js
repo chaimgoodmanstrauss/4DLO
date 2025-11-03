@@ -953,14 +953,14 @@ const test=new hdlomodel({
         {indices:[4],edgemodel:new edgemodel(
             {coloringfunctionindex:5, coloringfunctionname:5})},
         {indices:[5],edgemodel:new edgemodel(
-            {coloringfunctionindex:6, coloringfunctionname:6})}]})
+            {coloringfunctionindex:6, coloringfunctionname:6})}],fordisplayQ:true,addToRegistryQ:true})
 
  
 const edge=new hdlomodel(
     {name:'edge',
     listofedmodels:[{indices:[95],edgemodel:new edgemodel({coloringfunctionindex:1,
         coloringfunctionname:1})}],fordisplayQ:true,addToRegistryQ:true})
-
+/*
 //const generatedcycle=edge.applyactions(shiftrightalongacycle,
 //   {fordisplayQ:true, addToRegistryQ:true, name:'generatedcycle'})
 
@@ -1186,5 +1186,5 @@ const graycode = new hdlomodel(
             edgemodel:new edgemodel({coloringfunctionname:2, direction:1})}
 ],fordisplayQ:true, 
         addToRegistryQ:true,})
-
+*/
  

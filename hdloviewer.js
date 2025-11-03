@@ -373,7 +373,7 @@ const exportpermlist = [
  [new qAction(qOne,qI),"onetoi"],
  ]
 
- writeSeveralActionsAsPermutationsToAFile(exportpermlist)
+ //writeSeveralActionsAsPermutationsToAFile(exportpermlist)
 
 
 

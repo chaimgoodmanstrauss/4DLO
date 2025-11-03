@@ -87,7 +87,50 @@ void colormodel::printRegistry() {
   Serial.println("=====================");
 }
 
+// Track edge-specific palettes
+static String edgePalettes[120];
+static String edgeFunctions[120];
+static bool edgePalettesInitialized = false;
+
+// Function to set edge-specific palettes
+void setEdgePalette(int edgeIndex, String functionName, String paletteName) {
+  if(!edgePalettesInitialized) {
+    for(int i = 0; i < 120; i++) {
+      edgePalettes[i] = "";
+      edgeFunctions[i] = "";
+    }
+    edgePalettesInitialized = true;
+  }
+  
+  if(edgeIndex >= 0 && edgeIndex < 120) {
+    edgeFunctions[edgeIndex] = functionName;
+    edgePalettes[edgeIndex] = paletteName;
+  }
+}
+
 CRGB colormodel::getcolorfunction(int edgeindex, float position) {
+  // Initialize edge palette arrays if needed
+  if(!edgePalettesInitialized) {
+    for(int i = 0; i < 120; i++) {
+      edgePalettes[i] = "";
+      edgeFunctions[i] = "";
+    }
+    edgePalettesInitialized = true;
+  }
+  
+  // Check if this edge has a specific palette set
+  if(edgeFunctions[edgeindex] != "" && edgePalettes[edgeindex] != "") {
+    // Apply the edge-specific palette
+    static String lastFunction = "";
+    static String lastPalette = "";
+    
+    if(lastFunction != edgeFunctions[edgeindex] || lastPalette != edgePalettes[edgeindex]) {
+      switchPalette(edgeFunctions[edgeindex], edgePalettes[edgeindex]);
+      lastFunction = edgeFunctions[edgeindex];
+      lastPalette = edgePalettes[edgeindex];
+    }
+  }
+  
   // Use the colorfunctionclass object's returncolor method
   return colorfunctions[edgemodels[edgeindex][0]].returncolor(position);
 }
@@ -293,7 +336,7 @@ colormodel* colormodel::mergeModels(String model1Name, String model2Name, String
 //==========================================
 
 void initializefancymodels(){
-
+/*
   // Create merged models using string names - SO EASY!
   colormodel::mergeModels("flowoctahedron", "octachain", "flow_octa_merged");
   colormodel::mergeModels("cycle", "cycles", "cycle_merged");
@@ -305,7 +348,7 @@ void initializefancymodels(){
   
   String perms2[] = {"invert"};
   colormodel::applyEdgePermutationSequence("allcycles", perms2, 1, "allcycles_inverted");
-  
+  */
   // Set color functions for all newly created models
   for(int modelIdx = 0; modelIdx < colormodel::getNumRegisteredModels(); modelIdx++) {
     colormodel* model = colormodel::getModelRegistry()[modelIdx];

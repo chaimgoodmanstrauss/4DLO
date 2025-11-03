@@ -196,7 +196,7 @@ float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
 
   //Reverse again if the direction is reversed***
 
-Serial.println(" led "+String(lednumber)+" on edge "+String(edgeindex)+" of class "+ String(edgeclass)+" has position "+String(position,5));
+//Serial.println(" led "+String(lednumber)+" on edge "+String(edgeindex)+" of class "+ String(edgeclass)+" has position "+String(position,5));
 /*Serial.print("   ");
 Serial.print("Adjusted t:" + String(adjt));
 Serial.print(" The end point (" + String(endpt[0]) + ", " + String(endpt[1]) + ", " + String(endpt[2]) + ", " + String(endpt[3]) + "); The lifted pt: (" + String(liftedpt[0]) + ", " + String(liftedpt[1]) + ", " + String(liftedpt[2]) + ", " + String(liftedpt[3]) + ")");
@@ -303,11 +303,12 @@ void initedgedata(){
     constructstrandtable();
   
   //let's take a look at what we've got:
-
+/*
    for(int i = 0; i<numberofpins; i++){
      Serial.println("pin # "+String(i)+":");
      for(int j = 0; j<ledsperstrip;j++){
        Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
      }
    }
+     */
 }

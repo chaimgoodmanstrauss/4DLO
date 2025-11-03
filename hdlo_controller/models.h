@@ -17,6 +17,9 @@ typedef CRGB (*ColorFunction)(float);
 // Forward declaration
 class EdgePermutation;
 
+// Function to set edge-specific palettes
+void setEdgePalette(int edgeIndex, String functionName, String paletteName);
+
 ////////////////////////////////////
 //
 // colorfunctionclass instances do one thing:
