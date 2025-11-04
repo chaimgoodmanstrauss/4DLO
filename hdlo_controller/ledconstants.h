@@ -73,7 +73,7 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
   DMAMEM int displayMemory[ledsperstrip * numberofpins * 3 / 4];
   int drawingMemory[ledsperstrip * numberofpins * 3 / 4];
   
-  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_GRB | WS2811_800kHz, numberofpins, pinList);
+  OctoWS2811 octocontroller(ledsperstrip, displayMemory, drawingMemory, WS2811_GRB| WS2811_800kHz, numberofpins, pinList);
 
 
 // Now set up a pointer that will point to a  CTeensy4Controller

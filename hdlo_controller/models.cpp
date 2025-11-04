@@ -120,15 +120,8 @@ CRGB colormodel::getcolorfunction(int edgeindex, float position) {
   
   // Check if this edge has a specific palette set
   if(edgeFunctions[edgeindex] != "" && edgePalettes[edgeindex] != "") {
-    // Apply the edge-specific palette
-    static String lastFunction = "";
-    static String lastPalette = "";
-    
-    if(lastFunction != edgeFunctions[edgeindex] || lastPalette != edgePalettes[edgeindex]) {
-      switchPalette(edgeFunctions[edgeindex], edgePalettes[edgeindex]);
-      lastFunction = edgeFunctions[edgeindex];
-      lastPalette = edgePalettes[edgeindex];
-    }
+    // Always apply the edge-specific palette (no caching)
+    switchPalette(edgeFunctions[edgeindex], edgePalettes[edgeindex]);
   }
   
   // Use the colorfunctionclass object's returncolor method

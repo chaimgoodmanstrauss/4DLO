@@ -541,203 +541,193 @@ public:
 };
 
 /////////////////////////////////////////
-// FREQUENCY BAND VISUALIZER
-// Maps different frequency bands to different positions
+// CYLON EFFECT
+// Classic scanning eye effect with trailing tail
 //
 
-class FrequencyBandVisualizer : public StatefulColorFunction {
+class CylonEffect : public StatefulColorFunction {
 private:
-    static const int NUM_LEDS = 128;
-    static const int NUM_BANDS = 4;  // Bass, Low-mid, Mid, Treble
-    
-    float bandLevels[NUM_BANDS];
+    float position;
+    float velocity;
+    float speed;
     String paletteName;
     
 public:
-    FrequencyBandVisualizer(String functionName = "freqbands",
-                           String palette = "rainbow")
+    CylonEffect(String functionName = "cylon",
+               float scanSpeed = 0.03,
+               String palette = "fire")
         : StatefulColorFunction(functionName, 20),
+          position(0.0),
+          velocity(scanSpeed),
+          speed(scanSpeed),
           paletteName(palette) {
         reset();
     }
     
     void reset() override {
-        for(int i = 0; i < NUM_BANDS; i++) {
-            bandLevels[i] = 0;
-        }
+        position = 0.0;
+        velocity = speed;
     }
     
     void updateState() override {
-        // Get frequency bands from AudioSystem
-        bandLevels[0] = AudioSystem::getBass();             // 0-200 Hz
-        bandLevels[1] = AudioSystem::getBandRange(10, 14);  // Low-mid
-        bandLevels[2] = AudioSystem::getBandRange(15, 24);  // Mid
-        bandLevels[3] = AudioSystem::getTreble();           // High
-    }
-    
-    CRGB getColor(float position) override {
-        // Divide LED strip into 4 zones
-        int zone = (int)(position * NUM_BANDS);
-        zone = constrain(zone, 0, NUM_BANDS - 1);
+        // Move the position
+        position += velocity;
         
-        // Get brightness for this zone
-        byte brightness = bandLevels[zone] * 25500*1.3;  // Scale up
-        
-        // Map to palette
-        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
-        if(palette == nullptr) {
-            palette = PaletteRegistry::findByName("rainbow");
-        }
-        
-        byte paletteIndex = zone * (255 / NUM_BANDS);
-        CRGB color = ColorFromPalette(*palette, paletteIndex);
-        color.nscale8(brightness);
-        
-        return color;
-    }
-    
-    void setPaletteName(String name) { paletteName = name; }
-    String getPaletteName() const override { return paletteName; }
-    void setPalette(String name) override { setPaletteName(name); }
-};
-
-/////////////////////////////////////////
-// BASS PULSE FUNCTION
-// Pulses brightness based on bass frequencies
-//
-
-class BassPulseFunction : public StatefulColorFunction {
-private:
-    static const int NUM_LEDS = 128;
-    
-    float currentBass;
-    float peakBass;
-    unsigned long lastPeakTime;
-    String paletteName;  // Use palette instead of fixed base color
-    
-public:
-    BassPulseFunction(String functionName = "basspulse",
-                     String palette = "fire")
-        : StatefulColorFunction(functionName, 20),
-          currentBass(0),
-          peakBass(0),
-          lastPeakTime(0),
-          paletteName(palette) {
-        reset();
-    }
-    
-    void reset() override {
-        currentBass = 0;
-        peakBass = 0;
-        lastPeakTime = 0;
-    }
-    
-    void updateState() override {
-        // Get bass level
-        currentBass = AudioSystem::getBass();
-        
-        // Track peaks
-        if(currentBass > peakBass) {
-            peakBass = currentBass;
-            lastPeakTime = millis();
-        }
-        
-        // Decay peak
-        if(millis() - lastPeakTime > 200) {
-            peakBass *= 0.9;
+        // Bounce at edges
+        if(position >= 1.0) {
+            position = 1.0;
+            velocity = -speed;
+        } else if(position <= 0.0) {
+            position = 0.0;
+            velocity = speed;
         }
     }
     
-    CRGB getColor(float position) override {
-        // Scale brightness based on bass level
-        byte brightness = constrain(currentBass * 255000*.1, 0, 255);
+    CRGB getColor(float ledPosition) override {
+        // Calculate distance from scanning position
+        float distance = ledPosition - position;
         
-        // Get color from palette based on position
+        // Determine if this LED is in front or behind based on direction
+        bool isAhead = (velocity > 0) ? (distance > 0) : (distance < 0);
+        distance = abs(distance);
+        
+        float brightness = 0;
+        
+        if(isAhead) {
+            // Leading edge - bright spot
+            if(distance < 0.05) {
+                brightness = 1.0 - (distance / 0.05);
+            }
+        } else {
+            // Trailing tail - fades off
+            if(distance < 0.25) {
+                brightness = 0.8 * (1.0 - (distance / 0.25));
+            }
+        }
+        
+        // Get color from palette
         CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
         if(palette == nullptr) {
             palette = PaletteRegistry::findByName("fire");
         }
         
-        byte paletteIndex = position * 255;
+        // Use position for palette color
+        byte paletteIndex = ledPosition * 255;
         CRGB color = ColorFromPalette(*palette, paletteIndex);
-        color.nscale8(brightness);
-        
-        // Add white flash on peak
-        if(currentBass > peakBass * 0.9) {
-            color += CRGB(brightness/2, brightness/2, brightness/2);
-        }
+        color.nscale8(brightness * 255);
         
         return color;
     }
     
+    void setSpeed(float newSpeed) { 
+        speed = abs(newSpeed);
+        if(velocity > 0) velocity = speed;
+        else velocity = -speed;
+    }
     void setPaletteName(String name) { paletteName = name; }
     String getPaletteName() const override { return paletteName; }
     void setPalette(String name) override { setPaletteName(name); }
 };
 
 /////////////////////////////////////////
-// SPECTRUM ANALYZER
-// Classic spectrum analyzer effect
+// AUDIO CYLON EFFECT
+// Cylon effect where speed varies with volume and leading edge color 
+// represents the dominant vocal frequency bins mapped to palette colors
 //
 
-class SpectrumAnalyzer : public StatefulColorFunction {
+class AudioCylonEffect : public StatefulColorFunction {
 private:
     static const int NUM_LEDS = 128;
-    static const int NUM_BANDS = 3;  // More bands for detailed display
+    static const int NUM_VOCAL_BINS = 16;  // Use bands 0-15 for ~0-344Hz (fundamental + lower harmonics)
     
-    float bandHeights[NUM_BANDS];
-    float peakHeights[NUM_BANDS];
-    unsigned long peakTimes[NUM_BANDS];
-    String paletteName;  // Use palette instead of hardcoded colors
+    float position;
+    float velocity;
+    float baseSpeed;
+    byte trailBrightness[NUM_LEDS];
+    CRGB trailColor[NUM_LEDS];
+    String paletteName;
     
 public:
-    SpectrumAnalyzer(String functionName = "spectrum",
+    AudioCylonEffect(String functionName = "audiocylon",
+                    float scanSpeed = 0.02,
                     String palette = "rainbow")
         : StatefulColorFunction(functionName, 20),
+          position(0.0),
+          velocity(scanSpeed),
+          baseSpeed(scanSpeed),
           paletteName(palette) {
         reset();
     }
     
     void reset() override {
-        for(int i = 0; i < NUM_BANDS; i++) {
-            bandHeights[i] = 0;
-            peakHeights[i] = 0;
-            peakTimes[i] = 0;
+        position = 0.0;
+        velocity = baseSpeed;
+        for(int i = 0; i < NUM_LEDS; i++) {
+            trailBrightness[i] = 0;
+            trailColor[i] = CRGB::Black;
         }
     }
     
     void updateState() override {
-        // Sample 20 bands across the spectrum
-        for(int i = 0; i < NUM_BANDS; i++) {
-            // Map band to frequency range
-            int bandIndex = i * 2;  // Spread across 40 available bands
-            float level = AudioSystem::getBand(bandIndex);
-            
-            // Smooth the height
-            bandHeights[i] = bandHeights[i] * 0.7 + level * 0.3;
-            
-            // Track peaks
-            if(bandHeights[i] > peakHeights[i]) {
-                peakHeights[i] = bandHeights[i];
-                peakTimes[i] = millis();
+        // Get audio level for speed modulation
+        float audioLevel = AudioSystem::getLevel();
+        
+        // Modulate speed based on audio level (0.5x to 3x base speed)
+        float speedMultiplier = 0.5 + (audioLevel * 2.5);
+        float currentSpeed = baseSpeed * speedMultiplier;
+        
+        // Update velocity magnitude while preserving direction
+        if(velocity > 0) {
+            velocity = currentSpeed;
+        } else {
+            velocity = -currentSpeed;
+        }
+        
+        // Move the position
+        position += velocity;
+        
+        // Bounce at edges
+        if(position >= 1.0) {
+            position = 1.0;
+            velocity = -abs(velocity);
+        } else if(position <= 0.0) {
+            position = 0.0;
+            velocity = abs(velocity);
+        }
+        
+        // Fade all trail brightness
+        for(int i = 0; i < NUM_LEDS; i++) {
+            trailBrightness[i] = trailBrightness[i] * 0.95;
+        }
+        
+        // Get frequency bins in vocal range - using bands 0-7 based on actual data
+        float binEnergies[NUM_VOCAL_BINS];
+        float maxEnergy = 0;
+        
+        // Debug: Show vocal range bands (abbreviated for readability)
+        static unsigned long lastDebug = 0;
+        if(millis() - lastDebug > 1000) {
+            Serial.print("AudioCylon [0-15]: ");
+            for(int i = 0; i < NUM_VOCAL_BINS; i++) {
+                Serial.print(AudioSystem::getBand(i), 3);
+                Serial.print(" ");
             }
-            
-            // Decay peaks
-            if(millis() - peakTimes[i] > 300) {
-                peakHeights[i] *= 0.95;
+            lastDebug = millis();
+        }
+        
+        for(int i = 0; i < NUM_VOCAL_BINS; i++) {
+            binEnergies[i] = AudioSystem::getBand(i) * 10000000;  // 10 million boost
+            if(binEnergies[i] > maxEnergy) maxEnergy = binEnergies[i];
+        }
+        
+        // Debug boosted values occasionally
+        if(millis() - lastDebug > 1000) {
+            Serial.print(" | Boosted: ");
+            for(int i = 0; i < NUM_VOCAL_BINS; i++) {
+                Serial.print(binEnergies[i], 0);
+                Serial.print(" ");
             }
         }
-    }
-    
-    CRGB getColor(float position) override {
-        // Determine which band this LED is in
-        int band = (int)(position * NUM_BANDS);
-        band = constrain(band, 0, NUM_BANDS - 1);
-        
-        // Position within band (0.0 to 1.0)
-        float bandPos = fmod(position * NUM_BANDS, 1.0);
-        
-        CRGB color = CRGB::Black;
         
         // Get palette
         CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
@@ -745,33 +735,95 @@ public:
             palette = PaletteRegistry::findByName("rainbow");
         }
         
-       // FIXED: Scale band heights for visibility
-        float scaledHeight = min(1.0f, bandHeights[band] * 100.0);  // 100× boost, cap at 1.0
+        // Blend colors from dominant bins - use only top 3 for clearer colors
+        CRGB leadingColor = CRGB::Black;
+        float totalEnergy = 0;
         
-        // Check if this position should be lit
-        if(bandPos < scaledHeight) {
-            // Color from palette based on height within band
-            byte paletteIndex = (bandPos / max(0.01f, scaledHeight)) * 255;
-            color = ColorFromPalette(*palette, paletteIndex);
+        // Find top 3 bins by energy
+        int topBins[3] = {0, 0, 0};
+        float topEnergies[3] = {0, 0, 0};
+        
+        for(int i = 0; i < NUM_VOCAL_BINS; i++) {
+            if(binEnergies[i] > topEnergies[0]) {
+                topBins[2] = topBins[1];
+                topEnergies[2] = topEnergies[1];
+                topBins[1] = topBins[0];
+                topEnergies[1] = topEnergies[0];
+                topBins[0] = i;
+                topEnergies[0] = binEnergies[i];
+            } else if(binEnergies[i] > topEnergies[1]) {
+                topBins[2] = topBins[1];
+                topEnergies[2] = topEnergies[1];
+                topBins[1] = i;
+                topEnergies[1] = binEnergies[i];
+            } else if(binEnergies[i] > topEnergies[2]) {
+                topBins[2] = i;
+                topEnergies[2] = binEnergies[i];
+            }
+            totalEnergy += binEnergies[i];
+        }
+        
+        if(totalEnergy > 1) {
+            // Just use the dominant bin's color from the palette
+            int dominantBin = topBins[0];
             
-            // FIXED: Add brightness boost based on actual band level
-            byte brightness = constrain(bandHeights[band] * 25500, 50, 255);  // Min 50 for visibility
-            color.nscale8(brightness);
+            // Map bin to palette position evenly across full palette range
+            byte paletteIndex = (dominantBin * 255) / (NUM_VOCAL_BINS - 1);
+            leadingColor = ColorFromPalette(*palette, paletteIndex);
+            
+            // Apply brightness boost
+            leadingColor.nscale8(min(255, (int)(50 * (topEnergies[0] / 100000))));
+        } else {
+            // No vocal energy - use first palette color
+            leadingColor = ColorFromPalette(*palette, 0);
         }
         
-        // Add bright peak indicator from palette
-        float scaledPeak = min(1.0f, peakHeights[band] * 100.0);  // Match scaling
-        if(abs(bandPos - scaledPeak) < 0.05) {
-            color = ColorFromPalette(*palette, 255);  // Brightest color
+        // Debug final color and top bins
+        if(millis() - lastDebug < 50) {  // Same update cycle
+            Serial.print(" | Dom bin: ");
+            Serial.print(topBins[0]);
+            Serial.print(" | RGB: ");
+            Serial.print(leadingColor.r);
+            Serial.print(",");
+            Serial.print(leadingColor.g);
+            Serial.print(",");
+            Serial.println(leadingColor.b);
         }
+        
+        // Paint leading edge with interpolation to avoid gaps
+        float ledPos = position * (NUM_LEDS - 1);
+        int led1 = (int)ledPos;
+        int led2 = (velocity > 0) ? led1 + 1 : led1 - 1;  // Direction-aware
+        float frac = ledPos - led1;
+        if(velocity < 0) frac = 1.0 - frac;  // Reverse fractional position
+        
+        // Set both LEDs for smooth motion
+        if(led1 >= 0 && led1 < NUM_LEDS) {
+            trailBrightness[led1] = 255;
+            trailColor[led1] = leadingColor;
+        }
+        if(led2 >= 0 && led2 < NUM_LEDS) {
+            trailBrightness[led2] = 255 * frac;  // Fade based on fractional position
+            trailColor[led2] = leadingColor;
+        }
+    }
+    
+    CRGB getColor(float ledPosition) override {
+        int ledIndex = ledPosition * (NUM_LEDS - 1);
+        ledIndex = constrain(ledIndex, 0, NUM_LEDS - 1);
+        
+        CRGB color = trailColor[ledIndex];
+        color.nscale8(trailBrightness[ledIndex]);
         
         return color;
     }
     
+    void setBaseSpeed(float newSpeed) { baseSpeed = abs(newSpeed); }
     void setPaletteName(String name) { paletteName = name; }
     String getPaletteName() const override { return paletteName; }
     void setPalette(String name) override { setPaletteName(name); }
 };
+
 
 /////////////////////////////////////////
 // BEAT DETECTOR
@@ -970,40 +1022,6 @@ void registerStatefulColorFunction(int index, StatefulColorFunction* func);
 
 inline CRGB rainbow(float position) {
     return CHSV(((int)(position * 255)), 255, MAXBRIGHTNESS);
-}
-
-inline CRGB bluetored(float position) {
-    return CRGB(position * MAXBRIGHTNESS, 0, (1 - position) * MAXBRIGHTNESS);
-}
-
-inline CRGB cylon(float position) {
-    return CHSV((millis() % 1000) / 1000.0 * 255, 255, 
-                MAXBRIGHTNESS * max(0.0, cos(3.141 * position)));
-}
-
-inline CRGB staticblue(float position) {
-    return CRGB(0, 0, MAXBRIGHTNESS);
-}
-
-inline CRGB staticred(float position) {
-    return CRGB(0, MAXBRIGHTNESS, 0);
-}
-
-inline CRGB staticgreen(float position) {
-    return CRGB(MAXBRIGHTNESS, 0, 0);
-}
-
-inline CRGB pulsingblue(float position) {
-    return CRGB(0, 0, (sin(millis() / 1000.) + 1) / 2 * MAXBRIGHTNESS);
-}
-
-inline CRGB pulsingwhite(float position) {
-    float val = ((sin(position * 6.28) + 1) * (sin(millis() / 1000.) + 1) / 5 + .2) * MAXBRIGHTNESS;
-    return CRGB(val, val, .6 * val);
-}
-
-inline CRGB pulsingred(float position) {
-    return CRGB(0, (sin(millis() / 1000.) + 1) / 2 * MAXBRIGHTNESS, 0);
 }
 
 inline CRGB constantlyDark(float position) {

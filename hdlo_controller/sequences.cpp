@@ -19,30 +19,49 @@ seq->startNewSequence("Live Audio Only", 4000, true,
  
   
 
-  
+  /*
    
     seq->addStep("test", {
     "breathing",
     "audio",
-    "fire2012",
-    "plasma",
-    "particles",
+    {"audio","ocean"},
+   {"audio","rainbow"},
+    {"audio","forest"},
     {"audio","lava"},
     {"audio","ocean"}
 
   }, 100, FADE, 2);
-  
-/*
-   seq->addStep("test", {
+
+  seq->addStep("test", {
     "breathing",
     {"plasma", "fire"},
-    "dark",
     {"plasma", "ocean"},
     {"plasma", "rainbow"},
     {"plasma", "forest"},
     {"plasma", "lava"},
     {"plasma", "sunset"}
-  }, 10, FADE, 2);
+  }, 100, FADE, 2);
+  */
+   seq->addStep("test", {
+    "breathing",
+    {"plasma", "fire"},
+    {"plasma", "fire"},
+    {"plasma", "fire"},
+    {"plasma", "fire"},
+    {"plasma", "fire"},
+    {"plasma", "fire"}
+  }, 100, FADE, 2);
+
+/*
+   seq->addStep("test", {
+    "breathing",
+    {"audiocylon", "fire"},
+    {"audiocylon", "ocean"},
+    {"audiocylon", "rainbow"},
+    {"audiocylon", "forest"},
+    {"audiocylon", "lava"},
+    {"audiocylon", "sunset"}
+  }, 100, FADE, 2);
 */
 
 }

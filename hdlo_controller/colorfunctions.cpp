@@ -57,16 +57,16 @@ String getCurrentPaletteName(String functionName) {
 //
 
 // Define wrappers for stateful functions to fit ColorFunction signature
+CRGB cylonWrapper(float position) {
+    return callStatefulColorFunction(7, position);
+}
+
 CRGB fire2012Wrapper(float position) {
     return callStatefulColorFunction(8, position);
 }
 
-CRGB fire2012BlueWrapper(float position) {
+CRGB audioCylonWrapper(float position) {
     return callStatefulColorFunction(9, position);
-}
-
-CRGB fire2012GreenWrapper(float position) {
-    return callStatefulColorFunction(10, position);
 }
 
 CRGB audioReactiveWrapper(float position) {
@@ -85,18 +85,6 @@ CRGB particlesWrapper(float position) {
     return callStatefulColorFunction(14, position);
 }
 
-CRGB freqBandsWrapper(float position) {
-    return callStatefulColorFunction(17, position);
-}
-
-CRGB bassPulseWrapper(float position) {
-    return callStatefulColorFunction(18, position);
-}
-
-CRGB spectrumWrapper(float position) {
-    return callStatefulColorFunction(19, position);
-}
-
 CRGB beatDetectWrapper(float position) {
     return callStatefulColorFunction(20, position);
 }
@@ -109,24 +97,24 @@ CRGB vocalsWrapper(float position) {
 ColorFunction colorFunctionArray[numcolorfunctions] = {
     constantlyDark,          // 0 - constantly dark
     rainbow,                 // 1
-    bluetored,               // 2
-    staticblue,              // 3
-    pulsingblue,             // 4
-    pulsingwhite,            // 5
-    staticred,               // 6
-    cylon,                   // 7
+    nullptr,                 // 2
+    nullptr,                 // 3
+    nullptr,                 // 4
+    nullptr,                 // 5
+    nullptr,                 // 6
+    cylonWrapper,            // 7 - cylon scanning effect
     fire2012Wrapper,         // 8 - fire effect (red/orange)
-    fire2012BlueWrapper,     // 9 - fire effect (blue)
-    fire2012GreenWrapper,    // 10 - fire effect (green)
+    audioCylonWrapper,       // 9 - audio-reactive cylon
+    nullptr,                 // 10
     audioReactiveWrapper,    // 11 - audio reactive
     vuMeterWrapper,          // 12 - VU meter
     plasmaWrapper,           // 13 - plasma
     particlesWrapper,        // 14 - particles
-    staticgreen,             // 15
-    pulsingred,              // 16
-    freqBandsWrapper,        // 17 - frequency band visualizer
-    bassPulseWrapper,        // 18 - bass pulse
-    spectrumWrapper,         // 19 - spectrum analyzer
+    nullptr,                 // 15
+    nullptr,                 // 16
+    nullptr,                 // 17
+    nullptr,                 // 18
+    nullptr,                 // 19
     beatDetectWrapper,       // 20 - beat detector
     vocalsWrapper,           // 21 - vocal highlighter
     breathingColor,          // 22 - breathing white
@@ -138,24 +126,24 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
 String colorFunctionNames[numcolorfunctions] = {
     "dark",
     "rainbow",
-    "bluetored", 
-    "staticblue",
-    "pulsingblue",
-    "pulsingwhite",
-    "staticred",
+    "",
+    "",
+    "",
+    "",
+    "",
     "cylon",
     "fire2012",
-    "fire2012_blue",
-    "fire2012_green",
+    "audiocylon",
+    "",
     "audio",
     "vumeter",
     "plasma",
     "particles",
-    "staticgreen",
-    "pulsingred",
-    "freqbands",
-    "basspulse",
-    "spectrum",
+    "",
+    "",
+    "",
+    "",
+    "",
     "beatdetect",
     "vocals",
     "breathing",      // 22
@@ -227,6 +215,14 @@ void initializeStatefulColorFunctions() {
     // Make sure palettes are initialized
     PaletteRegistry::initialize();
     
+    // Cylon (index 7) - Classic scanning effect
+    CylonEffect* cylon = new CylonEffect(
+        "cylon",         // name
+        0.03,            // scan speed
+        "fire"           // palette name from registry
+    );
+    registerStatefulColorFunction(7, cylon);
+    
     // Fire2012 Standard (index 8) - Classic fire
     Fire2012ColorFunction* fire2012Standard = new Fire2012ColorFunction(
         "fire2012",      // name
@@ -237,25 +233,13 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(8, fire2012Standard);
     
-    // Fire2012 Blue (index 9) - Blue fire
-    Fire2012ColorFunction* fire2012Blue = new Fire2012ColorFunction(
-        "fire2012_blue", 
-        45,              // cooler for blue effect
-        100,             // less sparking
-        false, 
-        "bluefire"       // blue fire palette from registry
+    // Audio Cylon (index 9) - Audio-reactive scanning effect
+    AudioCylonEffect* audioCylon = new AudioCylonEffect(
+        "audiocylon",    // name
+        0.02,            // base scan speed
+        "fire"           // palette for tail
     );
-    registerStatefulColorFunction(9, fire2012Blue);
-    
-    // Fire2012 Green (index 10) - Green fire
-    Fire2012ColorFunction* fire2012Green = new Fire2012ColorFunction(
-        "fire2012_green",
-        50,
-        110,
-        false,
-        "greenfire"      // green fire palette from registry
-    );
-    registerStatefulColorFunction(10, fire2012Green);
+    registerStatefulColorFunction(9, audioCylon);
     
     // Audio Reactive (index 11)
     AudioReactiveColorFunction* audioReactive = new AudioReactiveColorFunction(
@@ -301,27 +285,6 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(14, particles);
     
-    // Frequency Band Visualizer (index 17)
-    FrequencyBandVisualizer* freqBands = new FrequencyBandVisualizer(
-        "freqbands",     // name
-        "rainbow"        // palette name from registry
-    );
-    registerStatefulColorFunction(17, freqBands);
-    
-    // Bass Pulse (index 18) - now with palette support
-    BassPulseFunction* bassPulse = new BassPulseFunction(
-        "basspulse",     // name
-        "fire"           // palette name from registry
-    );
-    registerStatefulColorFunction(18, bassPulse);
-    
-    // Spectrum Analyzer (index 19) - now with palette support
-    SpectrumAnalyzer* spectrum = new SpectrumAnalyzer(
-        "spectrum",      // name
-        "rainbow"        // palette name from registry
-    );
-    registerStatefulColorFunction(19, spectrum);
-    
     // Beat Detector (index 20)
     BeatDetector* beatDetect = new BeatDetector(
         "beatdetect",    // name
@@ -338,16 +301,13 @@ void initializeStatefulColorFunctions() {
     registerStatefulColorFunction(21, vocals);
     
     Serial.println("Stateful color functions initialized:");
+    Serial.println("  - cylon (index 7) - Scanning eye effect");
     Serial.println("  - fire2012 (index 8) - Uses 'fire' palette");
-    Serial.println("  - fire2012_blue (index 9) - Uses 'bluefire' palette");
-    Serial.println("  - fire2012_green (index 10) - Uses 'greenfire' palette");
+    Serial.println("  - audiocylon (index 9) - Audio-reactive scanning (speed=volume, color=pitch)");
     Serial.println("  - audio (index 11) - Uses 'rainbow' palette");
     Serial.println("  - vumeter (index 12) - Classic VU meter colors");
     Serial.println("  - plasma (index 13) - Uses 'plasma' palette");
     Serial.println("  - particles (index 14) - Uses 'rainbow' palette");
-    Serial.println("  - freqbands (index 17) - Frequency band visualizer");
-    Serial.println("  - basspulse (index 18) - Bass-reactive pulse");
-    Serial.println("  - spectrum (index 19) - Classic spectrum analyzer");
     Serial.println("  - beatdetect (index 20) - Beat detection flash");
     Serial.println("  - vocals (index 21) - Vocal frequency highlighter");
     Serial.println("NOTE: All audio functions use centralized AudioSystem");
@@ -388,7 +348,7 @@ void switchPalette(String functionName, String paletteName) {
     
     // Verify it worked by checking if the function supports palettes
     if(statefulColorFunctions[funcIndex]->getPaletteName() == paletteName) {
-        Serial.println("Switched " + functionName + " to palette: " + paletteName);
+        // Serial.println("Switched " + functionName + " to palette: " + paletteName);
     } else {
         Serial.println("Warning: Function '" + functionName + "' does not support palettes");
     }
@@ -404,17 +364,14 @@ void cycleAllPalettes() {
     Serial.println("Cycling all functions to palette: " + paletteName);
     
     // Update all palettized functions
+    switchPalette("cylon", paletteName);
     switchPalette("fire2012", paletteName);
-    switchPalette("fire2012_blue", paletteName);
-    switchPalette("fire2012_green", paletteName);
+    switchPalette("audiocylon", paletteName);
     switchPalette("audio", paletteName);
     switchPalette("plasma", paletteName);
     switchPalette("particles", paletteName);
-    switchPalette("freqbands", paletteName);
     switchPalette("beatdetect", paletteName);
     switchPalette("vumeter", paletteName);
-    switchPalette("basspulse", paletteName);
-    switchPalette("spectrum", paletteName);
     switchPalette("vocals", paletteName);
 }
 
@@ -425,16 +382,13 @@ void randomizeAllPalettes() {
     int numPalettes = PaletteRegistry::getCount();
     
     // Give each function a different random palette
+    switchPalette("cylon", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("fire2012", PaletteRegistry::getNameByIndex(random(numPalettes)));
-    switchPalette("fire2012_blue", PaletteRegistry::getNameByIndex(random(numPalettes)));
-    switchPalette("fire2012_green", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("audiocylon", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("audio", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("plasma", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("particles", PaletteRegistry::getNameByIndex(random(numPalettes)));
-    switchPalette("freqbands", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("beatdetect", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("vumeter", PaletteRegistry::getNameByIndex(random(numPalettes)));
-    switchPalette("basspulse", PaletteRegistry::getNameByIndex(random(numPalettes)));
-    switchPalette("spectrum", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("vocals", PaletteRegistry::getNameByIndex(random(numPalettes)));
 }

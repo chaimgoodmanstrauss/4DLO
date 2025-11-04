@@ -29,21 +29,6 @@ Organize the sequence sensibly.
 
 ----
 
-Remove all serial comments related to color palette change. 
-
-----
-
-
-Remove all evidence of the color functions that have names: 
-    "bluetored", 
-    "staticblue",
-    "pulsingblue",
-    "pulsingwhite",
-    "staticred",
-    "fire2012_blue",
-    "fire2012_green",
-"freqbands","basspulse", "spectrum analyzer"
-
 
 
 
@@ -54,6 +39,4 @@ Adapt the colors in the file to the color function architecture -- create a func
 
 -- 
 
-cylon is busted. particles does what? "freqbands",
-    "basspulse",
-    "spectrum" all seem to dampened.
+particles does what?

@@ -22,7 +22,9 @@ public:
             uint8_t r = pixels.loadAndScale0();
             uint8_t g = pixels.loadAndScale1();
             uint8_t b = pixels.loadAndScale2();
+            //pocto->setPixel(i++, g,r, b);// Claude suggested this
             pocto->setPixel(i++, r, g, b);
+            
             pixels.stepDithering();
             pixels.advanceData();
         }
