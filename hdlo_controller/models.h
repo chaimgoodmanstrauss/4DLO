@@ -62,6 +62,14 @@ private:
     // Helper for registration (public so it can be called after construction)
     void registerSelf();
     
+    // Add this public method to access edge models
+int getEdgeFunctionIndex(int edgeIndex) const {
+    if(edgeIndex >= 0 && edgeIndex < 120) {
+        return edgemodels[edgeIndex][0];
+    }
+    return -1;
+}
+
     // This allows us to return a color given an edge index and a position
     CRGB getcolorfunction(int edgeindex, float position);
 

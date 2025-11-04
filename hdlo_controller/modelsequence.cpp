@@ -71,32 +71,30 @@ static unsigned long safeSecondsToMillis(float seconds, const char* context) {
   
   return (unsigned long)(seconds * 1000.0f);
 }
-
-// Apply palette overrides for the current step
 void modelsequence::applyPaletteOverrides(const std::array<FunctionWithPalette, numcolorfunctions>& funcs) {
   // Clear any previous edge palette settings
   for(int edge = 0; edge < 120; edge++) {
     setEdgePalette(edge, "", "");
   }
   
-  for(int i = 0; i < numcolorfunctions; i++) {
-    if(funcs[i].functionName != "" && funcs[i].paletteName != "") {
-      // Store the original palette before overriding
-      originalPalettes[i] = getCurrentPaletteName(funcs[i].functionName);
+  // CORRECT: Look at what function each edge actually uses in the model
+  if(currentModel != nullptr) {
+    for(int edge = 0; edge < 120; edge++) {
+      // Get the function index this edge uses from the model
+      int funcIndex = currentModel->getEdgeFunctionIndex(edge);
       
-      // Set up edge-specific palettes
-      // Assuming edges are distributed evenly across segments
-      // Adjust this mapping based on your actual edge-to-segment mapping
-      int edgesPerSegment = 120 / numcolorfunctions;
-      for(int e = 0; e < edgesPerSegment; e++) {
-        int edgeIndex = i * edgesPerSegment + e;
-        if(edgeIndex < 120) {
-          setEdgePalette(edgeIndex, funcs[i].functionName, funcs[i].paletteName);
+      // Check if this function has a palette override
+      if(funcIndex >= 0 && funcIndex < numcolorfunctions) {
+        if(funcs[funcIndex].functionName != "" && funcs[funcIndex].paletteName != "") {
+          // Store the original palette before overriding (only once per function)
+          if(originalPalettes[funcIndex] == "") {
+            originalPalettes[funcIndex] = getCurrentPaletteName(funcs[funcIndex].functionName);
+          }
+          
+          // Set the palette for THIS edge based on what function it actually uses
+          setEdgePalette(edge, funcs[funcIndex].functionName, funcs[funcIndex].paletteName);
         }
       }
-      
-      // Still do the global switch as a fallback
-      // switchPalette(funcs[i].functionName, funcs[i].paletteName);
     }
   }
 }

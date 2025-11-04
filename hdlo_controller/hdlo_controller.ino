@@ -25,112 +25,6 @@
 modelsequence* mainSequence;
 
 
-// DEBUG CODE TO ADD TO hdlo_controller.ino
-// Add this function before setup():
-
-void debugColors() {
-    Serial.println("=== COLOR DEBUG TEST ===");
-    
-    // Test 1: Check palette retrieval
-    Serial.println("\n1. Testing palette retrieval:");
-    CRGBPalette16* firePalette = PaletteRegistry::findByName("fire");
-    CRGBPalette16* oceanPalette = PaletteRegistry::findByName("ocean");
-    CRGBPalette16* plasmaPalette = PaletteRegistry::findByName("plasma");
-    
-    Serial.print("Fire palette found: ");
-    Serial.println(firePalette != nullptr ? "YES" : "NO");
-    Serial.print("Ocean palette found: ");
-    Serial.println(oceanPalette != nullptr ? "YES" : "NO");
-    Serial.print("Plasma palette found: ");
-    Serial.println(plasmaPalette != nullptr ? "YES" : "NO");
-    
-    // Test 2: Check actual colors from palettes
-    if(firePalette != nullptr) {
-        Serial.println("\n2. Fire palette colors (at indices 0, 64, 128, 192, 255):");
-        for(int i = 0; i <= 255; i += 64) {
-            CRGB color = ColorFromPalette(*firePalette, i);
-            Serial.print("Index ");
-            Serial.print(i);
-            Serial.print(": R=");
-            Serial.print(color.r);
-            Serial.print(" G=");
-            Serial.print(color.g);
-            Serial.print(" B=");
-            Serial.println(color.b);
-        }
-    }
-    
-    // Test 3: Test plasma function directly
-    Serial.println("\n3. Testing plasma function at position 0.5:");
-    PlasmaColorFunction testPlasma("test", 0.02, 0.03, 0.01, 4.0, 3.0, 5.0, "fire");
-    testPlasma.reset();
-    testPlasma.updateState();
-    CRGB plasmaColor = testPlasma.getColor(0.5);
-    Serial.print("Plasma with fire palette: R=");
-    Serial.print(plasmaColor.r);
-    Serial.print(" G=");
-    Serial.print(plasmaColor.g);
-    Serial.print(" B=");
-    Serial.println(plasmaColor.b);
-    
-    // Test 4: Direct color test
-    Serial.println("\n4. Setting LEDs to pure colors:");
-    Serial.println("Setting LED 0 to pure RED (255,0,0)");
-    Serial.println("Setting LED 1 to pure GREEN (0,255,0)");
-    Serial.println("Setting LED 2 to pure BLUE (0,0,255)");
-    rgbarray[0] = CRGB(255, 0, 0);  // Pure red
-    rgbarray[1] = CRGB(0, 255, 0);  // Pure green
-    rgbarray[2] = CRGB(0, 0, 255);  // Pure blue
-    FastLED.show();
-    Serial.println("Check what colors actually appear on LEDs 0, 1, 2");
-    
-    // Test 5: Check what's in the strand table
-    Serial.println("\n5. First 10 entries in strand table:");
-    for(int i = 0; i < 10 && i < numberofleds; i++) {
-        Serial.print("LED ");
-        Serial.print(i);
-        Serial.print(": position=");
-        Serial.print(strandtable[i][0]);
-        Serial.print(" edge=");
-        Serial.println(strandtable[i][1]);
-    }
-    
-    Serial.println("\n=== END COLOR DEBUG ===\n");
-}
-
-// Then in setup(), right after initializeSequences(mainSequence), add:
-// debugColors();
-// delay(5000);  // Give time to see the test colors
-
-// Also add this simpler test you can call from serial commands:
-void testPureColors() {
-    Serial.println("Testing pure colors on first 3 LEDs:");
-    
-    // Test pure colors
-    rgbarray[0] = CRGB::Red;
-    rgbarray[1] = CRGB::Green;
-    rgbarray[2] = CRGB::Blue;
-    FastLED.show();
-    Serial.println("LED 0 should be RED");
-    Serial.println("LED 1 should be GREEN");
-    Serial.println("LED 2 should be BLUE");
-    delay(3000);
-    
-    // Test other combinations
-    rgbarray[0] = CRGB(255, 255, 0);  // Yellow
-    rgbarray[1] = CRGB(255, 0, 255);  // Magenta
-    rgbarray[2] = CRGB(0, 255, 255);  // Cyan
-    FastLED.show();
-    Serial.println("LED 0 should be YELLOW");
-    Serial.println("LED 1 should be MAGENTA");
-    Serial.println("LED 2 should be CYAN");
-}
-
-// In handleSerialCommands(), add:
-// else if(command == "testcolors") {
-//     testPureColors();
-// }
-
 void setup() {
     Serial.begin(115200);
     // Optional: wait briefly for serial monitor (comment out for production)
@@ -180,12 +74,6 @@ void setup() {
     mainSequence = new modelsequence();
     initializeSequences(mainSequence);
     
-
-  debugColors();
-  delay(5000);
-
-
-
     // Step 9: Start the sequence registry
     Serial.println("Starting sequence registry...");
     mainSequence->beginRegistry();
@@ -227,9 +115,16 @@ void loop() {
         // Get color from the sequence
         CRGB color = mainSequence->getColor(edgeindex, position);
         
+        // TOTAL HACK!!!
+        // SWAP RED AND GREEN TO FIX HARDWARE COLOR ORDER
+        CRGB swappedColor;
+        swappedColor.r = color.g;  // Put green value in red channel
+        swappedColor.g = color.r;  // Put red value in green channel
+        swappedColor.b = color.b;  // Blue stays the same
+        
         // Apply to LED array
-        rgbarray[ledindex] = color;
-    }
+        rgbarray[ledindex] = swappedColor;  // Use swapped color, not original
+      }
     
     // Show the LEDs
     FastLED.show();

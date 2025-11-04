@@ -303,12 +303,12 @@ void initedgedata(){
     constructstrandtable();
   
   //let's take a look at what we've got:
-/*
+
    for(int i = 0; i<numberofpins; i++){
      Serial.println("pin # "+String(i)+":");
      for(int j = 0; j<ledsperstrip;j++){
        Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
      }
    }
-     */
+     
 }

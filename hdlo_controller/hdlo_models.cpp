@@ -6,7 +6,7 @@
 #include "hdlo_models.h"
 
 std::array<std::array<int, 6>, 120> testdata={{
-  {{1,0,0,10000,0,10000}},   // edge 0// note time is turned off!
+  {{1,1,0,10000,0,10000}},   // edge 0// note time is turned off!
   {{2,1,0,10000,0,10000}},   // edge 1 // and space is stretched?
   {{3,1,0,10000,0,10000}},   // edge 2
   {{4,1,0,10000,0,10000}},   // edge 3
