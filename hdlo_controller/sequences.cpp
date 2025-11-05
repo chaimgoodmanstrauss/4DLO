@@ -17,25 +17,33 @@ seq->startNewSequence("Live Audio Only", 4000, true,
                        AudioSourceConfig(AUDIO_MICROPHONE));
 
  
-  
+  seq->addStep("test", {
+    "breathing",
+    "plasma",
+    "fftfire",
+    "fire2012",
+    "cylon",
+    "plasma",
+    "cylon"
+  }, 100, FADE, 2);
 
   
    
     seq->addStep("test", {
     "breathing",
-    "audio",
-    {"audio","ocean"},
-   {"audio","rainbow"},
+    {"plasma","rainbow"},
+    {"plasma","rainbow"},
+    {"fftfire","fire"},
+    {"fftfire","ocean"},
+   {"fftfire","rainbow"},
     {"audio2","rainbow"},
-    {"audio2","lava"},
-    {"audio2","ocean"}
-
+    {"vumeter","rainbow"},
   }, 100, FADE, 2);
 /*
   seq->addStep("test", {
     "breathing",
     {"plasma", "ocean"},
-    {"plasma", "fire"},
+    {"cylon", "fire"},
     {"plasma", "rainbow"},
     {"plasma", "forest"},
     {"plasma", "lava"},

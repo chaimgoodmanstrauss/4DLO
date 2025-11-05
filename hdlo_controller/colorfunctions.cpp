@@ -97,6 +97,10 @@ CRGB vocalsWrapper(float position) {
     return callStatefulColorFunction(21, position);
 }
 
+CRGB fftFireWrapper(float position) {
+    return callStatefulColorFunction(25, position);
+}
+
 // Color function array definitions
 ColorFunction colorFunctionArray[numcolorfunctions] = {
     constantlyDark,          // 0 - constantly dark
@@ -124,7 +128,8 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
     breathingColor,          // 22 - breathing white
     simpleColor,             // 23 - simple color palette display
     audioReactive2Wrapper,   // 24 - audio reactive 2 (pitch-sensitive)
-    // Slots 25-99 available for future functions
+    fftFireWrapper,          // 25 - FFT fire (frequency-based fire effect)
+    // Slots 26-99 available for future functions
 
 };
 
@@ -154,6 +159,7 @@ String colorFunctionNames[numcolorfunctions] = {
     "breathing",      // 22
     "simplecolor",    // 23
     "audio2",         // 24
+    "fftfire",        // 25
     // Names for remaining slots will be empty strings
 };
 
@@ -317,6 +323,20 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(21, vocals);
     
+    // FFT Fire (index 25) - Frequency-based fire effect
+    FFTFireColorFunction* fftFire = new FFTFireColorFunction(
+        "fftfire",       // name
+        15,              // cooling (lower = brighter idle, slower fade) [was 20]
+        60,              // numFFTBins (from INO)
+        AUDIO_FFT_THRESHOLD,  // fftThreshold (0.01)
+        AUDIO_BRIGHTNESS_MULTIPLIER,  // brightnessScale (4000)
+        AUDIO_MAX_BRIGHTNESS,  // maxBrightness (160)
+        6,               // hueMultiplier (from INO)
+        false,           // useHSVMode (false = palette mode, true = frequency→color)
+        "fire"           // palette (for palette mode)
+    );
+    registerStatefulColorFunction(25, fftFire);
+    
     Serial.println("Stateful color functions initialized:");
     Serial.println("  - cylon (index 7) - Scanning eye effect");
     Serial.println("  - fire2012 (index 8) - Uses 'fire' palette");
@@ -328,6 +348,7 @@ void initializeStatefulColorFunctions() {
     Serial.println("  - beatdetect (index 20) - Beat detection flash");
     Serial.println("  - vocals (index 21) - Vocal frequency highlighter");
     Serial.println("  - audio2 (index 24) - Pitch-sensitive vocal (width=volume, color=pitch)");
+    Serial.println("  - fftfire (index 25) - FFT fire (frequency→color, amplitude→brightness)");
     Serial.println("NOTE: All audio functions use centralized AudioSystem");
     Serial.println("NOTE: Functions only update when actually used (lazy evaluation)");
     
@@ -392,6 +413,7 @@ void cycleAllPalettes() {
     switchPalette("beatdetect", paletteName);
     switchPalette("vumeter", paletteName);
     switchPalette("vocals", paletteName);
+    switchPalette("fftfire", paletteName);
 }
 
 // Randomize all palettes
@@ -411,4 +433,5 @@ void randomizeAllPalettes() {
     switchPalette("beatdetect", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("vumeter", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("vocals", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("fftfire", PaletteRegistry::getNameByIndex(random(numPalettes)));
 }

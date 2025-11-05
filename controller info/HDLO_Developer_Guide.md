@@ -1045,12 +1045,6 @@ When adding new functions, use available slots:
 4. **Add Model**: Test with existing functions and palettes
 5. **Combine**: Create complete custom sequences
 
-**Debugging Tips**:
-- Use `Serial.println()` liberally in your functions
-- Test each component independently
-- Use `printActiveStatefulFunctions()` to see what's running
-- Monitor serial output during startup for registration confirmations
-- Use serial commands to test runtime changes
 
 ### Common Patterns
 
@@ -1086,74 +1080,8 @@ smoothedValue = smoothedValue * 0.9 + newValue * 0.1;
 buffer[i] *= 0.95;  // 5% decay per frame
 ```
 
-### Best Practices
 
-1. **Always constrain values** before color conversion
-2. **Smooth audio data** to prevent jitter
-3. **Use palettes** instead of hardcoded colors
-4. **Test incrementally** - one change at a time
-5. **Name clearly** - use descriptive names for functions/models/palettes
-6. **Comment your code** - explain complex algorithms
-7. **Memory management** - be careful with dynamic allocation in stateful functions
-8. **Performance** - keep `getColor()` fast, put heavy computation in `updateState()`
-
----
-
-## Recent Improvements (2025)
-
-### Streamlined Color Function Registration
-
-The system now uses polymorphism for automatic palette integration. When creating palette-supporting color functions:
-
-**Old Way (Manual)**: Required editing `getCurrentPaletteName()` and `switchPalette()` with type-checking code for each new function (137 lines of boilerplate).
-
-**New Way (Automatic)**: Simply override two virtual methods in your class:
-```cpp
-String getPaletteName() const override { return paletteName; }
-void setPalette(String name) override { paletteName = name; }
-```
-
-Benefits:
-- **67% less code** to maintain
-- **Automatic integration** with all palette commands
-- **Type-safe** - compiler catches missing implementations
-- **Extensible** - new functions work immediately
 
 ### Audio System Constants
 
-All FFT magic numbers are now named constants:
-```cpp
-const int NUM_FFT_BANDS = 40;
-const int BASS_BAND_START = 0;
-const int BASS_BAND_END = 9;
-// ... etc
-```
-
-This makes audio code self-documenting and easier to tune.
-
-### Safety Improvements
-
-- NULL pointer checks in sequence transitions
-- Array bounds validation in registry
-- Boot-time safety checks
-- Proper handling of `millis()` overflow
-
-### Simplified Audio Configuration
-
-- Removed non-functional playback rate feature
-- Clearer documentation of pause/resume behavior
-- Streamlined AudioSourceConfig structure
-
----
-
-## Additional Resources
-
-- **FastLED Documentation**: http://fastled.io/
-- **Arduino Audio Library**: https://www.pjrc.com/teensy/td_libs_Audio.html
-- **OctoWS2811**: https://www.pjrc.com/teensy/td_libs_OctoWS2811.html
-
-For questions or contributions, refer to the project repository or documentation.
-
----
-
-*Last Updated: 2025*
+TBD ADD AUDIO INFO

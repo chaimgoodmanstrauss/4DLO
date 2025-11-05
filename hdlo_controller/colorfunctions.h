@@ -5,6 +5,28 @@
 // Color function system with automatic palette management
 // Uses PaletteRegistry for centralized palette handling
 //
+// AUDIO FUNCTION IMPLEMENTATION GUIDE:
+// All new audio-reactive functions should follow these conventions:
+// 1. Use direct FFT bin access via AudioSystem::getBin(i) not getLevel() or getBandRange()
+// 2. Apply AUDIO_FFT_THRESHOLD filter when reading bins: if(n > AUDIO_FFT_THRESHOLD)
+// 3. Use AUDIO_BRIGHTNESS_MULTIPLIER for amplitude scaling (4000 standard, can vary by function)
+// 4. Cap all brightness at AUDIO_MAX_BRIGHTNESS (160)
+// 5. Default to PALETTE MODE (useHSVMode = false) not HSV mode
+// 6. Include palette support: paletteName string, getPaletteName(), setPalette() methods
+// 7. Register in both cycleAllPalettes() and randomizeAllPalettes() in .cpp file
+// Example bin ranges: Bass 0-9 (~43-430Hz), Vocal 5-45 (~215-1935Hz), Full 0-59 (~43-2580Hz)
+//
+// STATEFUL FUNCTION SLOTS (in colorfunctions.cpp):
+// Index 7: cylon, 8: fire2012, 9: audiocylon, 11: audio, 12: vumeter
+// Index 13: plasma, 14: particles, 20: beatdetect, 21: vocals, 24: audio2, 25: fftfire
+// Next available: 26+
+//
+// TUNING PARAMETERS:
+// - cooling: Lower = brighter idle, slower fade (5-30 range, default 15-20)
+// - brightnessScale: Higher = more responsive (1000-8000 range, default 4000)
+// - fftThreshold: Higher = less sensitive to noise (0.001-0.1 range, default 0.01)
+// - decay: Higher = trails persist longer (0.5-0.99 range, default 0.9-0.95)
+//
 #ifndef COLORFUNCTIONS_H
 #define COLORFUNCTIONS_H
 
@@ -16,6 +38,11 @@
 
 const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
+
+// Audio reactive constants (aligned with FFT Fire algorithm)
+const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFT→brightness scale
+const int AUDIO_MAX_BRIGHTNESS = 160;          // Cap to prevent oversaturation
+const float AUDIO_FFT_THRESHOLD = 0.01;        // Minimum FFT value to detect (noise filter)
 
 /////////////////////////////////////////
 // STATEFUL COLOR FUNCTION BASE CLASS
@@ -195,16 +222,23 @@ public:
     }
     
     void updateState() override {
-        // Get audio level from centralized audio system
-        float audioLevel = AudioSystem::getLevel();
+        // Get audio level using direct FFT bin access (same as fftfire)
+        float audioLevel = 0;
+        for(int i = 0; i < 60; i++) {
+            float n = AudioSystem::getBin(i);
+            if(n > AUDIO_FFT_THRESHOLD) {
+                audioLevel += n;
+            }
+        }
+        audioLevel = audioLevel / 60.0;  // Average across bins
         
-        // Scale by sensitivity and convert to byte (0-255)
-        byte newLevel = constrain(audioLevel * sensitivity * 1500, 0, 255);
+        // Scale by sensitivity and convert to byte, using global constant and cap
+        byte newLevel = constrain(audioLevel * sensitivity * AUDIO_BRIGHTNESS_MULTIPLIER / 100, 0, AUDIO_MAX_BRIGHTNESS);
         currentLevel = newLevel;
         
         // Create audio-reactive spread effect
         int center = NUM_LEDS / 2;
-        int spread = (currentLevel * NUM_LEDS) / (255 * 2);
+        int spread = (currentLevel * NUM_LEDS) / (AUDIO_MAX_BRIGHTNESS * 2);
         
         // Apply decay to all LEDs
         for(int i = 0; i < NUM_LEDS; i++) {
@@ -358,8 +392,8 @@ public:
         // Use center bin's level for noise gate
         float maxLevel = AudioSystem::getBin(dominantBin);
         
-        // Only update pitch if there's significant energy (noise gate)
-        if(maxLevel > 0.01) {
+        // Only update pitch if there's significant energy (noise gate with global threshold)
+        if(maxLevel > AUDIO_FFT_THRESHOLD) {
             // Apply exponential smoothing to the dominant bin
             smoothedPitch = smoothingAlpha * dominantBin + (1.0 - smoothingAlpha) * smoothedPitch;
         }
@@ -369,10 +403,10 @@ public:
         byte currentHue = map(smoothedPitch * 100, MIN_VOCAL_BIN * 100, MAX_VOCAL_BIN * 100, 0, 255);
         currentHue = constrain(currentHue, 0, 255);
         
-        // Calculate spread based on total audio level
-        byte vocalBrightness = constrain(vocalLevel * sensitivity * 1200, 0, 255);
+        // Calculate spread based on total audio level (keep 1200 multiplier as it's vocal-specific)
+        byte vocalBrightness = constrain(vocalLevel * sensitivity * 1200 / 100, 0, AUDIO_MAX_BRIGHTNESS);
         int center = NUM_LEDS / 2;
-        int spread = (vocalBrightness * NUM_LEDS) / (255 * 2);
+        int spread = (vocalBrightness * NUM_LEDS) / (AUDIO_MAX_BRIGHTNESS * 2);
         
         // Apply decay to all LEDs (brightness decays, hue stays)
         for(int i = 0; i < NUM_LEDS; i++) {
@@ -476,11 +510,18 @@ public:
     }
     
     void updateState() override {
-        // Get audio level from centralized audio system
-        float audioLevel = AudioSystem::getLevel();
+        // Get audio level using direct FFT bin access (same as fftfire)
+        float audioLevel = 0;
+        for(int i = 0; i < 60; i++) {
+            float n = AudioSystem::getBin(i);
+            if(n > AUDIO_FFT_THRESHOLD) {
+                audioLevel += n;
+            }
+        }
+        audioLevel = audioLevel / 60.0;  // Average across bins
         
-        // Scale by sensitivity and convert to byte (0-255)
-        byte level = constrain(audioLevel * sensitivity * 2550, 0, 255);
+        // Scale by sensitivity - VU meter uses higher multiplier for full-range display
+        byte level = constrain(audioLevel * sensitivity * 2550 / 100, 0, AUDIO_MAX_BRIGHTNESS);
         currentLevel = level;
         
         // Track peak with hold time
@@ -1051,8 +1092,15 @@ public:
     }
     
     void updateState() override {
-        // Get current bass level
-        float currentBass = AudioSystem::getBass();
+        // Get current bass level using direct bins (0-9 = ~43-430 Hz)
+        float currentBass = 0;
+        for(int i = 0; i <= 9; i++) {
+            float n = AudioSystem::getBin(i);
+            if(n > AUDIO_FFT_THRESHOLD) {
+                currentBass += n;
+            }
+        }
+        currentBass = currentBass / 10.0;  // Average across bins
         
         // Store in history
         bassHistory[historyIndex] = currentBass;
@@ -1067,7 +1115,7 @@ public:
            now - lastBeatTime > 200) {  // Minimum 200ms between beats
             beatDetected = true;
             lastBeatTime = now;
-            beatBrightness = 255;
+            beatBrightness = AUDIO_MAX_BRIGHTNESS;
         }
         
         // Decay brightness after beat
@@ -1137,8 +1185,15 @@ public:
     
     void updateState() override {
         // Vocals are typically in the 200-2000 Hz range
-        // That maps to bands 10-19 in our system
-        vocalLevel = AudioSystem::getBandRange(12, 18);
+        // Use bins 5-45 for vocal range (215-1935 Hz with ~43Hz per bin)
+        float vocalLevel = 0;
+        for(int i = 5; i <= 45; i++) {
+            float n = AudioSystem::getBin(i);
+            if(n > AUDIO_FFT_THRESHOLD) {
+                vocalLevel += n;
+            }
+        }
+        vocalLevel = vocalLevel / 41.0;  // Average across bins
         
         // Apply decay to all LEDs
         for(int i = 0; i < NUM_LEDS; i++) {
@@ -1149,7 +1204,7 @@ public:
         int center = NUM_LEDS / 2;
         int spread = (int)(vocalLevel * 50);  // Max 50 LEDs spread
         
-        byte newBrightness = constrain(vocalLevel * 2550, 0, 255);
+        byte newBrightness = constrain(vocalLevel * 2550, 0, AUDIO_MAX_BRIGHTNESS);
         
         for(int i = -spread; i <= spread; i++) {
             int pos = center + i;
@@ -1177,6 +1232,134 @@ public:
     }
     
     void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+};
+
+/////////////////////////////////////////
+// FFT FIRE COLOR FUNCTION
+// Fire effect driven by FFT frequency data
+// Based on fastLEDAudioshieldFire4.ino algorithm
+//
+
+class FFTFireColorFunction : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    
+    // HSV storage (3 values per LED: hue, saturation, brightness)
+    byte hue[NUM_LEDS];
+    byte saturation[NUM_LEDS];
+    byte brightness[NUM_LEDS];
+    
+    int cooling;              // Cooling rate (20 in original)
+    int numFFTBins;           // How many FFT bins to read (60 in original)
+    float fftThreshold;       // Minimum FFT value to trigger
+    int brightnessScale;      // Multiplier for FFT→brightness
+    int maxBrightness;        // Cap on brightness
+    int hueMultiplier;        // FFT bin → hue mapping (6 in original)
+    String paletteName;       // Optional: for non-HSV mode
+    bool useHSVMode;          // true = HSV colors from frequency, false = use palette
+    
+public:
+    FFTFireColorFunction(String functionName = "fftfire",
+                         int coolingValue = 20,
+                         int numBins = 60,
+                         float threshold = AUDIO_FFT_THRESHOLD,
+                         int brightScale = AUDIO_BRIGHTNESS_MULTIPLIER,
+                         int maxBright = AUDIO_MAX_BRIGHTNESS,
+                         int hueMulti = 6,
+                         bool hsvMode = false,  // Default to palette mode
+                         String palette = "fire")
+        : StatefulColorFunction(functionName, 20),
+          cooling(coolingValue),
+          numFFTBins(numBins),
+          fftThreshold(threshold),
+          brightnessScale(brightScale),
+          maxBrightness(maxBright),
+          hueMultiplier(hueMulti),
+          useHSVMode(hsvMode),
+          paletteName(palette) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < NUM_LEDS; i++) {
+            hue[i] = 0;
+            saturation[i] = 255;
+            brightness[i] = 0;
+        }
+    }
+    
+    void updateState() override {
+        // Step 1: COOLING - reduce brightness randomly
+        for(int i = 0; i < NUM_LEDS - 3; i++) {
+            brightness[i] = qsub8(brightness[i], 
+                                  random8(0, ((cooling * 10) / NUM_LEDS) + 2));
+        }
+        
+        // Step 2: DIFFUSION - blur upward (brightness)
+        for(int k = NUM_LEDS - 1; k >= 2; k--) {
+            brightness[k] = (brightness[k-1] + brightness[k-2] + brightness[k-2]) / 3;
+        }
+        
+        // Step 3: DIFFUSION - blur upward (hue)
+        for(int k = NUM_LEDS - 1; k >= 2; k--) {
+            hue[k] = (hue[k-1] + hue[k-2] + hue[k-2]) / 3;
+        }
+        
+        // Step 4: ADD FFT ENERGY - read FFT bins and create "sparks"
+        for(int i = 0; i < numFFTBins; i++) {
+            // Read FFT bin directly
+            float n = AudioSystem::getBin(i);
+            
+            if(n > fftThreshold) {
+                int ledIndex = i / 4;  // Group 4 FFT bins per LED
+                
+                if(ledIndex < NUM_LEDS) {
+                    // Set hue based on frequency (lower freq = red, higher = blue)
+                    hue[ledIndex] = (i * hueMultiplier) % 256;
+                    
+                    // Add brightness based on amplitude
+                    int addBrightness = (int)(n * brightnessScale);
+                    brightness[ledIndex] = min(maxBrightness, 
+                                              brightness[ledIndex] + addBrightness);
+                    
+                    // Saturation stays at full
+                    saturation[ledIndex] = 255;
+                }
+            }
+        }
+        
+        // Step 5: DAMPING - reduce base energy
+        if(NUM_LEDS > 2) {
+            brightness[2] = brightness[2] / 3;
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        int ledIndex = (int)(position * (NUM_LEDS - 1));
+        ledIndex = constrain(ledIndex, 0, NUM_LEDS - 1);
+        
+        if(useHSVMode) {
+            // Original behavior: HSV based on frequency
+            return CHSV(hue[ledIndex], saturation[ledIndex], brightness[ledIndex]);
+        } else {
+            // Palette mode: use brightness to index palette
+            CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+            if(palette == nullptr) {
+                palette = PaletteRegistry::findByName("fire");
+            }
+            
+            CRGB color = ColorFromPalette(*palette, brightness[ledIndex]);
+            return color;
+        }
+    }
+    
+    void setCooling(int value) { cooling = constrain(value, 0, 100); }
+    void setFFTThreshold(float value) { fftThreshold = constrain(value, 0.001, 0.1); }
+    void setBrightnessScale(int value) { brightnessScale = constrain(value, 1000, 8000); }
+    void setHSVMode(bool mode) { useHSVMode = mode; }
     void setPaletteName(String name) { paletteName = name; }
     String getPaletteName() const override { return paletteName; }
     void setPalette(String name) override { setPaletteName(name); }
