@@ -78,6 +78,13 @@ float MicrophoneSource::getBand(int bandIndex) {
     return 0.0;
 }
 
+float MicrophoneSource::getBin(int binIndex) {
+    if(binIndex >= 0 && binIndex < 512) {
+        return myFFT.read(binIndex);
+    }
+    return 0.0;
+}
+
 float MicrophoneSource::getBandRange(int startBand, int endBand) {
     if(startBand < 0) startBand = 0;
     if(endBand >= NUM_FFT_BANDS) endBand = FFT_LAST_BAND;
@@ -245,6 +252,13 @@ void SDCardSource::update() {
 float SDCardSource::getBand(int bandIndex) {
     if(bandIndex >= 0 && bandIndex < NUM_FFT_BANDS) {
         return cachedBands[bandIndex];
+    }
+    return 0.0;
+}
+
+float SDCardSource::getBin(int binIndex) {
+    if(binIndex >= 0 && binIndex < 512) {
+        return myFFT.read(binIndex);
     }
     return 0.0;
 }

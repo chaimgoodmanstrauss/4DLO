@@ -19,19 +19,19 @@ seq->startNewSequence("Live Audio Only", 4000, true,
  
   
 
-  /*
+  
    
     seq->addStep("test", {
     "breathing",
     "audio",
     {"audio","ocean"},
    {"audio","rainbow"},
-    {"audio","forest"},
-    {"audio","lava"},
-    {"audio","ocean"}
+    {"audio2","rainbow"},
+    {"audio2","lava"},
+    {"audio2","ocean"}
 
   }, 100, FADE, 2);
-*/
+/*
   seq->addStep("test", {
     "breathing",
     {"plasma", "ocean"},
@@ -41,7 +41,7 @@ seq->startNewSequence("Live Audio Only", 4000, true,
     {"plasma", "lava"},
     {"plasma", "sunset"}
   }, 100, FADE, 2);
-  
+  */
   
 
 /*

@@ -199,7 +199,7 @@ public:
         float audioLevel = AudioSystem::getLevel();
         
         // Scale by sensitivity and convert to byte (0-255)
-        byte newLevel = constrain(audioLevel * sensitivity * 2550, 0, 255);
+        byte newLevel = constrain(audioLevel * sensitivity * 1500, 0, 255);
         currentLevel = newLevel;
         
         // Create audio-reactive spread effect
@@ -254,6 +254,183 @@ public:
     void setPalette(String name) override { setPaletteName(name); }
     void setHSVMode(bool mode) { useHSV = mode; }
     byte getCurrentLevel() const { return currentLevel; }
+};
+
+/////////////////////////////////////////
+// AUDIO REACTIVE COLOR FUNCTION 2
+// Vocal-range pitch-sensitive version with fine-grained FFT bin analysis
+//
+
+class AudioReactiveColorFunction2 : public StatefulColorFunction {
+private:
+    static const int NUM_LEDS = 128;
+    static const int MIN_VOCAL_BIN = 2;   // ~86 Hz (lower male range)
+    static const int MAX_VOCAL_BIN = 9;   // ~387 Hz (typical vocal fundamental range)
+    
+    byte brightness[NUM_LEDS];
+    byte hue[NUM_LEDS];       // Store hue per LED for trailing effect
+    int sensitivity;
+    float decay;
+    String paletteName;
+    bool useHSV;
+    float smoothedPitch;      // Smoothed interpolated pitch (bin number as float)
+    float smoothingAlpha;     // Smoothing factor (0-1, higher = more responsive)
+    
+public:
+    AudioReactiveColorFunction2(String functionName = "audio2", 
+                               int pin = A0,  // Kept for compatibility, but unused
+                               int sens = 100,
+                               float decayRate = 0.95,
+                               String palette = "rainbow",
+                               bool hsvMode = false)
+        : StatefulColorFunction(functionName, 20),
+          sensitivity(sens),
+          decay(decayRate),
+          paletteName(palette),
+          useHSV(hsvMode),
+          smoothedPitch(13.5),  // Initialize to middle of range (~560 Hz)
+          smoothingAlpha(0.3) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < NUM_LEDS; i++) {
+            brightness[i] = 0;
+            hue[i] = 0;
+        }
+        smoothedPitch = 13.5;  // Middle of vocal range
+    }
+    
+    void updateState() override {
+        // Calculate vocal level from bins 2-9 for width
+        float vocalLevel = 0;
+        for(int bin = 2; bin <= 9; bin++) {
+            vocalLevel += AudioSystem::getBin(bin);
+        }
+        vocalLevel = vocalLevel / 8.0;  // Average across bins
+        
+        // Find the dominant pitch using convolution with neighboring bins
+        // This smooths the spectrum and gives more stable pitch detection
+        int dominantBin = MIN_VOCAL_BIN;
+        float maxConvolved = 0;
+        
+        // Periodic diagnostics (every 500ms)
+        static unsigned long lastDiagnostic = 0;
+        unsigned long now = millis();
+        bool printDiag = (now - lastDiagnostic > 500);
+        
+        if(printDiag) {
+            Serial.print("Bins: [");
+        }
+        
+        for(int bin = 2; bin <= 9; bin++) {  // Vocal fundamental range (~86-387 Hz)
+            // Convolve: 1/10(n-2) + 2/10(n-1) + 1/2(n) + 2/10(n+1) + 1/10(n+2)
+            float convolved = 0;
+            convolved += AudioSystem::getBin(bin - 2) * 0.1;
+            convolved += AudioSystem::getBin(bin - 1) * 0.2;
+            convolved += AudioSystem::getBin(bin) * 0.5;
+            convolved += AudioSystem::getBin(bin + 1) * 0.2;
+            convolved += AudioSystem::getBin(bin + 2) * 0.1;
+            
+            if(printDiag) {
+                Serial.print(AudioSystem::getBin(bin), 3);
+                Serial.print("(");
+                Serial.print(convolved, 3);
+                Serial.print(")");
+                if(bin < 9) Serial.print(" ");
+            }
+            
+            if(convolved > maxConvolved) {
+                maxConvolved = convolved;
+                dominantBin = bin;
+            }
+        }
+        
+        if(printDiag) {
+            Serial.print("] Winner: bin ");
+            Serial.print(dominantBin);
+            Serial.print(" (~");
+            Serial.print(dominantBin * 43);
+            Serial.println(" Hz)");
+            lastDiagnostic = now;
+        }
+        
+        // Use center bin's level for noise gate
+        float maxLevel = AudioSystem::getBin(dominantBin);
+        
+        // Only update pitch if there's significant energy (noise gate)
+        if(maxLevel > 0.01) {
+            // Apply exponential smoothing to the dominant bin
+            smoothedPitch = smoothingAlpha * dominantBin + (1.0 - smoothingAlpha) * smoothedPitch;
+        }
+        // else keep previous smoothedPitch value
+        
+        // Map smoothed pitch to hue for new pixels
+        byte currentHue = map(smoothedPitch * 100, MIN_VOCAL_BIN * 100, MAX_VOCAL_BIN * 100, 0, 255);
+        currentHue = constrain(currentHue, 0, 255);
+        
+        // Calculate spread based on total audio level
+        byte vocalBrightness = constrain(vocalLevel * sensitivity * 1200, 0, 255);
+        int center = NUM_LEDS / 2;
+        int spread = (vocalBrightness * NUM_LEDS) / (255 * 2);
+        
+        // Apply decay to all LEDs (brightness decays, hue stays)
+        for(int i = 0; i < NUM_LEDS; i++) {
+            brightness[i] = brightness[i] * decay;
+        }
+        
+        // Add new brightness at leading edge with current hue
+        for(int i = 0; i < spread; i++) {
+            int pos1 = center + i;
+            int pos2 = center - i;
+            
+            if(pos1 < NUM_LEDS) {
+                if(vocalBrightness > brightness[pos1]) {
+                    brightness[pos1] = vocalBrightness;
+                    hue[pos1] = currentHue;  // Update hue only on leading edge
+                }
+            }
+            if(pos2 >= 0) {
+                if(vocalBrightness > brightness[pos2]) {
+                    brightness[pos2] = vocalBrightness;
+                    hue[pos2] = currentHue;  // Update hue only on leading edge
+                }
+            }
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        int index = (int)(position * (NUM_LEDS - 1));
+        index = constrain(index, 0, NUM_LEDS - 1);
+        
+        byte value = brightness[index];
+        byte ledHue = hue[index];  // Use stored hue for this LED
+        
+        if(useHSV) {
+            // Use stored hue with full saturation
+            return CHSV(ledHue, 255, value);
+        } else {
+            // Map stored hue to palette index
+            CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+            if(palette == nullptr) {
+                palette = PaletteRegistry::findByName("rainbow");
+            }
+            
+            CRGB color = ColorFromPalette(*palette, ledHue);
+            color.nscale8(value);
+            
+            return color;
+        }
+    }
+    
+    void setSensitivity(int sens) { sensitivity = constrain(sens, 10, 500); }
+    void setDecay(float d) { decay = constrain(d, 0.5, 0.99); }
+    void setSmoothingAlpha(float alpha) { smoothingAlpha = constrain(alpha, 0.05, 0.95); }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+    void setHSVMode(bool mode) { useHSV = mode; }
+    float getSmoothedPitch() const { return smoothedPitch; }
 };
 
 /////////////////////////////////////////

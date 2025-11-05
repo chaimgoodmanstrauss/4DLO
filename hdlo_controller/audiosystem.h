@@ -60,6 +60,9 @@ public:
     // Get specific frequency band (0-39)
     virtual float getBand(int bandIndex) = 0;
     
+    // Get raw FFT bin (0-511 for FFT1024)
+    virtual float getBin(int binIndex) = 0;
+    
     // Get average of a range of bands
     virtual float getBandRange(int startBand, int endBand) = 0;
     
@@ -117,6 +120,7 @@ public:
     float getLevel() override { return currentLevel; }
     float getPeakLevel() override { return peakLevel; }
     float getBand(int bandIndex) override;
+    float getBin(int binIndex) override;
     float getBandRange(int startBand, int endBand) override;
     float getBass() override { return getBandRange(BASS_BAND_START, BASS_BAND_END); }
     float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
@@ -177,6 +181,7 @@ public:
     float getLevel() override { return currentLevel; }
     float getPeakLevel() override { return peakLevel; }
     float getBand(int bandIndex) override;
+    float getBin(int binIndex) override;
     float getBandRange(int startBand, int endBand) override;
     float getBass() override { return getBandRange(BASS_BAND_START, BASS_BAND_END); }
     float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
@@ -222,6 +227,7 @@ public:
     static float getLevel() { return currentSource ? currentSource->getLevel() : 0.0f; }
     static float getPeakLevel() { return currentSource ? currentSource->getPeakLevel() : 0.0f; }
     static float getBand(int bandIndex) { return currentSource ? currentSource->getBand(bandIndex) : 0.0f; }
+    static float getBin(int binIndex) { return currentSource ? currentSource->getBin(binIndex) : 0.0f; }
     static float getBandRange(int startBand, int endBand) { 
         return currentSource ? currentSource->getBandRange(startBand, endBand) : 0.0f; 
     }

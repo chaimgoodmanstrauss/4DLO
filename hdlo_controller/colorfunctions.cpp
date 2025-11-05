@@ -73,6 +73,10 @@ CRGB audioReactiveWrapper(float position) {
     return callStatefulColorFunction(11, position);
 }
 
+CRGB audioReactive2Wrapper(float position) {
+    return callStatefulColorFunction(24, position);
+}
+
 CRGB vuMeterWrapper(float position) {
     return callStatefulColorFunction(12, position);
 }
@@ -119,7 +123,8 @@ ColorFunction colorFunctionArray[numcolorfunctions] = {
     vocalsWrapper,           // 21 - vocal highlighter
     breathingColor,          // 22 - breathing white
     simpleColor,             // 23 - simple color palette display
-    // Slots 24-99 available for future functions
+    audioReactive2Wrapper,   // 24 - audio reactive 2 (pitch-sensitive)
+    // Slots 25-99 available for future functions
 
 };
 
@@ -148,6 +153,7 @@ String colorFunctionNames[numcolorfunctions] = {
     "vocals",
     "breathing",      // 22
     "simplecolor",    // 23
+    "audio2",         // 24
     // Names for remaining slots will be empty strings
 };
 
@@ -252,6 +258,17 @@ void initializeStatefulColorFunctions() {
     );
     registerStatefulColorFunction(11, audioReactive);
     
+    // Audio Reactive 2 (index 24) - Pitch-sensitive vocal version
+    AudioReactiveColorFunction2* audioReactive2 = new AudioReactiveColorFunction2(
+        "audio2",        // name
+        A0,              // audio pin (unused)
+        100,             // sensitivity
+        0.95,            // decay rate
+        "rainbow",       // palette name from registry
+        false            // use palette mode (not HSV mode)
+    );
+    registerStatefulColorFunction(24, audioReactive2);
+    
     // VU Meter (index 12) - now with palette support
     VUMeterColorFunction* vuMeter = new VUMeterColorFunction(
         "vumeter",       // name
@@ -310,6 +327,7 @@ void initializeStatefulColorFunctions() {
     Serial.println("  - particles (index 14) - Uses 'rainbow' palette");
     Serial.println("  - beatdetect (index 20) - Beat detection flash");
     Serial.println("  - vocals (index 21) - Vocal frequency highlighter");
+    Serial.println("  - audio2 (index 24) - Pitch-sensitive vocal (width=volume, color=pitch)");
     Serial.println("NOTE: All audio functions use centralized AudioSystem");
     Serial.println("NOTE: Functions only update when actually used (lazy evaluation)");
     
@@ -368,6 +386,7 @@ void cycleAllPalettes() {
     switchPalette("fire2012", paletteName);
     switchPalette("audiocylon", paletteName);
     switchPalette("audio", paletteName);
+    switchPalette("audio2", paletteName);
     switchPalette("plasma", paletteName);
     switchPalette("particles", paletteName);
     switchPalette("beatdetect", paletteName);
@@ -386,6 +405,7 @@ void randomizeAllPalettes() {
     switchPalette("fire2012", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("audiocylon", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("audio", PaletteRegistry::getNameByIndex(random(numPalettes)));
+    switchPalette("audio2", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("plasma", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("particles", PaletteRegistry::getNameByIndex(random(numPalettes)));
     switchPalette("beatdetect", PaletteRegistry::getNameByIndex(random(numPalettes)));
