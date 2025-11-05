@@ -10,6 +10,7 @@
 #include "models.h"
 #include "edgepermutations.h"
 #include "colorfunctions.h"
+//#include "edgesetup.h" // just for positionresolution=10000
 
 ////////////////////////////////////
 //
@@ -124,8 +125,23 @@ CRGB colormodel::getcolorfunction(int edgeindex, float position) {
     switchPalette(edgeFunctions[edgeindex], edgePalettes[edgeindex]);
   }
   
+  // Calculate the transformed position
+  float transformedPosition = (float)(edgemodels[edgeindex][2])/(10000.)+
+                              (float)(edgemodels[edgeindex][3])/(10000.)*position;
+  
+  // DEBUG
+  static int debugCount = 0;
+  if(debugCount < 10) {
+    Serial.print("MODEL: edge="); Serial.print(edgeindex);
+    Serial.print(" inPos="); Serial.print(position, 4);
+    Serial.print(" [1]="); Serial.print(edgemodels[edgeindex][1]);
+    Serial.print(" [2]="); Serial.print(edgemodels[edgeindex][2]);
+    Serial.print(" outPos="); Serial.println(transformedPosition, 6);
+    debugCount++;
+  }
+  
   // Use the colorfunctionclass object's returncolor method
-  return colorfunctions[edgemodels[edgeindex][0]].returncolor(position);
+  return colorfunctions[edgemodels[edgeindex][0]].returncolor(transformedPosition);
 }
 
 void colormodel::setColorFunction(int index, String name, ColorFunction func) {

@@ -16,19 +16,29 @@ seq->clearRegistry();
 seq->startNewSequence("Live Audio Only", 4000, true,
                        AudioSourceConfig(AUDIO_MICROPHONE));
 
- 
+ /*
   seq->addStep("test", {
     "breathing",
-    "plasma",
     "fftfire",
-    "fire2012",
-    "cylon",
-    "plasma",
+    "audiocylon",
+    "plasma","plasma","plasma",
     "cylon"
+  }, 100, FADE, 2);*/
+   seq->addStep("test", {
+    "breathing",
+    
+    "rainbow",
+    "rainbow",
+    {"noiseperlin", "ocean"},
+    {"noiseperlin", "lava"},
+    {"noiseperlin", "plasma"},
+    {"noiseperlin", "forest"},
+
+
   }, 100, FADE, 2);
 
   
-   
+/*
     seq->addStep("test", {
     "breathing",
     {"plasma","rainbow"},
@@ -38,7 +48,7 @@ seq->startNewSequence("Live Audio Only", 4000, true,
    {"fftfire","rainbow"},
     {"audio2","rainbow"},
     {"vumeter","rainbow"},
-  }, 100, FADE, 2);
+  }, 100, FADE, 2);*/
 /*
   seq->addStep("test", {
     "breathing",

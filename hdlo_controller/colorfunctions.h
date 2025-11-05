@@ -17,9 +17,10 @@
 // Example bin ranges: Bass 0-9 (~43-430Hz), Vocal 5-45 (~215-1935Hz), Full 0-59 (~43-2580Hz)
 //
 // STATEFUL FUNCTION SLOTS (in colorfunctions.cpp):
-// Index 7: cylon, 8: fire2012, 9: audiocylon, 11: audio, 12: vumeter
-// Index 13: plasma, 14: particles, 20: beatdetect, 21: vocals, 24: audio2, 25: fftfire
-// Next available: 26+
+// Index 0: dark, 1: rainbow, 2: cylon, 3: fire2012, 4: audiocylon
+// Index 5: audio, 6: vumeter, 7: plasma, 8: particles, 9: beatdetect
+// Index 10: vocals, 11: breathing, 12: simplecolor, 13: audio2, 14: fftfire
+// Next available: 15+
 //
 // TUNING PARAMETERS:
 // - cooling: Lower = brighter idle, slower fade (5-30 range, default 15-20)
@@ -887,11 +888,18 @@ public:
     }
     
     void updateState() override {
-        // Get audio level for speed modulation
-        float audioLevel = AudioSystem::getLevel();
+        // Get audio level for speed modulation using direct bins
+        float audioLevel = 0;
+        for(int i = 0; i < 60; i++) {
+            float n = AudioSystem::getBin(i);
+            if(n > AUDIO_FFT_THRESHOLD) {
+                audioLevel += n;
+            }
+        }
+        audioLevel = audioLevel / 60.0;
         
-        // Modulate speed based on audio level (0.5x to 3x base speed)
-        float speedMultiplier = 0.5 + (audioLevel * 2.5);
+        // Increased sensitivity: 0.5x to 5x base speed (was 0.5x to 3x)
+        float speedMultiplier = 0.5 + (audioLevel * 200);  // Much higher multiplier
         float currentSpeed = baseSpeed * speedMultiplier;
         
         // Update velocity magnitude while preserving direction
@@ -918,33 +926,13 @@ public:
             trailBrightness[i] = trailBrightness[i] * 0.95;
         }
         
-        // Get frequency bins in vocal range - using bands 0-7 based on actual data
+        // Get frequency bins in vocal range - using bins directly
         float binEnergies[NUM_VOCAL_BINS];
         float maxEnergy = 0;
         
-        // Debug: Show vocal range bands (abbreviated for readability)
-        static unsigned long lastDebug = 0;
-        if(millis() - lastDebug > 1000) {
-            Serial.print("AudioCylon [0-15]: ");
-            for(int i = 0; i < NUM_VOCAL_BINS; i++) {
-                Serial.print(AudioSystem::getBand(i), 3);
-                Serial.print(" ");
-            }
-            lastDebug = millis();
-        }
-        
         for(int i = 0; i < NUM_VOCAL_BINS; i++) {
-            binEnergies[i] = AudioSystem::getBand(i) * 10000000;  // 10 million boost
+            binEnergies[i] = AudioSystem::getBin(i) * 50000;  // Increased from 10M (was too much)
             if(binEnergies[i] > maxEnergy) maxEnergy = binEnergies[i];
-        }
-        
-        // Debug boosted values occasionally
-        if(millis() - lastDebug > 1000) {
-            Serial.print(" | Boosted: ");
-            for(int i = 0; i < NUM_VOCAL_BINS; i++) {
-                Serial.print(binEnergies[i], 0);
-                Serial.print(" ");
-            }
         }
         
         // Get palette
@@ -994,18 +982,6 @@ public:
         } else {
             // No vocal energy - use first palette color
             leadingColor = ColorFromPalette(*palette, 0);
-        }
-        
-        // Debug final color and top bins
-        if(millis() - lastDebug < 50) {  // Same update cycle
-            Serial.print(" | Dom bin: ");
-            Serial.print(topBins[0]);
-            Serial.print(" | RGB: ");
-            Serial.print(leadingColor.r);
-            Serial.print(",");
-            Serial.print(leadingColor.g);
-            Serial.print(",");
-            Serial.println(leadingColor.b);
         }
         
         // Paint leading edge with interpolation to avoid gaps
@@ -1258,8 +1234,8 @@ private:
     int brightnessScale;      // Multiplier for FFT→brightness
     int maxBrightness;        // Cap on brightness
     int hueMultiplier;        // FFT bin → hue mapping (6 in original)
-    String paletteName;       // Optional: for non-HSV mode
     bool useHSVMode;          // true = HSV colors from frequency, false = use palette
+    String paletteName;       // Optional: for non-HSV mode
     
 public:
     FFTFireColorFunction(String functionName = "fftfire",
@@ -1342,17 +1318,24 @@ public:
         ledIndex = constrain(ledIndex, 0, NUM_LEDS - 1);
         
         if(useHSVMode) {
-            // Original behavior: HSV based on frequency
+            // Original behavior: HSV based on frequency (rainbow)
             return CHSV(hue[ledIndex], saturation[ledIndex], brightness[ledIndex]);
         } else {
-            // Palette mode: use brightness to index palette
-            CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
-            if(palette == nullptr) {
-                palette = PaletteRegistry::findByName("fire");
+            // Hybrid mode: rainbow hue for active pixels, palette for background
+            // This matches the original INO where frequency→hue and palette provides base colors
+            if(brightness[ledIndex] > 20) {
+                // Active pixel: use frequency-based rainbow hue
+                return CHSV(hue[ledIndex], saturation[ledIndex], brightness[ledIndex]);
+            } else {
+                // Background/dim pixel: use palette
+                CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+                if(palette == nullptr) {
+                    palette = PaletteRegistry::findByName("fire");
+                }
+                
+                CRGB color = ColorFromPalette(*palette, brightness[ledIndex]);
+                return color;
             }
-            
-            CRGB color = ColorFromPalette(*palette, brightness[ledIndex]);
-            return color;
         }
     }
     
@@ -1360,6 +1343,204 @@ public:
     void setFFTThreshold(float value) { fftThreshold = constrain(value, 0.001, 0.1); }
     void setBrightnessScale(int value) { brightnessScale = constrain(value, 1000, 8000); }
     void setHSVMode(bool mode) { useHSVMode = mode; }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+};
+
+/////////////////////////////////////////
+// NOISE PERLIN COLOR FUNCTION
+//
+
+class NoisePerlinColorFunction : public StatefulColorFunction {
+private:
+    static const int kMatrixWidth = 16;
+    static const int kMatrixHeight = 16;
+    static const int MAX_DIMENSION = 16;
+    
+    uint8_t noise[MAX_DIMENSION][MAX_DIMENSION];
+    uint16_t x;
+    uint16_t y;
+    uint16_t z;
+    uint16_t speed;
+    uint16_t scale;
+    String paletteName;
+    uint8_t colorLoop;
+    uint8_t ihue;
+    
+    void fillNoise8() {
+        uint8_t dataSmoothing = 0;
+        if(speed < 50) {
+            dataSmoothing = 200 - (speed * 4);
+        }
+        
+        for(int i = 0; i < MAX_DIMENSION; i++) {
+            int ioffset = scale * i;
+            for(int j = 0; j < MAX_DIMENSION; j++) {
+                int joffset = scale * j;
+                
+                uint8_t data = inoise8(x + ioffset, y + joffset, z);
+                data = qsub8(data, 16);
+                data = qadd8(data, scale8(data, 39));
+                
+                if(dataSmoothing) {
+                    uint8_t olddata = noise[i][j];
+                    uint8_t newdata = scale8(olddata, dataSmoothing) + 
+                                     scale8(data, 256 - dataSmoothing);
+                    data = newdata;
+                }
+                
+                noise[i][j] = data;
+            }
+        }
+        
+        z += speed;
+        x += speed / 8;
+        y -= speed / 16;
+    }
+    
+public:
+    NoisePerlinColorFunction(String functionName = "noiseperlin",
+                            uint16_t animSpeed = 20,
+                            uint16_t noiseScale = 30,
+                            uint8_t enableColorLoop = 1,
+                            String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          speed(animSpeed),
+          scale(noiseScale),
+          paletteName(palette),
+          colorLoop(enableColorLoop),
+          ihue(0) {
+        reset();
+    }
+    
+    void reset() override {
+        x = random16();
+        y = random16();
+        z = random16();
+        
+        for(int i = 0; i < MAX_DIMENSION; i++) {
+            for(int j = 0; j < MAX_DIMENSION; j++) {
+                noise[i][j] = 0;
+            }
+        }
+        
+        ihue = 0;
+        lastUpdateTime = 0;
+    }
+    
+    void updateState() override {
+        fillNoise8();
+        if(colorLoop) {
+            ihue++;
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        // Position is used as-is - edge mapping already applied
+        // Map position (whatever range edge provides) to 16x16 matrix
+        int totalIndex = (int)(position * (kMatrixWidth * kMatrixHeight - 1));
+        totalIndex = constrain(totalIndex, 0, kMatrixWidth * kMatrixHeight - 1);
+        
+        int i = totalIndex % kMatrixWidth;
+        int j = totalIndex / kMatrixWidth;
+        
+        // DEBUG: Show what coordinates we're sampling
+        static int sampleCount = 0;
+        if(sampleCount < 20) {
+            Serial.print("pos="); Serial.print(position, 4);
+            Serial.print(" totalIdx="); Serial.print(totalIndex);
+            Serial.print(" (i,j)=("); Serial.print(i); Serial.print(","); Serial.print(j);
+            Serial.print(") noise["); Serial.print(j); Serial.print("]["); Serial.print(i); Serial.print("]=");
+            Serial.println(noise[j][i]);
+            sampleCount++;
+        }
+        
+        // Use EXACT mapping from original:
+        // noise[j][i] for palette index, noise[i][j] for brightness
+        uint8_t index = noise[j][i];
+        uint8_t bri = noise[i][j];
+        
+        if(colorLoop) {
+            index += ihue;
+        }
+        
+        if(bri > 127) {
+            bri = 255;
+        } else {
+            bri = dim8_raw(bri * 2);
+        }
+        
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("rainbow");
+        }
+        
+        return ColorFromPalette(*palette, index, bri);
+    }
+    
+    void setSpeed(uint16_t value) { speed = value; }
+    void setScale(uint16_t value) { scale = value; }
+    void setColorLoop(uint8_t value) { colorLoop = value; }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+};
+
+/////////////////////////////////////////
+// COLOR FUNCTION REGISTRY
+//
+
+extern ColorFunction colorFunctionArray[numcolorfunctions];
+extern String colorFunctionNames[numcolorfunctions];
+extern StatefulColorFunction* statefulColorFunctions[numcolorfunctions];
+extern int numStatefulColorFunctions;
+
+void registerStatefulColorFunction(int index, StatefulColorFunction* func);
+
+/////////////////////////////////////////
+// SIMPLE COLOR VIEWER
+// Shows palette gradient from 0 to 1
+//
+
+class SimpleColorViewer : public StatefulColorFunction {
+private:
+    String paletteName;
+    
+public:
+    SimpleColorViewer(String functionName = "simplecolor",
+                     String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          paletteName(palette) {
+    }
+    
+    void reset() override {
+        // Nothing to reset
+    }
+    
+    void updateState() override {
+        // Nothing to update - static display
+    }
+    
+    CRGB getColor(float position) override {
+        // Get the assigned palette
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("rainbow");
+        }
+        
+        // Map position (0-1) to palette index (0-255)
+        byte paletteIndex = position * 255;
+        
+        // Get color from palette
+        CRGB color = ColorFromPalette(*palette, paletteIndex);
+        
+        // Scale to max brightness
+        color.nscale8(MAXBRIGHTNESS);
+        
+        return color;
+    }
+    
     void setPaletteName(String name) { paletteName = name; }
     String getPaletteName() const override { return paletteName; }
     void setPalette(String name) override { setPaletteName(name); }
@@ -1410,27 +1591,6 @@ inline CRGB breathingColor(float position) {
     return color;
 }
 
-// Simple color function - shows the entire palette gradient
-inline CRGB simpleColor(float position) {
-    // Get the white palette
-    CRGBPalette16* palette = PaletteRegistry::findByName("white");
-    if(palette == nullptr) {
-        palette = PaletteRegistry::getByIndex(0);
-    }
-    
-    // Map position (0-1) to palette index (0-255)
-    byte paletteIndex = position * 255;
-    
-    // Get color from palette
-    CRGB color = ColorFromPalette(*palette, paletteIndex);
-    
-    // Scale to max brightness
-    color.nscale8(MAXBRIGHTNESS);
-    
-    return color;
-}
-
-
 
 
 
@@ -1441,6 +1601,11 @@ inline CRGB callStatefulColorFunction(int index, float position) {
         return statefulColorFunctions[index]->getColor(position);
     }
     return CRGB(0, 0, 0);
+}
+
+// Legacy inline function for backward compatibility (must come after callStatefulColorFunction)
+inline CRGB simpleColor(float position) {
+    return callStatefulColorFunction(12, position);
 }
 
 

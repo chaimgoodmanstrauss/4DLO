@@ -27,9 +27,9 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
   //incidentally a cycle is 67,95,39,64,92,36, all positive direction
   
   // edge #0 is looking at color #1 in the test model.
-  {{8,7,1},{80,3,1},{8,7,1},{80,2,1},{8,7,1},{80,2,1}},
-    /*{
-    {40,0,1}, 
+  /*{{8,7,1},{80,3,1},{8,7,1},{80,3,-1},{8,7,1},{80,2,1}},*/
+    {
+    {40,0,1},
     {4,7,1},
     {40,1,1}, 
     {4,7,1},
@@ -40,7 +40,7 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
     {40,4,1},
     {4,7,1},
     {40,5,1},
-    },*/
+    },
 
     /*
     {{10,7,1},

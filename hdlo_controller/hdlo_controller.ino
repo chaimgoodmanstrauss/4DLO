@@ -43,6 +43,36 @@ void setup() {
     FastLED.setBrightness(MAXBRIGHTNESS);
     FastLED.addLeds(teensycontroller, rgbarray, numberofleds);
     
+    // STARTUP LIGHT SHOW - Rainbow sweep
+    Serial.println("Running startup light show...");
+    for(int sweep = 0; sweep < 3; sweep++) {
+        for(int hue = 0; hue < 256; hue += 2) {
+            for(int i = 0; i < numberofleds; i++) {
+                // Rainbow with position offset
+                int ledHue = (hue + (i * 256 / numberofleds)) % 256;
+                CRGB color = CHSV(ledHue, 255, MAXBRIGHTNESS);
+                // Apply hardware color swap
+                rgbarray[i].r = color.g;
+                rgbarray[i].g = color.r;
+                rgbarray[i].b = color.b;
+            }
+            FastLED.show();
+            delay(5);
+        }
+    }
+    // Brief white flash
+    for(int i = 0; i < numberofleds; i++) {
+        rgbarray[i] = CRGB(MAXBRIGHTNESS, MAXBRIGHTNESS, MAXBRIGHTNESS);
+    }
+    FastLED.show();
+    delay(100);
+    // Clear
+    for(int i = 0; i < numberofleds; i++) {
+        rgbarray[i] = CRGB(0, 0, 0);
+    }
+    FastLED.show();
+    Serial.println("Startup light show complete!");
+    
     // Step 3: Initialize the audio system (BEFORE color functions!)
     Serial.println("Initializing audio system...");
     AudioMemory(12);  // Allocate audio memory blocks FIRST

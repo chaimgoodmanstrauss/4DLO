@@ -258,6 +258,20 @@ void constructstrandtable(){
         // now we go through the segments, again discarding those that are zeroed out:
         if(stranddata[strandnumber][segmentnumber][0]!=0){
           
+          // Check if this segment would exceed the strip length
+          int segmentLength = stranddata[strandnumber][segmentnumber][0];
+          int totalLEDsAfterSegment = lengthofprevioussegments + segmentLength;
+          
+          if(totalLEDsAfterSegment > ledsperstrip) {
+            Serial.println("ERROR: Strand " + String(strandnumber) + " segment " + String(segmentnumber) + 
+                         " would exceed ledsperstrip limit (" + String(ledsperstrip) + ")");
+            Serial.println("  Segment length: " + String(segmentLength) + 
+                         ", Total LEDs so far: " + String(lengthofprevioussegments) +
+                         ", Would be: " + String(totalLEDsAfterSegment));
+            Serial.println("  Skipping this segment to prevent buffer overflow!");
+            continue; // Skip this segment
+          }
+          
           // so now we have something: 
           // We can assume that [0]= the length of the segment in LEDS
           // [1]=edgetype and [2]= direction. We fill stranddata with 
@@ -303,12 +317,12 @@ void initedgedata(){
     constructstrandtable();
   
   //let's take a look at what we've got:
-
+/*
    for(int i = 0; i<numberofpins; i++){
      Serial.println("pin # "+String(i)+":");
      for(int j = 0; j<ledsperstrip;j++){
        Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
      }
-   }
+   }*/
      
 }
