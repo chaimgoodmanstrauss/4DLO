@@ -1,289 +1,244 @@
-////////////////////////////////////////////
+////////////////////////////////////
 //
-//   hdlo_controller.ino (UPDATED)
+//   hdlo_controller.ino
 //
-// Example main sketch using the new cleaned-up system
-// No more pointer registration needed!
+// Main controller file for HDLO LED system
+// Updated for new OOP architecture with CRTP auto-registration
 //
 
 #include <OctoWS2811.h>
 #include <FastLED.h>
+
 #include "teensy4controller.h"
 #include "ledconstants.h"
 #include "edgesetup.h"
-#include "paletteregistry.h"    // NEW: Add this include
-#include "audiosystem.h"        // NEW: Centralized audio system
+#include "audiosystem.h"
+#include "paletteregistry.h"
 #include "models.h"
-#include "hdlo_models.h"
 #include "colorfunctions.h"
 #include "modelsequence.h"
-#include "sequences.h"
+#include "hdlo_models.h"
 #include "edgepermutations.h"
-#include "namedpermutations.h"
+#include "sequences.h"
 
-// Global sequence object
-modelsequence* mainSequence;
-
+// Sequence
+extern modelsequence mainSequence;
 
 void setup() {
     Serial.begin(115200);
-    // Optional: wait briefly for serial monitor (comment out for production)
-    // while (!Serial && millis() < 3000);
+    delay(1000);
     
-    Serial.println("=== HDLO Controller Starting ===");
+    Serial.println("\n=== HDLO Controller Starting ===");
     
-    // Step 1: Initialize edge data
-    Serial.println("Initializing edge data...");
-    initedgedata();
-    
-    // Step 2: Initialize OctoWS2811
+    // Step 1: Initialize OctoWS2811
     Serial.println("Initializing OctoWS2811...");
     octocontroller.begin();
+    
+    // Step 2: Initialize FastLED
+    Serial.println("Initializing FastLED...");
     teensycontroller = new CTeensy4Controller<GRB, WS2811_800kHz>(&octocontroller);
-    FastLED.setBrightness(MAXBRIGHTNESS);
     FastLED.addLeds(teensycontroller, rgbarray, numberofleds);
-    
-    // STARTUP LIGHT SHOW - Rainbow sweep
-    Serial.println("Running startup light show...");
-    for(int sweep = 0; sweep < 3; sweep++) {
-        for(int hue = 0; hue < 256; hue += 2) {
-            for(int i = 0; i < numberofleds; i++) {
-                // Rainbow with position offset
-                int ledHue = (hue + (i * 256 / numberofleds)) % 256;
-                CRGB color = CHSV(ledHue, 255, MAXBRIGHTNESS);
-                // Apply hardware color swap
-                rgbarray[i].r = color.g;
-                rgbarray[i].g = color.r;
-                rgbarray[i].b = color.b;
-            }
-            FastLED.show();
-            delay(5);
-        }
-    }
-    // Brief white flash
-    for(int i = 0; i < numberofleds; i++) {
-        rgbarray[i] = CRGB(MAXBRIGHTNESS, MAXBRIGHTNESS, MAXBRIGHTNESS);
-    }
+    FastLED.setBrightness(MAXBRIGHTNESS);
+    FastLED.clear();
     FastLED.show();
-    delay(100);
-    // Clear
-    for(int i = 0; i < numberofleds; i++) {
-        rgbarray[i] = CRGB(0, 0, 0);
-    }
-    FastLED.show();
-    Serial.println("Startup light show complete!");
     
-    // Step 3: Initialize the audio system (BEFORE color functions!)
+    // Step 3: Initialize audio system
     Serial.println("Initializing audio system...");
-    AudioMemory(12);  // Allocate audio memory blocks FIRST
     AudioSystem::initialize();
     
-    // Step 4: Initialize the palette registry 
+    // Step 4: Initialize palette registry
     Serial.println("Initializing palette registry...");
     PaletteRegistry::initialize();
-    //PaletteRegistry::printRegistry();  // Optional: see available palettes
     
-    // Step 5: Initialize color functions
-    Serial.println("Initializing color functions...");
-    initializeStatefulColorFunctions();
+    // Step 5: Construct strand table
+    Serial.println("Constructing strand table...");
+    initedgedata();
     
-
-    // Step 6: Initialize edge permutations
+    // Step 6: Color functions auto-register via CRTP
+    Serial.println("Color functions registered via CRTP");
+    ColorFunctionFactory::getInstance().listFunctions();
+    
+    // Step 7: Initialize edge permutations
     Serial.println("Initializing edge permutations...");
-    //EdgePermutation::printRegistry();  // Optional: see available permutations
+    EdgePermutation::printRegistry();
     
-
-    // Step 7: Initialize models
+    // Step 8: Initialize models
     Serial.println("Initializing models...");
     initializemodels();
-    initializefancymodels();// this also initializes the color functions for the models
-    colormodel::printRegistry();  // Optional: see available models
+    colormodel::printRegistry();
     
-    // Step 8: Create and initialize sequences (NEW - SIMPLIFIED!)
+    // Step 9: Create fancy model variations
+    Serial.println("Creating fancy models...");
+    initializefancymodels();
+    
+    // Step 10: Initialize sequences
     Serial.println("Initializing sequences...");
-    mainSequence = new modelsequence();
-    initializeSequences(mainSequence);
+    initializeSequences();
     
-    // Step 9: Start the sequence registry
-    Serial.println("Starting sequence registry...");
-    mainSequence->beginRegistry();
+    // Step 11: Startup light show
+    Serial.println("Startup light show...");
+    Serial.print("Number of LEDs: ");
+    Serial.println(numberofleds);
     
-    Serial.println("=== Setup Complete ===");
-    Serial.println("Current sequence: " + mainSequence->getCurrentRegistryName());
-    Serial.println();
+    // Test 1: All white
+    for(int i = 0; i < numberofleds; i++) {
+        rgbarray[i] = CRGB(50, 50, 50);
+    }
+    FastLED.show();
+    delay(1000);
+    
+    // Test 2: Rainbow
+    for(int i = 0; i < numberofleds; i++) {
+        rgbarray[i] = CHSV(i * 255 / numberofleds, 255, 100);
+    }
+    FastLED.show();
+    delay(1000);
+    
+    // Clear
+    FastLED.clear();
+    FastLED.show();
+    delay(100);
+    
+    Serial.println("=== Setup Complete ===\n");
+    Serial.println("Commands: 's' = status, 'n' = next step, 'm' = model info");
 }
 
 void loop() {
-    // Safety check
-    if(!mainSequence) {
-        Serial.println("ERROR: mainSequence is NULL!");
-        delay(1000);
-        return;
-    }
+    unsigned long currentTime = millis();
     
-    // Update audio system (reads FFT data once per frame)
+    // Update audio system
     AudioSystem::update();
     
-    // Update frame counter for lazy evaluation
-    StatefulColorFunction::beginFrame();
+    // Update sequence (handles transitions and timing)
+    mainSequence.update();
     
-    // Update the sequence registry (handles sequence switching)
-    unsigned long currentTime = millis();
-    if(mainSequence->updateRegistry(currentTime)) {
-        Serial.println("Switched to sequence: " + mainSequence->getCurrentRegistryName());
+    // Increment global frame counter
+    IColorFunction::incrementGlobalFrame();
+    
+    // Render LEDs using strand table
+    colormodel* currentModel = mainSequence.getCurrentModel();
+    if(currentModel) {
+        for(int i = 0; i < numberofleds; i++) {
+            int edgeindex = strandtable[i][1];
+            int positionInt = strandtable[i][0];
+            
+            if(edgeindex == 0 && positionInt == 0) {
+                rgbarray[i] = CRGB::Black;
+                continue;
+            }
+            
+            float position = positionInt / 10000.0;
+            rgbarray[i] = currentModel->getcolorfunction(edgeindex, position);
+        }
+    } else {
+        // Fallback: simple rainbow if no model
+        static uint8_t hue = 0;
+        for(int i = 0; i < numberofleds; i++) {
+            rgbarray[i] = CHSV(hue + i, 255, 50);
+        }
+        hue++;
     }
     
-    // Update the current sequence
-    mainSequence->update(currentTime);
-    
-    // Apply the colors to the LED array
-    for(int ledindex = 0; ledindex < numberofleds; ledindex++) {
-        // Get edge and position from strand table
-        int edgeindex = strandtable[ledindex][1];
-        float position = strandtable[ledindex][0] / (float)positionresolution;
-        
-        // Get color from the sequence
-        CRGB color = mainSequence->getColor(edgeindex, position);
-        
-        // TOTAL HACK!!!
-        // SWAP RED AND GREEN TO FIX HARDWARE COLOR ORDER
-        CRGB swappedColor;
-        swappedColor.r = color.g;  // Put green value in red channel
-        swappedColor.g = color.r;  // Put red value in green channel
-        swappedColor.b = color.b;  // Blue stays the same
-        
-        // Apply to LED array
-        rgbarray[ledindex] = swappedColor;  // Use swapped color, not original
-      }
-    
-    // Show the LEDs
+    // Show LEDs
     FastLED.show();
     
-    // Optional: Print active stateful functions or whatever else every 1000 frames
-    static int frameCount = 0;
-    if(++frameCount % 1000 == 0) {
-      //  printActiveStatefulFunctions();
-    }
-    
-    // Optional: Handle serial commands for runtime control -- pretty cool little feature 
-    // Claude added on its own.
+    // Handle serial commands
     handleSerialCommands();
+    
+    // Optional: Print status every 10 seconds
+    static unsigned long lastStatusTime = 0;
+    if(currentTime - lastStatusTime >= 10000) {
+        printStatus();
+        lastStatusTime = currentTime;
+    }
 }
 
-// Optional: Add serial commands for runtime control
 void handleSerialCommands() {
-    if(Serial.available()) {
-        String command = Serial.readStringUntil('\n');
-        command.trim();
+    if(Serial.available() > 0) {
+        char cmd = Serial.read();
         
-        if(command == "next") {
-            // Force switch to next sequence
-            Serial.println("Forcing switch to next sequence...");
-            // You could add a forceNextSequence() method to modelsequence
-        }
-        else if(command == "palettes") {
-            // Show all palettes
-            PaletteRegistry::printRegistry();
-        }
-        else if(command == "models") {
-            // Show all models
-            colormodel::printRegistry();
-        }
-        else if(command == "sequences") {
-            // Show current sequence info
-            Serial.println("Current sequence: " + mainSequence->getCurrentRegistryName());
-            Serial.println("Step: " + String(mainSequence->getCurrentStep()) + 
-                          " of " + String(mainSequence->getTotalSteps()));
-        }
-        else if(command.startsWith("cycle")) {
-            // Cycle all palettes
-            cycleAllPalettes();
-            Serial.println("Cycled all palettes");
-        }
-        else if(command.startsWith("random")) {
-            // Randomize all palettes
-            randomizeAllPalettes();
-            Serial.println("Randomized all palettes");
-        }
-        else if(command.startsWith("switch ")) {
-            // Switch a specific function to a specific palette
-            // Format: "switch fire2012 ocean"
-            int spacePos = command.indexOf(' ', 7);
-            if(spacePos > 0) {
-                String funcName = command.substring(7, spacePos);
-                String paletteName = command.substring(spacePos + 1);
-                switchPalette(funcName, paletteName);
-            }
-        }
-        else if(command == "help") {
-            Serial.println("Commands:");
-            Serial.println("  next - Force next sequence");
-            Serial.println("  palettes - List all palettes");
-            Serial.println("  models - List all models");
-            Serial.println("  sequences - Show sequence info");
-            Serial.println("  cycle - Cycle all palettes");
-            Serial.println("  random - Randomize palettes");
-            Serial.println("  switch [function] [palette] - Switch specific function palette");
-            Serial.println("  audio - Show audio levels");
-            Serial.println("  gain [0.0-1.0] - Set microphone gain");
-            Serial.println("  mic - Switch to microphone input");
-            Serial.println("  play [filename] - Play SD card file");
-            Serial.println("  loop [on/off] - Enable/disable looping");
-            Serial.println("  stop - Stop playback");
-            Serial.println("  pause - Pause playback");
-            Serial.println("  resume - Resume playback");
-            Serial.println("  source - Show current audio source");
-            Serial.println("  help - Show this help");
-        }
-        else if(command == "audio") {
-            // Show audio levels
-            AudioSystem::printLevels();
-        }
-        else if(command.startsWith("gain ")) {
-            // Set microphone gain
-            float gain = command.substring(5).toFloat();
-            AudioSystem::setMicGain(gain);
-        }
-        else if(command == "mic") {
-            AudioSystem::useMicrophone();
-            Serial.println("Switched to microphone");
-        }
-        else if(command.startsWith("play ")) {
-            String filename = command.substring(5);
-            
-            if(AudioSystem::useSDCard(filename.c_str(), 1.0)) {
-                Serial.println("Playing: " + filename);
-            } else {
-                Serial.println("Failed to play: " + filename);
-            }
-        }
-        else if(command.startsWith("rate ")) {
-            Serial.println("Error: Playback rate control not supported");
-        }
-        else if(command.startsWith("loop ")) {
-            String state = command.substring(5);
-            if(state == "on") {
-                AudioSystem::setLooping(true);
-                Serial.println("Looping enabled");
-            } else {
-                AudioSystem::setLooping(false);
-                Serial.println("Looping disabled");
-            }
-        }
-        else if(command == "stop") {
-            AudioSystem::stopPlayback();
-        }
-        else if(command == "pause") {
-            AudioSystem::pausePlayback();
-        }
-        else if(command == "resume") {
-            AudioSystem::resumePlayback();
-        }
-        else if(command == "source") {
-            Serial.println("Current source: " + AudioSystem::getCurrentSourceType());
-            if(AudioSystem::isPlaying()) {
-                Serial.println("Status: Playing");
-            }
+        switch(cmd) {
+            case 's':
+                printStatus();
+                break;
+                
+            case 'n':
+                Serial.println("Skipping to next step...");
+                // Force step advance by resetting step start time
+                mainSequence.reset();
+                break;
+                
+            case 'm':
+                colormodel::printRegistry();
+                break;
+                
+            case 'f':
+                ColorFunctionFactory::getInstance().listFunctions();
+                break;
+                
+            case 'p':
+                PaletteRegistry::printRegistry();
+                break;
+                
+            case 'e':
+                EdgePermutation::printRegistry();
+                break;
+                
+            case 'q':
+                mainSequence.printSequenceInfo();
+                break;
+                
+            case 'h':
+                printHelp();
+                break;
+                
+            case '\n':
+            case '\r':
+                // Ignore newlines
+                break;
+                
+            default:
+                Serial.print("Unknown command: ");
+                Serial.println(cmd);
+                Serial.println("Type 'h' for help");
+                break;
         }
     }
+}
+
+void printStatus() {
+    Serial.println("\n=== Status ===");
+    Serial.print("Sequence: ");
+    Serial.println(mainSequence.getCurrentRegistryName());
+    Serial.print("Step: ");
+    Serial.print(mainSequence.getCurrentStep());
+    Serial.print(" Progress: ");
+    Serial.print(mainSequence.getProgress() * 100, 1);
+    Serial.println("%");
+    
+    colormodel* model = mainSequence.getCurrentModel();
+    if(model) {
+        Serial.print("Model: ");
+        Serial.println(model->getModelName());
+    }
+    
+    Serial.print("Audio level: ");
+    Serial.println(AudioSystem::getLevel());
+    
+    Serial.print("Frame: ");
+    Serial.println(IColorFunction::getGlobalFrame());
+    Serial.println("==============\n");
+}
+
+void printHelp() {
+    Serial.println("\n=== Commands ===");
+    Serial.println("s - Print status");
+    Serial.println("n - Next step");
+    Serial.println("m - List models");
+    Serial.println("f - List color functions");
+    Serial.println("p - List palettes");
+    Serial.println("e - List edge permutations");
+    Serial.println("q - Sequence info");
+    Serial.println("h - This help");
+    Serial.println("================\n");
 }

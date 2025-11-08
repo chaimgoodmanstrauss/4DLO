@@ -1,226 +1,279 @@
+////////////////////////////////////
+//
+//   modelsequence.h
+//
+// Sequence management system for HDLO controller
+//
 #ifndef MODELSEQUENCE_H
 #define MODELSEQUENCE_H
 
 #include "models.h"
-#include "colorfunctions.h"  // For numcolorfunctions constant
-#include "audiosystem.h"      // For audio source control
+#include "colorfunctions.h"
 #include <array>
-#include <initializer_list>
+#include <vector>
 
-// Enum for transition types
-enum TransitionType {
-  INSTANT,      // No transition, immediate switch
-  FADE,         // Cross-fade between models
-  WIPE          // Sequential wipe across edges
-};
-
-// Enum for audio source types
-enum AudioSourceType {
-  AUDIO_KEEP_CURRENT,    // Don't change audio source
-  AUDIO_MICROPHONE,      // Use microphone input
-  AUDIO_SD_CARD          // Use SD card playback
-};
-
-// Structure for audio source configuration
+// Audio source configuration
 struct AudioSourceConfig {
-  AudioSourceType type;
-  String filename;       // SD card filename (if type == AUDIO_SD_CARD)
-  float playbackRate;    // Playback rate (0.01 to 4.0)
-  bool looping;          // Loop playback
-  
-  // Auto-fallback settings
-  bool enableFallback;   // Enable auto-fallback to SD when mic is silent
-  String fallbackFile;   // SD card file to play when mic is silent (always loops)
-  float fallbackRate;    // Playback rate for fallback file
-  float silenceThreshold; // Audio level threshold for silence detection
-  unsigned long silenceTimeout; // Milliseconds of silence before switching (default 5000)
-  
-  AudioSourceConfig() 
-    : type(AUDIO_KEEP_CURRENT), filename(""), playbackRate(1.0), looping(false),
-      enableFallback(false), fallbackFile(""), fallbackRate(1.0), 
-      silenceThreshold(0.01), silenceTimeout(5000) {}
+    enum SourceType { MICROPHONE, SD_CARD, LINE_IN };
+    SourceType type;
+    String filename;  // For SD_CARD type
+    bool loop;        // For SD_CARD type
     
-  AudioSourceConfig(AudioSourceType t, String file = "", float rate = 1.0, bool loop = true)
-    : type(t), filename(file), playbackRate(rate), looping(loop),
-      enableFallback(false), fallbackFile(""), fallbackRate(1.0),
-      silenceThreshold(0.01), silenceTimeout(5000) {}
-      
-  // Constructor for microphone with fallback
-  AudioSourceConfig(String fallbackFileName, float fallbackSpeed = 1.0, unsigned long silenceMs = 5000)
-    : type(AUDIO_MICROPHONE), filename(""), playbackRate(1.0), looping(false),
-      enableFallback(true), fallbackFile(fallbackFileName), fallbackRate(fallbackSpeed),
-      silenceThreshold(0.01), silenceTimeout(silenceMs) {}
+    AudioSourceConfig() : type(MICROPHONE), filename(""), loop(false) {}
+    AudioSourceConfig(SourceType t, String fn = "", bool l = false) 
+        : type(t), filename(fn), loop(l) {}
 };
 
-// Structure for sequence registry entry
-struct SequenceRegistryEntry {
-  int startStepIndex;           // Index of first step in this sequence
-  int numSteps;                 // Number of steps in this sequence
-  String name;                  // Sequence name
-  unsigned long duration;       // How long to display this sequence (milliseconds)
-  bool enabled;                 // Whether this sequence is active
-  AudioSourceConfig audioConfig; // Audio configuration for entire sequence
-  
-  SequenceRegistryEntry()
-    : startStepIndex(0), numSteps(0), name(""), duration(60000), enabled(false), audioConfig() {}
-    
-  SequenceRegistryEntry(int start, int count, String n, unsigned long dur, bool en = true, AudioSourceConfig audio = AudioSourceConfig())
-    : startStepIndex(start), numSteps(count), name(n), duration(dur), enabled(en), audioConfig(audio) {}
+// Transition types
+enum TransitionType {
+    INSTANT,
+    FADE,
+    WIPE
 };
 
-// Store function name and optional palette override
+// Function with palette specification
 struct FunctionWithPalette {
-  String functionName;
-  String paletteName;  // Empty string means use current/default palette
-  
-  FunctionWithPalette() : functionName(""), paletteName("") {}
-  FunctionWithPalette(String func, String palette = "") : functionName(func), paletteName(palette) {}
+    String functionName;
+    String paletteName;
+    std::vector<FunctionParameter> parameters;
+    
+    FunctionWithPalette() : functionName("breathing"), paletteName("") {}
+    
+    FunctionWithPalette(String fn, String pn = "")
+        : functionName(fn), paletteName(pn), parameters() {}
+    
+    FunctionWithPalette(String fn, String pn, std::initializer_list<float> params)
+        : functionName(fn), paletteName(pn) {
+        for(float p : params) {
+            parameters.push_back(FunctionParameter(p));
+        }
+    }
 };
 
-// Structure for a single sequence step - now uses FunctionWithPalette
+// Sequence step structure
 struct SequenceStep {
-  String modelName;                      // Name of the color model
-  std::array<FunctionWithPalette, numcolorfunctions> functions; // Functions with optional palettes
-  unsigned long duration;                // Duration in milliseconds
-  TransitionType transitionType;         // Type of transition to next step
-  unsigned long transitionDuration;      // Transition duration in milliseconds
-  
-  SequenceStep() 
-    : modelName(""), 
-      functions{},
-      duration(5000), 
-      transitionType(INSTANT),
-      transitionDuration(0) {}
+    static const int MAX_FUNCTIONS = 7;  // Matches current sequence design
+    
+    colormodel* model;
+    std::array<FunctionWithPalette, MAX_FUNCTIONS> functions;
+    int numFunctions;  // Track actual number used
+    unsigned long duration;
+    TransitionType transitionType;
+    unsigned long transitionDuration;
+    AudioSourceConfig audioConfig;
+    
+    SequenceStep()
+        : model(nullptr),
+          numFunctions(0),
+          duration(5000),
+          transitionType(INSTANT),
+          transitionDuration(0) {}
+    
+    SequenceStep(colormodel* m,
+                 const std::vector<FunctionWithPalette>& funcs,
+                 unsigned long dur,
+                 TransitionType trans = INSTANT,
+                 unsigned long transDur = 0,
+                 AudioSourceConfig audio = AudioSourceConfig())
+        : model(m),
+          numFunctions(funcs.size()),
+          duration(dur),
+          transitionType(trans),
+          transitionDuration(transDur),
+          audioConfig(audio) {
+        // Copy functions up to MAX_FUNCTIONS
+        for(int i = 0; i < numFunctions && i < MAX_FUNCTIONS; i++) {
+            functions[i] = funcs[i];
+        }
+        if(numFunctions > MAX_FUNCTIONS) {
+            numFunctions = MAX_FUNCTIONS;
+        }
+    }
 };
 
-// Helper struct for mixed string/pair initialization
-struct FunctionSpecInit {
-  String functionName;
-  String paletteName;
-  
-  FunctionSpecInit(const char* func) : functionName(func), paletteName("") {}
-  FunctionSpecInit(String func) : functionName(func), paletteName("") {}
-  FunctionSpecInit(std::initializer_list<String> init) {
-    auto it = init.begin();
-    if(init.size() >= 1) functionName = *it;
-    if(init.size() >= 2) paletteName = *(++it);
-  }
-  FunctionSpecInit(std::initializer_list<const char*> init) {
-    auto it = init.begin();
-    if(init.size() >= 1) functionName = String(*it);
-    if(init.size() >= 2) paletteName = String(*(++it));
-  }
+// Sequence registry entry
+struct SequenceRegistryEntry {
+    int startStepIndex;
+    int numSteps;
+    String name;
+    unsigned long duration;
+    bool enabled;
+    
+    SequenceRegistryEntry()
+        : startStepIndex(0), numSteps(0), name(""), duration(60000), enabled(false) {}
+    
+    SequenceRegistryEntry(int start, int count, String n, unsigned long dur, bool en = true)
+        : startStepIndex(start), numSteps(count), name(n), duration(dur), enabled(en) {}
 };
 
+// Main sequence class
 class modelsequence {
 private:
-  static const int MAX_STEPS = 100;  // Increased for more complex sequences
-  static const int MAX_REGISTRY_ENTRIES = 20;  // More sequences allowed
-  
-  SequenceStep steps[MAX_STEPS];
-  int numSteps;
-  int currentStepIndex;
-  unsigned long stepStartTime;
-  unsigned long transitionStartTime;
-  bool inTransition;
-  
-  // Cached pointers for current step (resolved at runtime)
-  colormodel* currentModel;
-  colormodel* nextModel;
-  std::array<ColorFunction, numcolorfunctions> currentFunctions;
-  std::array<ColorFunction, numcolorfunctions> nextFunctions;
-  
-  // Sequence registry
-  SequenceRegistryEntry registry[MAX_REGISTRY_ENTRIES];
-  int numRegistryEntries;
-  int currentRegistryIndex;
-  unsigned long registryStartTime;
-  int currentSequenceStartStep;
-  int currentSequenceNumSteps;
-  
-  // Store original palettes to restore them after each step
-  std::array<String, numcolorfunctions> originalPalettes;
-  
-  // Audio management
-  unsigned long lastAudioActivityTime;
-  bool isUsingFallback;
-  AudioSourceConfig currentAudioConfig;
-  
-  // Resolve model and function names to actual pointers
-  colormodel* resolveModel(const String& name);
-  ColorFunction resolveColorFunction(const String& name);
-  void applyPaletteOverrides(const std::array<FunctionWithPalette, numcolorfunctions>& funcs);
-  void restoreOriginalPalettes();
-  
-  // Convert FunctionSpecInit to FunctionWithPalette
-  FunctionWithPalette parseFunctionSpec(const FunctionSpecInit& spec);
-  
-  // Internal methods that work with milliseconds
-  bool addStepInternal(String model, std::array<FunctionWithPalette, numcolorfunctions> funcs, 
-                       unsigned long durationMs, TransitionType trans, 
-                       unsigned long transDurMs);
-  bool startNewSequenceInternal(String name, unsigned long durationMs, bool enabled, 
-                                AudioSourceConfig audio);
-  
+    static const int MAX_STEPS = 30;  // Reasonable limit for sequences
+    static const int MAX_REGISTRY_ENTRIES = 20;
+    
+    SequenceStep steps[MAX_STEPS];
+    int numSteps;
+    int currentStep;
+    unsigned long stepStartTime;
+    
+    SequenceRegistryEntry registry[MAX_REGISTRY_ENTRIES];
+    int numRegistryEntries;
+    int currentRegistryIndex;
+    unsigned long registryStartTime;
+    
+    bool inTransition;
+    unsigned long transitionStartTime;
+    float transitionProgress;
+    
+    void applyFunctionsToModel();
+    void configureAudioSource(const AudioSourceConfig& config);
+    
 public:
-  modelsequence();
-  
-  // Original addStep for backward compatibility - accepts SECONDS and string names directly
-  bool addStep(String modelName, std::array<String, numcolorfunctions> colorFuncNames,
-               float durationSeconds, TransitionType trans = INSTANT,
-               float transDurSeconds = 0);
-  
-  // New addStep that accepts mixed strings and {string, string} pairs
-  bool addStep(String modelName, std::initializer_list<FunctionSpecInit> funcSpecs,
-               float durationSeconds, TransitionType trans = INSTANT,
-               float transDurSeconds = 0);
-  
-  // Sequence registry management - accepts SECONDS
-  bool startNewSequence(String name, float durationSeconds, bool enabled = true, 
-                       AudioSourceConfig audio = AudioSourceConfig());
-  
-  void clearRegistry();
-  int getRegistrySize() const { return numRegistryEntries; }
-  SequenceRegistryEntry getRegistryEntry(int index) const;
-  
-  // Registry-based sequence cycling
-  void beginRegistry(); // Initialize registry cycling
-  bool updateRegistry(unsigned long currentTime); // Returns true if sequence changed
-  int getCurrentRegistryIndex() const { return currentRegistryIndex; }
-  String getCurrentRegistryName() const;
-  
-  // Initialize the sequence (call before first use)
-  void begin();
-  
-  // Update the sequence (call in loop)
-  void update(unsigned long currentTime);
-  
-  // Get color for a specific edge and position
-  CRGB getColor(int edgeindex, float position);
-  
-  // Get current model name for debugging
-  String getCurrentModelName();
-  
-  // Get direct access to current model
-  colormodel* getCurrentModel() { return currentModel; }
-  
-  // Get next model (useful during transitions)
-  colormodel* getNextModel() { return nextModel; }
-  
-  // Reset sequence to beginning
-  void reset();
-  
-  // Configure audio source from config
-  void configureAudioSource(const AudioSourceConfig& config);
-  
-  // Check audio levels and handle fallback
-  void updateAudioFallback(unsigned long currentTime);
-  
-  // Get sequence info
-  int getCurrentStep() const { return currentStepIndex - currentSequenceStartStep; }
-  int getTotalSteps() const { return currentSequenceNumSteps; }
-  bool isInTransition() const { return inTransition; }
-  float getTransitionProgress() const;
+    modelsequence();
+    
+    // Step management
+    void addStep(const SequenceStep& step);
+    void clearSteps();
+    
+    // Registry management
+    // duration is in SECONDS and will be converted to milliseconds
+    void beginRegistry(String name, float durationSeconds = 60.0, bool enabled = true);
+    void endRegistry();
+    int getNumRegistryEntries() const { return numRegistryEntries; }
+    String getCurrentRegistryName() const;
+    
+    // Playback control
+    void update();
+    colormodel* getCurrentModel();
+    CRGB getColor(int edgeindex, float position);
+    
+    // Status
+    int getCurrentStep() const;
+    float getProgress() const;
+    bool isInTransition() const { return inTransition; }
+    float getTransitionProgress() const { return transitionProgress; }
+    
+    void reset();
+    void printSequenceInfo();
+};
+
+/////////////////////////////////////////
+// SEQUENCE BUILDER HELPER
+//
+// Allows flexible syntax with NATIVE TYPES (no string conversion!):
+//
+// seq.add("test", {
+//     "breathing",                      // Just function name
+//     {"plasma", "ocean"},              // Function + palette  
+//     {"plasma", "fire", 2.0},          // Function + palette + float (native!)
+//     {"plasma", "lava", 1.5, 0.8}      // Function + palette + multiple floats
+// }, 10);  // Duration in seconds
+//
+// Can handle 1-120 function definitions per step
+// In practice: ~4 typical, 7 for this test (breathing + 6)
+//
+struct FunctionDef {
+    String functionName;
+    String paletteName;
+    std::vector<float> params;
+    
+    // Constructor from single string (just function name)
+    FunctionDef(const char* fn) : functionName(fn), paletteName("") {}
+    FunctionDef(const String& fn) : functionName(fn), paletteName("") {}
+    
+    // Constructor: function + palette
+    FunctionDef(const String& fn, const String& pn) 
+        : functionName(fn), paletteName(pn) {}
+    
+    // Constructors with 1 float parameter
+    FunctionDef(const String& fn, const String& pn, float p1) 
+        : functionName(fn), paletteName(pn), params{p1} {}
+    
+    // Constructors with 2 float parameters
+    FunctionDef(const String& fn, const String& pn, float p1, float p2) 
+        : functionName(fn), paletteName(pn), params{p1, p2} {}
+    
+    // Constructors with 3 float parameters
+    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3) 
+        : functionName(fn), paletteName(pn), params{p1, p2, p3} {}
+    
+    // Constructors with 4 float parameters
+    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4) 
+        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4} {}
+    
+    // Constructor from initializer_list (for backward compatibility with string params)
+    FunctionDef(std::initializer_list<String> def) {
+        auto it = def.begin();
+        functionName = (it != def.end()) ? *it++ : "breathing";
+        paletteName = (it != def.end()) ? *it++ : "";
+        while(it != def.end()) {
+            params.push_back((*it++).toFloat());
+        }
+    }
+};
+
+struct SequenceBuilder {
+    modelsequence* seq;
+    
+    SequenceBuilder(modelsequence* s) : seq(s) {}
+    
+    // Add step with flexible nested syntax
+    // duration is in SECONDS and will be converted to milliseconds
+    // Accepts any number of function definitions (up to 120)
+    void add(String modelName,
+             std::initializer_list<FunctionDef> funcDefs,
+             float durationSeconds) {
+        
+        colormodel* model = colormodel::findModelByName(modelName);
+        if(!model) {
+            Serial.println("Error: Model '" + modelName + "' not found");
+            return;
+        }
+        
+        std::vector<FunctionWithPalette> functions;
+        
+        for(const auto& def : funcDefs) {
+            if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+            
+            if(def.params.empty()) {
+                functions.push_back(FunctionWithPalette(def.functionName, def.paletteName));
+            } else {
+                // Build initializer_list by explicitly listing params
+                switch(def.params.size()) {
+                    case 1:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0]}));
+                        break;
+                    case 2:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1]}));
+                        break;
+                    case 3:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2]}));
+                        break;
+                    case 4:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                    default:
+                        // More than 4 params - just use first 4
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                }
+            }
+        }
+        
+        // Fill remaining slots with breathing if we have less than expected
+        // (This is optional - depends on desired behavior)
+        // For now, just use what was provided
+        
+        // Convert seconds to milliseconds
+        unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+        seq->addStep(SequenceStep(model, functions, durationMs));
+    }
 };
 
 #endif // MODELSEQUENCE_H

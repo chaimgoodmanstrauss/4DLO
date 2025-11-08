@@ -70,6 +70,16 @@ public:
         return nullptr;
     }
     
+    // Get palette (alias for findByName for convenience)
+    static CRGBPalette16 getPalette(String name) {
+        CRGBPalette16* pal = findByName(name);
+        if(pal) {
+            return *pal;
+        }
+        // Return default rainbow palette if not found
+        return RainbowColors_p;
+    }
+    
     // Get palette by index
     static CRGBPalette16* getByIndex(int index) {
         if(index >= 0 && index < numRegistered) {
