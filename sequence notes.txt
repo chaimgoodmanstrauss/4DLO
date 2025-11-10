@@ -1,0 +1,109 @@
+NOTES ON GOOD COMBOS
+
+Best palettes:
+
+heat
+sunset
+rainbow
+ocean_builtin
+
+forest
+
+
+
+// for long restful eras, turning down the brightness!!
+
+{"noiseperlin", "forest", 3.0, 5.0}, 
+
+{"plasma", "ocean_builtin",-1}
+{"plasma", "heat"}
+
+{"breathing", "", 120, 40, 0, 1.0}      // nice pale orange
+{"breathing", "", 0, 120, 0, 2.0}        // Green breathing, double speed
+
+
+{"noiseperlin", "rainbow", 1.0, 20.0},
+
+{"noiseperlin", "ocean_builtin", 5.0, 20.0}, 
+
+{"noiseperlin", "sunset", 1.0, 10.0},
+
+
+{"noiseperlin", "heat", 5.0, 5.0},
+
+{"noiseperlin", "heat", 25.0, 30.0},
+{"noiseperlin", "sunset", 5.0, 10.0}, 
+
+
+/////////
+
+simplecolor rolls the palettes around: very nice: 
+
+
+
+{"simplecolor", "forest",1.0}, 
+        {"simplecolor", "rainbow",.5},
+        {"simplecolor", "ocean_builtin",-1}, 
+        {"simplecolor", "cloud",2},
+        {"simplecolor", "sunset"},
+        {"simplecolor", "heat"}
+
+
+/////////
+
+// the audio threshold needs to be tuned to the environment by const float fftthreshold at the top of the file. 
+{"fftfire", "lava", 30.0, 0,fftthreshold},
+
+{"fftfire", "sunset", 30.0, 0,fftthreshold},
+
+
+
+
+
+/////////// misc cylon effects
+
+ {"cylon", "heat", 1.0, 0, 1.0},         // speed=1, bounce, phase=1
+     {"cylon", "ocean_builtin", 0.5, 0, 2.0},       // speed=0.5, bounce, phase=2 (faster palette 								change)
+    {"cylon", "rainbow", 1.5, 1, 1.0},      // speed=1.5, forward loop, phase=1
+       {"cylon", "ocean_builtin", 1.0, 0, 0.5}, // speed=1, bounce, phase=0.5 (slower palette)
+       {"cylon", "forest", 2.0, -1, 3.0},      // speed=2, backward loop, phase=3 (fast palette)
+       
+
+
+
+
+
+
+
+/////////////
+
+to be worked on:
+
+audio -- want a nice blobs, changing color somehow
+currently averages over 60 bins.
+
+{"audio", "party",0.98, 7000}, 
+
+
+
+////// Broken or useless
+
+audiocylon -- just start over
+vumeter
+beatdetector 
+vocals
+particles
+
+
+not so useful 
+
+plasma
+cloud
+rainbow_builtin
+rainbowstripe
+ocean 
+party
+forest_builtin
+
+
+ice is basic white to dark; can be useful 

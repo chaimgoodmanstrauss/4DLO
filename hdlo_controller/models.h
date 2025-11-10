@@ -16,7 +16,7 @@
 
 // Forward declarations
 struct FunctionParameter;  // Full definition in colorfunctions.h
-class IColorFunction;
+class StatefulColorFunction;
 class ColorFunctionFactory;
 class EdgePermutation;
 
@@ -25,7 +25,7 @@ class EdgePermutation;
 //
 class ColorFunctionFactory {
 private:
-    std::map<String, std::function<IColorFunction*()>> creators;
+    std::map<String, std::function<StatefulColorFunction*()>> creators;
     static ColorFunctionFactory* instance;
     
     ColorFunctionFactory() {}
@@ -38,11 +38,11 @@ public:
         return *instance;
     }
     
-    void registerFunction(const String& name, std::function<IColorFunction*()> creator) {
+    void registerFunction(const String& name, std::function<StatefulColorFunction*()> creator) {
         creators[name] = creator;
     }
     
-    IColorFunction* create(const String& name);
+    StatefulColorFunction* create(const String& name);
     
     bool hasFunction(const String& name) const {
         return creators.find(name) != creators.end();
@@ -59,7 +59,7 @@ class colormodel {
 private: 
     std::array<std::array<int, 6>, 120> edgemodels;
     String modelname;
-    std::array<std::unique_ptr<IColorFunction>, 120> edgeFunctions;
+    std::array<std::unique_ptr<StatefulColorFunction>, 120> edgeFunctions;
     std::array<String, 120> edgePalettes;
     bool shouldRegister;
 

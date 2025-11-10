@@ -16,13 +16,13 @@
 
 ColorFunctionFactory* ColorFunctionFactory::instance = nullptr;
 
-IColorFunction* ColorFunctionFactory::create(const String& name) {
+StatefulColorFunction* ColorFunctionFactory::create(const String& name) {
     auto it = creators.find(name);
     if (it != creators.end()) {
         return it->second();
     }
-    Serial.println("Warning: Unknown function '" + name + "', using dark");
-    return create("dark");
+    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
+    return nullptr;
 }
 
 void ColorFunctionFactory::listFunctions() {
@@ -64,7 +64,7 @@ colormodel::colormodel(const colormodel& other)
     edgePalettes(other.edgePalettes),
     shouldRegister(other.shouldRegister) {
   
-  // Deep copy all IColorFunction instances
+  // Deep copy all StatefulColorFunction instances
   for(int i = 0; i < 120; i++) {
     if(other.edgeFunctions[i]) {
       edgeFunctions[i].reset(other.edgeFunctions[i]->clone());
@@ -126,7 +126,7 @@ void colormodel::setColorFunction(int edgeindex, const String& functionName,
   }
   
   // Create new function instance from factory
-  IColorFunction* newFunc = ColorFunctionFactory::getInstance().create(functionName);
+  StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(functionName);
   
   if(newFunc) {
     // Set palette if provided

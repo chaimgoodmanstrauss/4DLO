@@ -235,21 +235,27 @@ String modelsequence::getCurrentRegistryName() const {
 }
 
 void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
-    // Audio system configuration would go here
-    // For now, just log what we would do
     switch(config.type) {
         case AudioSourceConfig::MICROPHONE:
-            Serial.println("Audio: Would switch to microphone");
+            AudioSystem::useMicrophone();
+            Serial.println("Audio: Switched to microphone");
             break;
             
         case AudioSourceConfig::LINE_IN:
-            Serial.println("Audio: Would switch to line in");
+            AudioSystem::useMicrophone();  // Line in uses same hardware as mic
+            AudioSystem::setLineInLevel(0.8);  // Set appropriate line in level
+            Serial.println("Audio: Switched to line in");
             break;
             
         case AudioSourceConfig::SD_CARD:
-            Serial.print("Audio: Would play ");
-            Serial.print(config.filename);
-            Serial.println(config.loop ? " (looping)" : "");
+            if(AudioSystem::useSDCard(config.filename.c_str())) {
+                AudioSystem::setLooping(config.loop);
+                Serial.print("Audio: Playing ");
+                Serial.print(config.filename);
+                Serial.println(config.loop ? " (looping)" : "");
+            } else {
+                Serial.println("Audio: Failed to play SD card file");
+            }
             break;
     }
 }

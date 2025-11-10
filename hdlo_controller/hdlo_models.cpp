@@ -6,8 +6,8 @@
 #include "hdlo_models.h"
 
 std::array<std::array<int, 6>, 120> testdata={{
-  {{1,1,0,5000,0,10000}},   // edge 0// note time is turned off! This ranges from 0 to .5
-  {{2,1,5000,5000,0,10000}},   // edge 1 // and space is stretched, starting at .5, slowed to .5 speed so range is .5 to 1.0
+  {{1,1,0,10000,0,10000}},   // edge 0// note time is turned off! This ranges from 0 to .5
+  {{2,1,0,10000,0,10000}},   // edge 1 // and space is stretched, starting at .5, slowed to .5 speed so range is .5 to 1.0
   {{3,1,0,10000,0,10000}},   // edge 2
   {{4,1,0,10000,0,10000}},   // edge 3
   {{5,1,0,10000,0,10000}},   // edge 4

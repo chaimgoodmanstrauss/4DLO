@@ -24,6 +24,7 @@
 // Sequence
 extern modelsequence mainSequence;
 
+const float absolutebrightnessknob = .15; // 0 to 1
 void setup() {
     Serial.begin(115200);
     delay(1000);
@@ -44,6 +45,7 @@ void setup() {
     
     // Step 3: Initialize audio system
     Serial.println("Initializing audio system...");
+    AudioMemory(12);  // REQUIRED: Allocate audio buffers for Teensy Audio Library
     AudioSystem::initialize();
     
     // Step 4: Initialize palette registry
@@ -54,8 +56,9 @@ void setup() {
     Serial.println("Constructing strand table...");
     initedgedata();
     
-    // Step 6: Color functions auto-register via CRTP
-    Serial.println("Color functions registered via CRTP");
+    // Step 6: Register color functions
+    Serial.println("Registering color functions...");
+    registerAllColorFunctions();
     ColorFunctionFactory::getInstance().listFunctions();
     
     // Step 7: Initialize edge permutations
@@ -100,7 +103,7 @@ void setup() {
     delay(100);
     
     Serial.println("=== Setup Complete ===\n");
-    Serial.println("Commands: 's' = status, 'n' = next step, 'm' = model info");
+    Serial.println("Commands: 's' = status, 'n' = next step, 'a' = audio info, 'h' = help");
 }
 
 void loop() {
@@ -113,7 +116,7 @@ void loop() {
     mainSequence.update();
     
     // Increment global frame counter
-    IColorFunction::incrementGlobalFrame();
+    StatefulColorFunction::beginFrame();
     
     // Render LEDs using strand table
     colormodel* currentModel = mainSequence.getCurrentModel();
@@ -128,7 +131,12 @@ void loop() {
             }
             
             float position = positionInt / 10000.0;
-            rgbarray[i] = currentModel->getcolorfunction(edgeindex, position);
+
+            //DO NOT REMOVE THIS CODE!!
+            CRGB returnedcolor = currentModel->getcolorfunction(edgeindex, position);
+            CRGB swappedcolor(absolutebrightnessknob*returnedcolor.green, absolutebrightnessknob*returnedcolor.red, absolutebrightnessknob*returnedcolor.blue); 
+      
+            rgbarray[i] = swappedcolor;
         }
     } else {
         // Fallback: simple rainbow if no model
@@ -188,6 +196,14 @@ void handleSerialCommands() {
                 mainSequence.printSequenceInfo();
                 break;
                 
+            case 'a':
+                Serial.println("\n=== Audio Info ===");
+                Serial.print("Source: ");
+                Serial.println(AudioSystem::getCurrentSourceType());
+                AudioSystem::printLevels();
+                Serial.println("==================\n");
+                break;
+                
             case 'h':
                 printHelp();
                 break;
@@ -226,7 +242,7 @@ void printStatus() {
     Serial.println(AudioSystem::getLevel());
     
     Serial.print("Frame: ");
-    Serial.println(IColorFunction::getGlobalFrame());
+    Serial.println(StatefulColorFunction::getGlobalFrame());
     Serial.println("==============\n");
 }
 
@@ -239,6 +255,7 @@ void printHelp() {
     Serial.println("p - List palettes");
     Serial.println("e - List edge permutations");
     Serial.println("q - Sequence info");
+    Serial.println("a - Audio info (levels, source)");
     Serial.println("h - This help");
     Serial.println("================\n");
 }

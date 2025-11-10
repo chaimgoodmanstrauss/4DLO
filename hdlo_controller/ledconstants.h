@@ -16,8 +16,8 @@
 
 const int numberofpins = 1;// this will be derived from the array
   byte pinList[numberofpins] = {24}; // this is derived from the array
-  const int ledsperstrip = 260; // the max number of leds per strip
-const int maxedgesperstrand = 20;
+  const int ledsperstrip = 288; // the max number of leds per strip
+const int maxedgesperstrand = 16;
 
 
 /// Here is where we work out how the pins correspond to specific edges in the 24-cell: 
@@ -28,19 +28,35 @@ const int stranddata[numberofpins][maxedgesperstrand][3] =
   
   // edge #0 is looking at color #1 in the test model.
   /*{{8,7,1},{80,3,1},{8,7,1},{80,3,-1},{8,7,1},{80,2,1}},*/
+  /* {
+    {80,0,1},
+    {4,7,1},
+    {80,1,1}, 
+    {4,7,1},
+    {80,2,1}},
+    
+    {{80,3,1},
+    {4,7,1},
+    {80,4,1},
+    {4,7,1},
+    {80,5,1},
+    }*/
+   
+   
+   
     {
-    {40,0,1},
+    {44,0,1},
     {4,7,1},
-    {40,1,1}, 
+    {44,1,1}, 
     {4,7,1},
-    {40,2,1},
+    {44,2,1},
     {4,7,1},
-    {40,3,1},
+    {44,3,1},
     {4,7,1},
-    {40,4,1},
+    {44,4,1},
     {4,7,1},
-    {40,5,1},
-    },
+    {44,5,1},
+    }
 
     /*
     {{10,7,1},

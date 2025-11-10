@@ -69,12 +69,30 @@ DEFINE_GRADIENT_PALETTE( CustomOcean_gp ) {
 };
 
 DEFINE_GRADIENT_PALETTE( CustomForest_gp ) {
-    0,    0,   32,  0,   // Very dark green
-   64,   0,   64,  0,   // Dark green
-   128,  32,  96,  0,   // Medium green
-   192,  64,  128, 32,  // Light green
-   255,  128, 192, 64   // Yellow-green
+    0,    0,   40,  0,   // Dark green
+    40, 0, 80,0,
+   50,   30,  120,  20,   // Bright green
+   90, 5, 150, 20,
+   100, 140,  150,  0,   // Yellow-green
+  120, 80,  180, 60,  // Yellow-white
+  130, 150,  200, 140,  // White (peak intensity)
+  150, 20,  40,  10,  // Brown/amber
+  160, 120,  90,  30,  // Brown/amber
+  190, 0,  90,  0,  // Light green
+  230, 30, 60, 20,
+  255, 40,  90, 10   // Pale green
 };
+/*
+DEFINE_GRADIENT_PALETTE( CustomForest_gp ) {
+    0,    0,   40,  0,   // Dark green
+   50,   0,  160,  0,   // Bright green
+   90, 200,  255,  0,   // Yellow-green
+  130, 255,  255, 100,  // Yellow-white
+  170, 255,  255, 255,  // White (peak intensity)
+  200, 180,  120,  30,  // Brown/amber
+  230, 120,  200,  60,  // Light green
+  255, 160,  255, 120   // Pale green
+};*/
 
 DEFINE_GRADIENT_PALETTE( CustomSunset_gp ) {
     0,   32,   0,   64,  // Deep purple
