@@ -35,7 +35,7 @@ void buildMainSequence(SequenceBuilder& seq) {
     mainSequence.beginRegistry("Main Show", 3000, true);
 
 //restful:
-seq.add("test", {
+seq.add("test_merged", {
         "dark",  
         {"noiseperlin", "forest", 3.0, 5.0}, 
         {"plasma", "ocean_builtin",-1},

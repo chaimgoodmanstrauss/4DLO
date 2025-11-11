@@ -98,6 +98,7 @@ public:
     
     static colormodel* applyEdgePermutation(String modelName, const EdgePermutation& perm, String newName = "");
     static colormodel* applyEdgePermutation(String modelName, const std::array<int, 120>& permArray, String newName = "");
+    static colormodel* applyEdgePermutation(String modelName, String permName, String newName = "");
     static colormodel* applyEdgePermutationSequence(String modelName, const String* permNames, int numPerms, String newName = "");
     
     static colormodel* mergeModels(const colormodel* model1, const colormodel* model2, String newName);

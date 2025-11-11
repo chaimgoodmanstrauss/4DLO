@@ -19,6 +19,7 @@
 #include "modelsequence.h"
 #include "hdlo_models.h"
 #include "edgepermutations.h"
+#include "namedpermutations.h"
 #include "sequences.h"
 
 // Sequence
@@ -69,6 +70,11 @@ void setup() {
     Serial.println("Initializing models...");
     initializemodels();
     colormodel::printRegistry();
+    
+    // Step 8.5: Register named permutations
+    Serial.println("Registering permutations...");
+    registerNamedPermutations();
+    EdgePermutation::printRegistry();
     
     // Step 9: Create fancy model variations
     Serial.println("Creating fancy models...");

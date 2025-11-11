@@ -1631,7 +1631,7 @@ public:
         int i = totalIndex % kMatrixWidth;
         int j = totalIndex / kMatrixWidth;
         
-        // DEBUG: Show what coordinates we're sampling
+       /* // DEBUG: Show what coordinates we're sampling
         static int sampleCount = 0;
         if(sampleCount < 20) {
             Serial.print("pos="); Serial.print(position, 4);
@@ -1640,7 +1640,7 @@ public:
             Serial.print(") noise["); Serial.print(j); Serial.print("]["); Serial.print(i); Serial.print("]=");
             Serial.println(noise[j][i]);
             sampleCount++;
-        }
+        }*/
         
         // Use EXACT mapping from original:
         // noise[j][i] for palette index, noise[i][j] for brightness

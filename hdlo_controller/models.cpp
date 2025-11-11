@@ -156,10 +156,22 @@ colormodel* colormodel::applyEdgePermutation(const EdgePermutation& perm, String
 colormodel* colormodel::applyEdgePermutation(const std::array<int, 120>& permArray, String newName, bool registerModel) const {
   std::array<std::array<int, 6>, 120> newEdgeModels;
   
+  Serial.println("Applying permutation to model: " + modelname);
+  
   for(int i = 0; i < 120; i++) {
     int sourceIndex = permArray[i];
     if(sourceIndex >= 0 && sourceIndex < 120) {
       newEdgeModels[i] = edgemodels[sourceIndex];
+      // Debug first 6 edges
+      if(i < 6 && edgemodels[sourceIndex][0] != 0) {
+        Serial.print("  Edge ");
+        Serial.print(i);
+        Serial.print(" <- Edge ");
+        Serial.print(sourceIndex);
+        Serial.print(" (func idx ");
+        Serial.print(edgemodels[sourceIndex][0]);
+        Serial.println(")");
+      }
     } else {
       newEdgeModels[i] = edgemodels[i];
     }
@@ -226,6 +238,22 @@ colormodel* colormodel::applyEdgePermutation(String modelName, const std::array<
   return nullptr;
 }
 
+colormodel* colormodel::applyEdgePermutation(String modelName, String permName, String newName) {
+  colormodel* model = findModelByName(modelName);
+  if(!model) {
+    Serial.println("Error: Model '" + modelName + "' not found");
+    return nullptr;
+  }
+  
+  EdgePermutation* perm = EdgePermutation::findPermutationByName(permName);
+  if(!perm) {
+    Serial.println("Error: Permutation '" + permName + "' not found");
+    return nullptr;
+  }
+  
+  return model->applyEdgePermutation(*perm, newName);
+}
+
 colormodel* colormodel::applyEdgePermutationSequence(String modelName, const String* permNames, int numPerms, String newName) {
   colormodel* model = findModelByName(modelName);
   if(model) {
@@ -237,11 +265,14 @@ colormodel* colormodel::applyEdgePermutationSequence(String modelName, const Str
 colormodel* colormodel::mergeModels(const colormodel* model1, const colormodel* model2, String newName) {
   std::array<std::array<int, 6>, 120> mergedEdgeModels;
   
+  Serial.println("Merging models: " + model1->modelname + " + " + model2->modelname);
+  
   for(int i = 0; i < 120; i++) {
-    if(i < 60) {
+    // Use model1's edge unless it's dark (function index 0), then use model2's
+    if(model1->edgemodels[i][0] != 0) {
       mergedEdgeModels[i] = model1->edgemodels[i];
     } else {
-      mergedEdgeModels[i] = model2->edgemodels[i - 60];
+      mergedEdgeModels[i] = model2->edgemodels[i];
     }
   }
   
@@ -251,16 +282,18 @@ colormodel* colormodel::mergeModels(const colormodel* model1, const colormodel* 
   
   colormodel* result = new colormodel(mergedEdgeModels, newName, true);
   
-  // Copy color functions
+  // Copy color functions - model1 takes priority, model2 fills in blanks
   for(int i = 0; i < 120; i++) {
-    if(i < 60 && model1->edgeFunctions[i]) {
+    if(model1->edgemodels[i][0] != 0 && model1->edgeFunctions[i]) {
       result->edgeFunctions[i].reset(model1->edgeFunctions[i]->clone());
       result->edgePalettes[i] = model1->edgePalettes[i];
-    } else if(i >= 60 && model2->edgeFunctions[i - 60]) {
-      result->edgeFunctions[i].reset(model2->edgeFunctions[i - 60]->clone());
-      result->edgePalettes[i] = model2->edgePalettes[i - 60];
+    } else if(model2->edgeFunctions[i]) {
+      result->edgeFunctions[i].reset(model2->edgeFunctions[i]->clone());
+      result->edgePalettes[i] = model2->edgePalettes[i];
     }
   }
+  
+  Serial.println("Merge complete: " + result->modelname);
   
   return result;
 }
@@ -305,26 +338,18 @@ void colormodel::printRegistry() {
 void initializefancymodels() {
     Serial.println("\n=== Creating Fancy Models ===");
     
-    // This function creates variations of base models using edge permutations
-    // Example usage (uncomment and modify as needed):
-    
-    /*
-    // Create a rotated version of a model
-    EdgePermutation* rot24 = EdgePermutation::findPermutationByName("rot24");
-    if(rot24) {
-        std::array<int, 120> permArray;
-        for(int i = 0; i < 120; i++) {
-            permArray[i] = rot24->getPermutation(i);
-        }
-        colormodel::applyEdgePermutation("test", permArray, "test_rotated");
+    // Create test_permed model
+    colormodel* result = colormodel::applyEdgePermutation("test", "simpletest", "test_permed");
+    if(result) {
+        Serial.print("Successfully created model: ");
+        Serial.println(result->getModelName());
+    } else {
+        Serial.println("ERROR: Failed to create test_permed");
     }
     
-    // Create a sequence of transformations
-    String perms[] = {"rot24", "mirror_xy"};
-    colormodel::applyEdgePermutationSequence("test", perms, 2, "test_transformed");
-    */
-    
-    Serial.println("Fancy models created (none defined yet)");
+    colormodel::mergeModels("test", "test_permed", "test_merged");
+
+    Serial.println("Fancy models created");
     Serial.println("=============================\n");
 }
 
