@@ -160,14 +160,43 @@ DEFINE_GRADIENT_PALETTE( AudioSpectrum_gp ) {
   255,  255,  255,   0    // Yellow
 };
 
-// Simple white palette for testing
+///////////////////////////////////////
+// Simple palettes for testing
 DEFINE_GRADIENT_PALETTE( WhitePalette_gp ) {
-    0,   255, 255, 255,  // White
-   64,   255, 255, 255,  // White
-  128,   255, 255, 255,  // White
-  192,   255, 255, 255,  // White
+    0,   0, 0, 0,  // nothing
   255,   255, 255, 255   // White
 };
+
+DEFINE_GRADIENT_PALETTE( RedPalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   255, 0, 0   // red
+};
+
+DEFINE_GRADIENT_PALETTE( GreenPalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   0, 255, 0   // green
+};
+
+DEFINE_GRADIENT_PALETTE( BluePalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   0,0, 255   // blue
+};
+
+DEFINE_GRADIENT_PALETTE( CyanPalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   0,255, 255   // cyan
+};
+
+DEFINE_GRADIENT_PALETTE( MagentaPalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   255,0, 255   // magenta
+};
+
+DEFINE_GRADIENT_PALETTE( YellowPalette_gp ) {
+    0,   0, 0, 0,  // nothing
+  255,   255, 255,0   // yellow
+};
+
 
 } // anonymous namespace
 
@@ -191,6 +220,12 @@ void PaletteRegistry::initialize() {
     registerPalette("audiogreen", AudioGreen_gp);
     registerPalette("audiospectrum", AudioSpectrum_gp);
     registerPalette("white", WhitePalette_gp);
+    registerPalette("red", RedPalette_gp);
+    registerPalette("green", GreenPalette_gp);
+    registerPalette("blue", BluePalette_gp);
+    registerPalette("cyan", CyanPalette_gp);
+    registerPalette("yellow", YellowPalette_gp);
+    registerPalette("magenta", MagentaPalette_gp);
     
     // Also register FastLED built-in palettes
     registerPalette("heat", HeatColors_p);

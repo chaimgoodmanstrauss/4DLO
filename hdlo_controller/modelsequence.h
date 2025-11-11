@@ -11,6 +11,7 @@
 #include "colorfunctions.h"
 #include <array>
 #include <vector>
+#include <map>
 
 // Audio source configuration
 struct AudioSourceConfig {
@@ -60,6 +61,7 @@ struct SequenceStep {
     unsigned long duration;
     TransitionType transitionType;
     unsigned long transitionDuration;
+    float transitionSpeed;  // For FADE/WIPE: 1.0 = 3.141 seconds
     AudioSourceConfig audioConfig;
     
     SequenceStep()
@@ -67,12 +69,14 @@ struct SequenceStep {
           numFunctions(0),
           duration(5000),
           transitionType(INSTANT),
-          transitionDuration(0) {}
+          transitionDuration(0),
+          transitionSpeed(1.0f) {}
     
     SequenceStep(colormodel* m,
                  const std::vector<FunctionWithPalette>& funcs,
                  unsigned long dur,
                  TransitionType trans = INSTANT,
+                 float transSpeed = 1.0f,
                  unsigned long transDur = 0,
                  AudioSourceConfig audio = AudioSourceConfig())
         : model(m),
@@ -80,6 +84,7 @@ struct SequenceStep {
           duration(dur),
           transitionType(trans),
           transitionDuration(transDur),
+          transitionSpeed(transSpeed),
           audioConfig(audio) {
         // Copy functions up to MAX_FUNCTIONS
         for(int i = 0; i < numFunctions && i < MAX_FUNCTIONS; i++) {
@@ -87,6 +92,12 @@ struct SequenceStep {
         }
         if(numFunctions > MAX_FUNCTIONS) {
             numFunctions = MAX_FUNCTIONS;
+        }
+        
+        // Convert transitionSpeed to transitionDuration if FADE or WIPE
+        // 1.0 speed = 3.141 seconds = 3141 ms
+        if(trans == FADE || trans == WIPE) {
+            this->transitionDuration = (unsigned long)(transSpeed * 3141.0f);
         }
     }
 };
@@ -215,10 +226,144 @@ struct FunctionDef {
 
 struct SequenceBuilder {
     modelsequence* seq;
+    std::vector<FunctionDef> currentPalettes;
+    
+    // Cache for permuted models: key = "modelName_permName", value = created model pointer
+    // Models registered in global registry, so safe to keep pointers
+    std::map<String, colormodel*> permutedModelCache;
     
     SequenceBuilder(modelsequence* s) : seq(s) {}
     
-    // Add step with flexible nested syntax
+    // Set palette definitions to be used by subsequent addstep() calls
+    void addpalette(std::initializer_list<FunctionDef> funcDefs) {
+        currentPalettes.clear();
+        for(const auto& def : funcDefs) {
+            currentPalettes.push_back(def);
+        }
+    }
+    
+    // Add step using previously defined palettes
+    // duration is in SECONDS, will be converted to milliseconds
+    // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
+    void addstep(String modelName, float durationSeconds, TransitionType transition = INSTANT, float speed = 1.0f) {
+        if(currentPalettes.empty()) {
+            Serial.println("Error: No palettes defined. Call addpalette() first.");
+            return;
+        }
+        
+        colormodel* model = colormodel::findModelByName(modelName);
+        if(!model) {
+            Serial.println("Error: Model '" + modelName + "' not found");
+            return;
+        }
+        
+        std::vector<FunctionWithPalette> functions;
+        
+        for(const auto& def : currentPalettes) {
+            if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+            
+            if(def.params.empty()) {
+                functions.push_back(FunctionWithPalette(def.functionName, def.paletteName));
+            } else {
+                switch(def.params.size()) {
+                    case 1:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0]}));
+                        break;
+                    case 2:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1]}));
+                        break;
+                    case 3:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2]}));
+                        break;
+                    case 4:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                    default:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                }
+            }
+        }
+        
+        unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+        seq->addStep(SequenceStep(model, functions, durationMs, transition, speed));
+    }
+    
+    // Add step using named model + named permutation with caching
+    // Automatically creates and caches permuted models: "baseModel_permName"
+    // duration is in SECONDS, will be converted to milliseconds
+    // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
+    void addstep(String modelName, String permName, float durationSeconds, TransitionType transition = INSTANT, float speed = 1.0f) {
+        if(currentPalettes.empty()) {
+            Serial.println("Error: No palettes defined. Call addpalette() first.");
+            return;
+        }
+        
+        // Generate cache key
+        String cacheKey = modelName + "_" + permName;
+        colormodel* permutedModel = nullptr;
+        
+        // Check cache first
+        auto it = permutedModelCache.find(cacheKey);
+        if(it != permutedModelCache.end()) {
+            permutedModel = it->second;
+        } else {
+            // Not in cache - create and register permuted model
+            permutedModel = colormodel::applyEdgePermutation(modelName, permName, cacheKey);
+            if(!permutedModel) {
+                Serial.println("Error: Failed to create permuted model '" + cacheKey + "'");
+                Serial.println("  Base model: '" + modelName + "', Permutation: '" + permName + "'");
+                return;
+            }
+            // Add to cache
+            permutedModelCache[cacheKey] = permutedModel;
+            Serial.println("Created and cached permuted model: " + cacheKey);
+        }
+        
+        // Build functions from current palettes
+        std::vector<FunctionWithPalette> functions;
+        
+        for(const auto& def : currentPalettes) {
+            if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+            
+            if(def.params.empty()) {
+                functions.push_back(FunctionWithPalette(def.functionName, def.paletteName));
+            } else {
+                switch(def.params.size()) {
+                    case 1:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0]}));
+                        break;
+                    case 2:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1]}));
+                        break;
+                    case 3:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2]}));
+                        break;
+                    case 4:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                    default:
+                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
+                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
+                        break;
+                }
+            }
+        }
+        
+        unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+        seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed));
+    }
+    
+    // Add step with flexible nested syntax (original method, still supported)
     // duration is in SECONDS and will be converted to milliseconds
     // Accepts any number of function definitions (up to 120)
     void add(String modelName,

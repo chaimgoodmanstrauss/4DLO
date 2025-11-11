@@ -6,8 +6,28 @@ heat
 sunset
 rainbow
 ocean_builtin
-
+cloud
 forest
+
+{"noiseperlin", "palette", speed (0....-40), grainularity (1-100)}, 
+
+
+
+seq.addpalette({
+    "dark",
+    {"noiseperlin", "heat",  7.0,20},
+    {"noiseperlin", "sunset",   7.0,20},
+    {"noiseperlin", "ocean_builtin", 7.0,20},
+    {"noiseperlin", "rainbow",  7.0,20},
+    {"noiseperlin", "cloud",  7.0,20},
+    {"noiseperlin", "forest",  7.0,20}
+});
+
+
+
+
+
+
 
 
 

@@ -57,6 +57,7 @@ seq.add("test", {
        {"cylon", "forest", 2.0, 1, 3.0},      // speed=2, backward loop, phase=3 (fast palette)
        }, 33);
 */
+/*
 //cylon variations
 seq.add("test_permed", {
         "dark",  
@@ -67,6 +68,31 @@ seq.add("test_permed", {
        {"cylon", "ocean_builtin", 2, 0, 0.5}, // speed=1, bounce, phase=0.5 (slower palette)
        {"cylon", "forest", 2.0, 0, 3.0},      // speed=2, backward loop, phase=3 (fast palette)
        }, 20);
+*/
+// NEW SYNTAX EXAMPLE - separate palette from models:
+
+seq.addpalette({
+    "dark",
+    {"noiseperlin", "red",  7.0,20},
+    {"noiseperlin", "green",   7.0,20},
+    {"noiseperlin", "blue", 7.0,20},
+    {"noiseperlin", "white",  7.0,20},
+    {"noiseperlin", "magenta",  7.0,20},
+    {"noiseperlin", "cyan",  7.0,20}
+});
+
+/*
+seq.addstep("test_permed", 20, FADE);            // Default speed = 1.0 (3.141 sec)
+seq.addstep("test_perm", 20, FADE, 2.0);         // Slower fade: 2.0 * 3.141 = 6.28 sec
+seq.addstep("test", 15, WIPE, 0.5);              // Faster wipe: 0.5 * 3.141 = 1.57 sec
+*/
+
+// With named permutations (auto-creates "test_simpletest" model, caches it):
+seq.addstep("test", 5, WIPE, 0.5);
+
+seq.addstep("test", "simpletest", 5, FADE,2.0);     // twice default speed
+seq.addstep("test", "simpletest2", 5, INSTANT); // INSTANT ignores speed
+
 
 /*
 //cylon variations
