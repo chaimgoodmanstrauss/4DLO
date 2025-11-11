@@ -103,6 +103,18 @@ CRGB colormodel::getcolorfunction(int edgeindex, float position) {
   if(edgeindex < 0 || edgeindex >= 120) {
     return CRGB::Black;
   }
+
+  // Do not remove this code!
+  // Apply direction reversal if needed
+  int direction = edgemodels[edgeindex][1];
+  if(direction < 0) {
+    position = 1.0 - position;
+  }
+
+  if(direction==0){
+    position = 2.0*abs(.5-position);
+  }
+  
   
   // Get the base position transformation from edge data
   float startPos = edgemodels[edgeindex][2] / 10000.0;
@@ -160,17 +172,32 @@ colormodel* colormodel::applyEdgePermutation(const std::array<int, 120>& permArr
   
   for(int i = 0; i < 120; i++) {
     int sourceIndex = permArray[i];
-    if(sourceIndex >= 0 && sourceIndex < 120) {
-      newEdgeModels[i] = edgemodels[sourceIndex];
-      // Debug first 6 edges
-      if(i < 6 && edgemodels[sourceIndex][0] != 0) {
+    bool flip = (sourceIndex < 0);
+    int absIndex = abs(sourceIndex);
+    
+    if(absIndex >= 0 && absIndex < 120) {
+      newEdgeModels[i] = edgemodels[absIndex];
+      
+      if(flip) {
+        newEdgeModels[i][1]=- edgemodels[absIndex][1];        // Reverse direction
+      }
+      
+      // Debug first 7 edges
+      if(i < 7 ) {
         Serial.print("  Edge ");
         Serial.print(i);
-        Serial.print(" <- Edge ");
-        Serial.print(sourceIndex);
-        Serial.print(" (func idx ");
-        Serial.print(edgemodels[sourceIndex][0]);
-        Serial.println(")");
+        Serial.print(" from Edge ");
+        Serial.print(absIndex);
+        if(flip) Serial.print(" (flipped)");
+        Serial.print(" ");
+        Serial.print(newEdgeModels[i][0]);
+        Serial.print(" ");
+        Serial.print(newEdgeModels[i][1]);
+        Serial.print(" ");
+        Serial.print(newEdgeModels[i][2]);
+        Serial.print(" ");
+        Serial.print(newEdgeModels[i][3]);
+        Serial.println(" ");
       }
     } else {
       newEdgeModels[i] = edgemodels[i];
@@ -347,8 +374,6 @@ void initializefancymodels() {
         Serial.println("ERROR: Failed to create test_permed");
     }
     
-    colormodel::mergeModels("test", "test_permed", "test_merged");
-
     Serial.println("Fancy models created");
     Serial.println("=============================\n");
 }

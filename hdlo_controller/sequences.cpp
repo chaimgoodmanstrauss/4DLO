@@ -35,6 +35,7 @@ void buildMainSequence(SequenceBuilder& seq) {
     mainSequence.beginRegistry("Main Show", 3000, true);
 
 //restful:
+/*
 seq.add("test_merged", {
         "dark",  
         {"noiseperlin", "forest", 3.0, 5.0}, 
@@ -44,8 +45,28 @@ seq.add("test_merged", {
         {"plasma", "sunset", 1.0, 10.0},
         {"noiseperlin", "heat", 5.0, 5.0},
         }, 20);
-
-
+*/
+/*
+seq.add("test", {
+        "dark",  
+       {"cylon", "heat", 2, 1, 1.0}, 
+       {"cylon", "heat", 2, 1, 1.0},         // speed=1, bounce, phase=1
+       {"cylon", "ocean_builtin", 2, 1, 2.0},       // speed=0.5, bounce, phase=2 (faster palette change)
+       {"cylon", "rainbow", 2, 1, 1.0},      // speed=1.5, forward loop, phase=1
+       {"cylon", "ocean_builtin", 2, 1, 0.5}, // speed=1, bounce, phase=0.5 (slower palette)
+       {"cylon", "forest", 2.0, 1, 3.0},      // speed=2, backward loop, phase=3 (fast palette)
+       }, 33);
+*/
+//cylon variations
+seq.add("test_permed", {
+        "dark",  
+       {"cylon", "heat", 2, 0, 1.0}, 
+       {"cylon", "heat", 2, 0, 1.0},         // speed=1, bounce, phase=1
+       {"cylon", "ocean_builtin", 2, 0, 2.0},       // speed=0.5, bounce, phase=2 (faster palette change)
+       {"cylon", "rainbow", 2, 0, 1.0},      // speed=1.5, forward loop, phase=1
+       {"cylon", "ocean_builtin", 2, 0, 0.5}, // speed=1, bounce, phase=0.5 (slower palette)
+       {"cylon", "forest", 2.0, 0, 3.0},      // speed=2, backward loop, phase=3 (fast palette)
+       }, 20);
 
 /*
 //cylon variations
