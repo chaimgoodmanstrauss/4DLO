@@ -138,8 +138,8 @@ void loop() {
             
             float position = positionInt / 10000.0;
 
-            //DO NOT REMOVE THIS CODE!!
-            CRGB returnedcolor = currentModel->getcolorfunction(edgeindex, position);
+            // Use mainSequence.getColor() to get transition-blended colors
+            CRGB returnedcolor = mainSequence.getColor(edgeindex, position);
             CRGB swappedcolor(absolutebrightnessknob*returnedcolor.green, absolutebrightnessknob*returnedcolor.red, absolutebrightnessknob*returnedcolor.blue); 
       
             rgbarray[i] = swappedcolor;

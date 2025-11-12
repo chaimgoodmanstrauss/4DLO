@@ -26,6 +26,9 @@ struct AudioSourceConfig {
 };
 
 // Transition types
+// INSTANT: immediate switch, no blending
+// FADE: linear crossfade between all edges simultaneously
+// WIPE: spatial sweep from edge 0 to 119, with 20% overlap window
 enum TransitionType {
     INSTANT,
     FADE,
@@ -56,8 +59,18 @@ struct SequenceStep {
     static const int MAX_FUNCTIONS = 7;  // Matches current sequence design
     
     colormodel* model;
-    std::array<FunctionWithPalette, MAX_FUNCTIONS> functions;
-    int numFunctions;  // Track actual number used
+    
+    // Dual palette system
+    std::array<FunctionWithPalette, MAX_FUNCTIONS> audioPalettes;
+    std::array<FunctionWithPalette, MAX_FUNCTIONS> backgroundPalettes;
+    int numAudioFunctions;
+    int numBackgroundFunctions;
+    
+    // Audio control
+    bool acceptAudio;           // Whether this step responds to audio
+    float audioThreshold;       // Audio level threshold to trigger audio palette
+    float audioTimeout;         // Seconds to wait before fading back to background
+    
     unsigned long duration;
     TransitionType transitionType;
     unsigned long transitionDuration;
@@ -66,12 +79,20 @@ struct SequenceStep {
     
     SequenceStep()
         : model(nullptr),
-          numFunctions(0),
+          numAudioFunctions(0),
+          numBackgroundFunctions(0),
+          acceptAudio(false),
+          audioThreshold(0.1f),
+          audioTimeout(2.0f),
           duration(5000),
           transitionType(INSTANT),
           transitionDuration(0),
-          transitionSpeed(1.0f) {}
+          transitionSpeed(1.0f) {
+        // Initialize with default palettes
+        initializeDefaultPalettes();
+    }
     
+    // Legacy constructor - converts single palette to dual system
     SequenceStep(colormodel* m,
                  const std::vector<FunctionWithPalette>& funcs,
                  unsigned long dur,
@@ -80,25 +101,110 @@ struct SequenceStep {
                  unsigned long transDur = 0,
                  AudioSourceConfig audio = AudioSourceConfig())
         : model(m),
-          numFunctions(funcs.size()),
+          acceptAudio(false),
+          audioThreshold(0.1f),
+          audioTimeout(2.0f),
           duration(dur),
           transitionType(trans),
           transitionDuration(transDur),
           transitionSpeed(transSpeed),
           audioConfig(audio) {
-        // Copy functions up to MAX_FUNCTIONS
-        for(int i = 0; i < numFunctions && i < MAX_FUNCTIONS; i++) {
-            functions[i] = funcs[i];
+        
+        // Use provided functions as background palette
+        numBackgroundFunctions = funcs.size();
+        for(int i = 0; i < numBackgroundFunctions && i < MAX_FUNCTIONS; i++) {
+            backgroundPalettes[i] = funcs[i];
         }
-        if(numFunctions > MAX_FUNCTIONS) {
-            numFunctions = MAX_FUNCTIONS;
+        if(numBackgroundFunctions > MAX_FUNCTIONS) {
+            numBackgroundFunctions = MAX_FUNCTIONS;
         }
         
+        // Initialize default audio palette
+        initializeDefaultAudioPalette();
+        
         // Convert transitionSpeed to transitionDuration if FADE or WIPE
-        // 1.0 speed = 3.141 seconds = 3141 ms
         if(trans == FADE || trans == WIPE) {
             this->transitionDuration = (unsigned long)(transSpeed * 3141.0f);
         }
+    }
+    
+    // New constructor for dual palettes
+    SequenceStep(colormodel* m,
+                 const std::vector<FunctionWithPalette>& audioFuncs,
+                 const std::vector<FunctionWithPalette>& backgroundFuncs,
+                 unsigned long dur,
+                 bool acceptAud = true,
+                 float audThresh = 0.1f,
+                 float audTimeout = 2.0f,
+                 TransitionType trans = INSTANT,
+                 float transSpeed = 1.0f,
+                 AudioSourceConfig audio = AudioSourceConfig())
+        : model(m),
+          acceptAudio(acceptAud),
+          audioThreshold(audThresh),
+          audioTimeout(audTimeout),
+          duration(dur),
+          transitionType(trans),
+          transitionSpeed(transSpeed),
+          audioConfig(audio) {
+        
+        // Set audio palette
+        numAudioFunctions = audioFuncs.size();
+        for(int i = 0; i < numAudioFunctions && i < MAX_FUNCTIONS; i++) {
+            audioPalettes[i] = audioFuncs[i];
+        }
+        if(numAudioFunctions > MAX_FUNCTIONS) {
+            numAudioFunctions = MAX_FUNCTIONS;
+        }
+        
+        // Set background palette
+        numBackgroundFunctions = backgroundFuncs.size();
+        for(int i = 0; i < numBackgroundFunctions && i < MAX_FUNCTIONS; i++) {
+            backgroundPalettes[i] = backgroundFuncs[i];
+        }
+        if(numBackgroundFunctions > MAX_FUNCTIONS) {
+            numBackgroundFunctions = MAX_FUNCTIONS;
+        }
+        
+        // Convert transitionSpeed to transitionDuration if FADE or WIPE
+        if(trans == FADE || trans == WIPE) {
+            this->transitionDuration = (unsigned long)(transSpeed * 3141.0f);
+        }
+    }
+    
+private:
+    void initializeDefaultPalettes() {
+        // Default audio palette
+        audioPalettes[0] = FunctionWithPalette("dark", "");
+        audioPalettes[1] = FunctionWithPalette("fftfire", "");
+        audioPalettes[2] = FunctionWithPalette("fftfire", "");
+        audioPalettes[3] = FunctionWithPalette("fftfire", "");
+        audioPalettes[4] = FunctionWithPalette("fftfire", "");
+        audioPalettes[5] = FunctionWithPalette("fftfire", "");
+        audioPalettes[6] = FunctionWithPalette("fftfire", "");
+        numAudioFunctions = 7;
+        
+        // Default background palette
+        backgroundPalettes[0] = FunctionWithPalette("breathing", "");
+        backgroundPalettes[1] = FunctionWithPalette("noiseperlin", "heat");
+        backgroundPalettes[2] = FunctionWithPalette("noiseperlin", "cloud");
+        backgroundPalettes[3] = FunctionWithPalette("noiseperlin", "forest");
+        backgroundPalettes[4] = FunctionWithPalette("noiseperlin", "rainbow");
+        backgroundPalettes[5] = FunctionWithPalette("noiseperlin", "sunset");
+        backgroundPalettes[6] = FunctionWithPalette("noiseperlin", "ocean_builtin");
+        numBackgroundFunctions = 7;
+    }
+    
+    void initializeDefaultAudioPalette() {
+        // Default audio palette
+        audioPalettes[0] = FunctionWithPalette("dark", "");
+        audioPalettes[1] = FunctionWithPalette("fftfire", "");
+        audioPalettes[2] = FunctionWithPalette("fftfire", "");
+        audioPalettes[3] = FunctionWithPalette("fftfire", "");
+        audioPalettes[4] = FunctionWithPalette("fftfire", "");
+        audioPalettes[5] = FunctionWithPalette("fftfire", "");
+        audioPalettes[6] = FunctionWithPalette("fftfire", "");
+        numAudioFunctions = 7;
     }
 };
 
@@ -126,6 +232,7 @@ private:
     SequenceStep steps[MAX_STEPS];
     int numSteps;
     int currentStep;
+    int previousStep;  // For transition blending
     unsigned long stepStartTime;
     
     SequenceRegistryEntry registry[MAX_REGISTRY_ENTRIES];
@@ -137,8 +244,18 @@ private:
     unsigned long transitionStartTime;
     float transitionProgress;
     
+    // Audio palette fading state
+    bool audioActive;               // Currently using audio palette
+    unsigned long audioLastActiveTime;  // When audio was last above threshold
+    bool audioFading;                // Currently fading between palettes
+    float audioFadeProgress;         // 0.0 = background, 1.0 = audio
+    unsigned long audioFadeStartTime;
+    bool fadingToAudio;              // Direction of fade
+    static constexpr float AUDIO_FADE_IN_TIME = 0.2f;  // Quick fade to audio (seconds)
+    
     void applyFunctionsToModel();
     void configureAudioSource(const AudioSourceConfig& config);
+    void updateAudioFade(const SequenceStep& step);
     
 public:
     modelsequence();
@@ -227,27 +344,52 @@ struct FunctionDef {
 struct SequenceBuilder {
     modelsequence* seq;
     std::vector<FunctionDef> currentPalettes;
+    std::vector<FunctionDef> currentAudioPalettes;
+    std::vector<FunctionDef> currentBackgroundPalettes;
+    bool useDualPalettes;
     
     // Cache for permuted models: key = "modelName_permName", value = created model pointer
     // Models registered in global registry, so safe to keep pointers
     std::map<String, colormodel*> permutedModelCache;
     
-    SequenceBuilder(modelsequence* s) : seq(s) {}
+    SequenceBuilder(modelsequence* s) : seq(s), useDualPalettes(false) {}
     
-    // Set palette definitions to be used by subsequent addstep() calls
+    // Set palette definitions to be used by subsequent addstep() calls (legacy)
     void addpalette(std::initializer_list<FunctionDef> funcDefs) {
         currentPalettes.clear();
         for(const auto& def : funcDefs) {
             currentPalettes.push_back(def);
         }
+        useDualPalettes = false;
+    }
+    
+    // Set audio palette for dual palette mode
+    void setaudiopalette(std::initializer_list<FunctionDef> funcDefs) {
+        currentAudioPalettes.clear();
+        for(const auto& def : funcDefs) {
+            currentAudioPalettes.push_back(def);
+        }
+        useDualPalettes = true;
+    }
+    
+    // Set background palette for dual palette mode
+    void setbackgroundpalette(std::initializer_list<FunctionDef> funcDefs) {
+        currentBackgroundPalettes.clear();
+        for(const auto& def : funcDefs) {
+            currentBackgroundPalettes.push_back(def);
+        }
+        useDualPalettes = true;
     }
     
     // Add step using previously defined palettes
     // duration is in SECONDS, will be converted to milliseconds
     // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
-    void addstep(String modelName, float durationSeconds, TransitionType transition = INSTANT, float speed = 1.0f) {
-        if(currentPalettes.empty()) {
-            Serial.println("Error: No palettes defined. Call addpalette() first.");
+    void addstep(String modelName, float durationSeconds, 
+                 TransitionType transition = INSTANT, float speed = 1.0f,
+                 bool acceptAudio = true, float audioThreshold = 0.1f, float audioTimeout = 2.0f) {
+        
+        if(!useDualPalettes && currentPalettes.empty()) {
+            Serial.println("Error: No palettes defined. Call addpalette() or setaudiopalette/setbackgroundpalette first.");
             return;
         }
         
@@ -257,50 +399,74 @@ struct SequenceBuilder {
             return;
         }
         
-        std::vector<FunctionWithPalette> functions;
-        
-        for(const auto& def : currentPalettes) {
-            if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+        if(useDualPalettes) {
+            // Dual palette mode
+            std::vector<FunctionWithPalette> audioFunctions;
+            std::vector<FunctionWithPalette> backgroundFunctions;
             
-            if(def.params.empty()) {
-                functions.push_back(FunctionWithPalette(def.functionName, def.paletteName));
-            } else {
-                switch(def.params.size()) {
-                    case 1:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0]}));
-                        break;
-                    case 2:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1]}));
-                        break;
-                    case 3:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2]}));
-                        break;
-                    case 4:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
-                        break;
-                    default:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
-                        break;
-                }
+            // Build audio functions
+            for(const auto& def : currentAudioPalettes) {
+                if(audioFunctions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                audioFunctions.push_back(buildFunctionWithPalette(def));
             }
+            
+            // Build background functions
+            for(const auto& def : currentBackgroundPalettes) {
+                if(backgroundFunctions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                backgroundFunctions.push_back(buildFunctionWithPalette(def));
+            }
+            
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            seq->addStep(SequenceStep(model, audioFunctions, backgroundFunctions, durationMs, 
+                                     acceptAudio, audioThreshold, audioTimeout, transition, speed));
+        } else {
+            // Legacy single palette mode
+            std::vector<FunctionWithPalette> functions;
+            
+            for(const auto& def : currentPalettes) {
+                if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                functions.push_back(buildFunctionWithPalette(def));
+            }
+            
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            seq->addStep(SequenceStep(model, functions, durationMs, transition, speed));
         }
-        
-        unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
-        seq->addStep(SequenceStep(model, functions, durationMs, transition, speed));
     }
     
+private:
+    FunctionWithPalette buildFunctionWithPalette(const FunctionDef& def) {
+        if(def.params.empty()) {
+            return FunctionWithPalette(def.functionName, def.paletteName);
+        } else {
+            switch(def.params.size()) {
+                case 1:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0]});
+                case 2:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0], def.params[1]});
+                case 3:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0], def.params[1], def.params[2]});
+                case 4:
+                default:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0], def.params[1], def.params[2], def.params[3]});
+            }
+        }
+    }
+    
+public:
     // Add step using named model + named permutation with caching
     // Automatically creates and caches permuted models: "baseModel_permName"
     // duration is in SECONDS, will be converted to milliseconds
     // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
-    void addstep(String modelName, String permName, float durationSeconds, TransitionType transition = INSTANT, float speed = 1.0f) {
-        if(currentPalettes.empty()) {
-            Serial.println("Error: No palettes defined. Call addpalette() first.");
+    void addstep(String modelName, String permName, float durationSeconds, 
+                 TransitionType transition = INSTANT, float speed = 1.0f,
+                 bool acceptAudio = true, float audioThreshold = 0.1f, float audioTimeout = 2.0f) {
+        
+        if(!useDualPalettes && currentPalettes.empty()) {
+            Serial.println("Error: No palettes defined. Call addpalette() or setaudiopalette/setbackgroundpalette first.");
             return;
         }
         
@@ -325,42 +491,38 @@ struct SequenceBuilder {
             Serial.println("Created and cached permuted model: " + cacheKey);
         }
         
-        // Build functions from current palettes
-        std::vector<FunctionWithPalette> functions;
-        
-        for(const auto& def : currentPalettes) {
-            if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+        if(useDualPalettes) {
+            // Dual palette mode
+            std::vector<FunctionWithPalette> audioFunctions;
+            std::vector<FunctionWithPalette> backgroundFunctions;
             
-            if(def.params.empty()) {
-                functions.push_back(FunctionWithPalette(def.functionName, def.paletteName));
-            } else {
-                switch(def.params.size()) {
-                    case 1:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0]}));
-                        break;
-                    case 2:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1]}));
-                        break;
-                    case 3:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2]}));
-                        break;
-                    case 4:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
-                        break;
-                    default:
-                        functions.push_back(FunctionWithPalette(def.functionName, def.paletteName, 
-                            {def.params[0], def.params[1], def.params[2], def.params[3]}));
-                        break;
-                }
+            // Build audio functions
+            for(const auto& def : currentAudioPalettes) {
+                if(audioFunctions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                audioFunctions.push_back(buildFunctionWithPalette(def));
             }
+            
+            // Build background functions
+            for(const auto& def : currentBackgroundPalettes) {
+                if(backgroundFunctions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                backgroundFunctions.push_back(buildFunctionWithPalette(def));
+            }
+            
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            seq->addStep(SequenceStep(permutedModel, audioFunctions, backgroundFunctions, durationMs, 
+                                     acceptAudio, audioThreshold, audioTimeout, transition, speed));
+        } else {
+            // Legacy single palette mode
+            std::vector<FunctionWithPalette> functions;
+            
+            for(const auto& def : currentPalettes) {
+                if(functions.size() >= SequenceStep::MAX_FUNCTIONS) break;
+                functions.push_back(buildFunctionWithPalette(def));
+            }
+            
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed));
         }
-        
-        unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
-        seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed));
     }
     
     // Add step with flexible nested syntax (original method, still supported)

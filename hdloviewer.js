@@ -94,8 +94,8 @@ function thecamerachanged(){
 	}}
 
 
-ourguiparams['show axes']=true;
-ourgui.add( ourguiparams, 'show axes').onChange(theModelChanged)
+ourguiparams['show axes']=false;
+//ourgui.add( ourguiparams, 'show axes').onChange(theModelChanged)
 
 // // these will remain switched as is for now:
 //ourguiparams['Show pedagogy']=false
@@ -364,14 +364,20 @@ theModelChanged();
 // the teensy hdlo controller manages, uncomment this 
 // (which is defined and managed around line 720 of modeldata.js)
 
-//writeModelsToFile(ourModelRegistry)
+writeModelsToFile(ourModelRegistry)
 
-const exportpermlist = [
+var exportpermlist = [];
+
+vertgroup.map(g=>{exportpermlist.push([g,"oneTo"+printvert(g.acton(qOne))])})
+vertgroup.map(g=>{exportpermlist.push([g,"i1To"+printvert(g.acton(q1I))])})
+
+
+exportpermlist=exportpermlist.concat([
  [new qAction(qOne,qW),"rightW"],
  [rots4X[1],"rot4"],
  [rots3[1],"rot3"],
  [new qAction(qOne,qI),"onetoi"],
- ]
+ ])
 
  //writeSeveralActionsAsPermutationsToAFile(exportpermlist)
  

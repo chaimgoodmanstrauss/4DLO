@@ -88,16 +88,17 @@ const vertexmaterials = [mats[1],mats[11],mats[14],mats[22]]
 
 // just for the printing functions here:
 function strfrom(n){
-    switch(n){
-        case 1:{return "+"}; break;
-        case -1:{return "-"}; break;
-        case 0:{return "0"}; break;
-        case -0:{return "0"}; break;
-        case -.5:{return "-"}; break;   
-        case .5:{return "+"}; break;
+    switch(Math.round(100*n)){
+        case 100:{return "p"}; break;
+        case -100:{return "m"}; break;
+        case 0:{return "z"}; break;
+        case -0:{return "z"}; break;
+        case -50:{return "m"}; break;   
+        case 50:{return "p"}; break;
+        case -71:{return "m"}; break;   
+        case 71:{return "p"}; break;
         default :{return n.toString()}; break;
         }
-        
 }
 
 function printvert(q){
@@ -212,37 +213,80 @@ function writeoutperm(aqaction){
 function writeSeveralActionsAsPermutationsToAFile(qActionList){
     var content = "" // our output.
 
-    // first the head
-    content+="////// Named Permutations\n\n #include \"edgepermutations.h\"\n\n"
+    content+="/////////////////////////////////\n"
+    content+="// a helpful list of vert perms\n"
+    content+="//inline const char* octacellperms[] = {"
+    
+    qActionList.slice(0,24).map(n=>{
+        content+="\""+n[1]+"\",";
+    })
+    content+="};\n//inline const char* cubecellperms[] = {"
+    qActionList.slice(24,48).map(n=>{
+        content+="\""+n[1]+"\",";
+    })
+    content+="};\n\n"
 
+
+
+    // first the head
+    content+="////// Named Permutations\n\n"
+
+
+    ////// Named Permutations
+
+    content+="#ifndef NAMEDPERMUTATIONS_H\n"
+    content+="#define NAMEDPERMUTATIONS_H\n\n"
+    content+="#include \"edgepermutations.h\"\n\n"
+
+//// define each permutation:
     content+="//// define each permutation:\n"
+
    qActionList.map(item=>{
-    content+="std::array<int, 120> "+item[1]+"Perm = {{\n";
+    content+="static inline std::array<int, 120> "+item[1]+"Perm = {{\n";
     content+=writeoutperm(item[0])+"}};\n\n"
     }
     )
 
     // we'll hand-code in this fake one:
 
-    content+="std::array<int, 120> simpletestPerm = {{1,2,3,4,5,0,\n";
+    content+="static inline std::array<int, 120> simpletestPerm = {{1,2,3,4,5,0,\n";
     for(var i=6;i<120;i++){content+=i.toString()+"," }
     content=content.slice(0,-1)+"}};\n\n";
 
-    content+="std::array<int, 120> simpletest2Perm = {{2,4,0,-1,-3,-5,\n";
+    content+="static inline std::array<int, 120> simpletest2Perm = {{2,4,0,-1,-3,-5,\n";
     for(var i=6;i<120;i++){content+=i.toString()+"," }
     content=content.slice(0,-1)+"}};\n\n";
 
 
     content+="\n"
 
-    
-    content+="//// now register everything:\n"
+    content +="// Function to register all named permutations - call from setup()\n"
+    content +="inline void registerNamedPermutations() {\n"
+    content +="    static bool registered = false;    \n"
+    content +="    if(registered) return;     \n"
+    content +="     registered = true; \n"  
+
+
+
     qActionList.map(item=>{
-    content+="EdgePermutation "+item[1]+"Permutation(\""+item[1]+"\", "+item[1]+"Perm);\n"
+    content+="static EdgePermutation "+item[1]+"Permutation(\""+item[1]+"\", "+item[1]+"Perm);\n"
     })
 
-    content+="EdgePermutation simpletestPermutation(\"simpletest\", simpletestPerm);\n"
-    content+="EdgePermutation simpletest2Permutation(\"simpletest2\", simpletest2Perm);\n"
+    content+="static  EdgePermutation simpletestPermutation(\"simpletest\", simpletestPerm);\n"
+    content+="static  EdgePermutation simpletest2Permutation(\"simpletest2\", simpletest2Perm);\n"
+
+    content +="}\n\n#endif // NAMEDPERMUTATIONS_H"
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Create a blob and download link
@@ -460,12 +504,13 @@ class edgemodel{
            this.coloringfunction=ourColorFunctionRegistry['defaultcolorfunction']
         }
         
-        var direction = 1
+        var adjustposition = position;
         if(this.direction){
             if(this.direction==-1)
-                {direction=-1}}
+                {adjustposition=1-position}}
 
-        var adjustposition = direction*this.scaleposition*position+this.shiftposition;
+        
+        adjustposition=this.scaleposition*adjustposition+this.shiftposition;
       
         //TBD: Make this work correctly:
         if(!this.direction){
@@ -937,8 +982,41 @@ const basichdlomodel = new hdlomodel({name:'basicModel'})
 
 basichdlomodel.name = 'basicModel'
 
-defaultmodel ='edge'
+defaultmodel ='octahedron'
 
+
+const hypercube = new hdlomodel ({name:'hypercube',
+    listofedmodels:
+    [{indices:[59,37,38,56,
+        63,49,50,60,
+        62,51,48,61,
+        39,58,57,36],
+        edgemodel:new edgemodel({coloringfunctionname:1, direction:1,scaleposition:.4})},
+    {indices:[74,27,24,73,87,21,22,84,23,86,20,85,75,25,26,72],
+        edgemodel:new edgemodel({coloringfunctionname:1, direction:-1,shiftposition:.4,scaleposition:.4})},
+],fordisplayQ:true,addToRegistryQ:true})
+
+const shiftedcube = hypercube.applyactions([qW],
+    {   fordisplayQ:true, 
+        cosetcolorsQ:true,
+        addToRegistryQ:true,
+        name:'rotated hypercube',
+    })
+
+const threecubes = hypercube.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize()],
+    {   fordisplayQ:true, 
+        cosetcolorsQ:true,
+        addToRegistryQ:true,
+        name:'hypercubes',
+    })
+
+
+const twentyfourcell = threecubes.permute(qOne, {colorpermutations:[1,1,1,1,1,1],name:"twentyfourcell"})
+twentyfourcell.fordisplayQ=true; 
+
+
+
+/*
 const test=new hdlomodel({
     name:'test',
     listofedmodels:[
@@ -954,104 +1032,8 @@ const test=new hdlomodel({
             {coloringfunctionindex:5, coloringfunctionname:5})},
         {indices:[5],edgemodel:new edgemodel(
             {coloringfunctionindex:6, coloringfunctionname:6})}],fordisplayQ:true,addToRegistryQ:true})
-
+*/
  
-const edge=new hdlomodel(
-    {name:'edge',
-    listofedmodels:[{indices:[95],edgemodel:new edgemodel({coloringfunctionindex:1,
-        coloringfunctionname:1})}],fordisplayQ:true,addToRegistryQ:true})
-/*
-//const generatedcycle=edge.applyactions(shiftrightalongacycle,
-//   {fordisplayQ:true, addToRegistryQ:true, name:'generatedcycle'})
-
-const generatedspiral=edge.applyactions(shiftrightalongacycle.map(qq=>
-    [qq.composeon(rots4X[1]),qq.composeon(rots4X[3])] ).flat(),
-   {fordisplayQ:true, addToRegistryQ:true, name:'generatedspiral'})
-
-
-
-const generatedeightway=edge.applyactions(rots4X,
-   {fordisplayQ:true, addToRegistryQ:true, name:'generatedeightway'})
-
-
-
-const threeway=edge.applyactions(rots3,
-   {fordisplayQ:true, addToRegistryQ:true, name:'threeway'})
-
-
-
-// The unit
-
-const theunit = new hdlomodel(
-    {name:"theUnit",
-        fordisplayQ:true,
-        addToRegistryQ:true,
-        listofedmodels:[
-        
-            {indices:[-64,24,-33],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:1, coloringfunctionname:1})},
-                
-            {indices:[-90,-80,48],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:2, coloringfunctionname:2})},
-                
-            {indices:[29,71,85],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:3, coloringfunctionname:3})},
-                
-            {indices:[-0,//!!
-               9,39,62],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:4, coloringfunctionname:4})},
-                
-            {indices:[46,-18,57,23],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:5, coloringfunctionname:5})},
-                
-            {indices:[79,-55,41,95],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:6, coloringfunctionname:6})},
-                
-            {indices:[-74,-7,14],distributeby:true,
-                edgemodel:new edgemodel({
-                    coloringfunctionindex:7, coloringfunctionname:7})},
-               
-        ]
-    }
-)
-
-
-
-
-// a basic octahedron, with flow from one end (at to the other. This is positio
-
-    const baseflowingoctahedron = new hdlomodel(
-    {name:'flow octahedron', 
-    listofedmodels:[
-        {indices:[91,70],distributeby:false, edgemodel:new edgemodel({
-            coloringfunctionindex:4, coloringfunctionname:3,shiftposition:1,scaleposition:-.5})},
-            {indices:[95,34],distributeby:false, edgemodel:new edgemodel({
-            coloringfunctionindex:3, coloringfunctionname:1,scaleposition:.5})},
-        {indices:[43,66],distributeby:false, edgemodel:new edgemodel({
-            coloringfunctionindex:1, coloringfunctionname:3,shiftposition:.5,scaleposition:-.5})},
-            {indices:[29,83],distributeby:false, edgemodel:new edgemodel({
-            coloringfunctionindex:1, coloringfunctionname:1,shiftposition:.5,scaleposition:.5})},
-        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({
-            coloringfunctionindex:2,coloringfunctionname:2,direction:1,shiftposition:0,scaleposition:1,scaletime:2})}
-    ],
-    fordisplayQ:true,
-    //forexportQ:true, 
-    addToRegistryQ:true})
-
-
-const anoctachain = baseflowingoctahedron.applyactions([qOneOne,qIOne,qMOneOne,qmIOneOne
-],{fordisplayQ:true,//forexportQ:true, 
-    addToRegistryQ:false, name:'octachain'})
-
-
-
-
 ////////////////////////////
 ////
 //// cycles
@@ -1065,7 +1047,7 @@ const cycle = new hdlomodel(
         [67,95,39,64,92,36],
         distributeby:true,
         edgemodel:new edgemodel({coloringfunctionindex:1,
-            coloringfunctionname:1})}],fordisplayQ:true,addToRegistryQ:true})
+            coloringfunctionname:1})}],fordisplayQ:false,addToRegistryQ:true})
 
 
 const cycles = cycle.applyactions(shiftcyclesright,
@@ -1073,13 +1055,6 @@ const cycles = cycle.applyactions(shiftcyclesright,
         addToRegistryQ:true,
         name:'cycles',
     })
-const altcycles = cycle.applyactions(shiftcyclesright,
-    {fordisplayQ:true, 
-        cosetcolorsQ:true,
-        addToRegistryQ:true,
-        name:'altcycles',
-    })
-
 
 
 const allcycles = cycles.applyactions(rots4X,
@@ -1090,17 +1065,59 @@ const allcycles = cycles.applyactions(rots4X,
     })
 
 
-new hdlomodel(
-    {name:'cycle',
-    listofedmodels:
-    [{indices:
-        [67,95,39,64,92,36],
-        distributeby:true,
+
+const graycode = new hdlomodel(
+	{
+	name:'gray codes',
+    listofedmodels:[
+        {indices:[22,57,23,49,86,37,-51,-21,-62,39,85,38,84,-73,20,56],
+            distributeby:true,
+            edgemodel:new edgemodel({coloringfunctionname:1, direction:1})
+            },
+    {indices:[61,72,63,74,-87,25,50,24,48,26,59,75,60,-58,-27,-36],distributeby:true,
+            edgemodel:new edgemodel({coloringfunctionname:2, direction:1})}
+],fordisplayQ:true, 
+        addToRegistryQ:true,})
+
+const threecodes = graycode.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize()],
+    {   fordisplayQ:true, 
+        cosetcolorsQ:true,
         addToRegistryQ:true,
-        edgemodel:new edgemodel({coloringfunctionindex:1,
-            coloringfunctionname:1})}],fordisplayQ:true,addToRegistryQ:true})
+        name:'six paths',
+    })
 
 
+
+
+    const octahedron = new hdlomodel(
+    {name:'octahedron', 
+    listofedmodels:[
+        {indices:[91,43,-66,-70],distributeby:true, edgemodel:new edgemodel({
+            coloringfunctionindex:3, coloringfunctionname:1})},
+            {indices:[95,29,-83,-34],distributeby:true, edgemodel:new edgemodel({
+            coloringfunctionindex:1, coloringfunctionname:2})},
+        {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({
+            coloringfunctionindex:2,coloringfunctionname:3,scaletime:2})}
+    ],
+    fordisplayQ:true,
+    //forexportQ:true, 
+    addToRegistryQ:true})
+
+const basiccube = new hdlomodel({name:'cube',
+    listofedmodels:
+    [{indices:[-87,-74,62],
+        edgemodel:new edgemodel({coloringfunctionname:1})},
+    {indices:[49,59,-23],
+        edgemodel:new edgemodel({coloringfunctionname:2})},
+    {indices:[-27,-21,51],
+        edgemodel:new edgemodel({coloringfunctionname:3})},
+    {indices:[37,63,-86],
+        edgemodel:new edgemodel({coloringfunctionname:4})}],
+    fordisplayQ:true,
+    addToRegistryQ:true})
+        
+
+/*
 const basiccube = new hdlomodel({name:'cube',
     listofedmodels:
     [{indices:[59,37],
@@ -1116,75 +1133,4 @@ const basiccube = new hdlomodel({name:'cube',
     {indices:[23,86],
         edgemodel:new edgemodel({coloringfunctionname:3, direction:-1})},
 ],fordisplayQ:true,addToRegistryQ:true})
-
-
-
-
-// const basichypercube = new hdlomodel(
-//     {name:'four color hypercube',
-//         listofedmodels:
-//     [{indices:[59,37,38,56],
-//         edgemodel:new edgemodel({coloringfunctionname:1, direction:1})},
-//     {indices:[63,49,50,60],
-//         edgemodel:new edgemodel({coloringfunctionname:2, direction:1})},
-//     {indices:[62,51,48,61],
-//         edgemodel:new edgemodel({coloringfunctionname:3, direction:1})},
-//     {indices:[39,58,57,36],
-//         edgemodel:new edgemodel({coloringfunctionname:4, direction:1})},
-//     {indices:[74,27,24,73],
-//         edgemodel:new edgemodel({coloringfunctionname:1, direction:-1})},
-//     {indices:[87,21,22,84],
-//         edgemodel:new edgemodel({coloringfunctionname:2, direction:-1})},
-//     {indices:[23,86,20,85],
-//         edgemodel:new edgemodel({coloringfunctionname:3, direction:-1})},
-//     {indices:[75,25,26,72],
-//         edgemodel:new edgemodel({coloringfunctionname:4, direction:-1})},
-// ],fordisplayQ:true,addToRegistryQ:true})
-
-
-
-
-const hypercube = new hdlomodel ({name:'hypercube',
-    listofedmodels:
-    [{indices:[59,37,38,56,
-        63,49,50,60,
-        62,51,48,61,
-        39,58,57,36],
-        edgemodel:new edgemodel({coloringfunctionname:1, direction:1})},
-    {indices:[74,27,24,73,87,21,22,84,23,86,20,85,75,25,26,72],
-        edgemodel:new edgemodel({coloringfunctionname:1, direction:-1})},
-],fordisplayQ:true,addToRegistryQ:true})
-
-const threecubes = hypercube.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize()],
-    {   fordisplayQ:true, 
-        cosetcolorsQ:true,
-        addToRegistryQ:true,
-        name:'hypercubes',
-    })
-
-
-const twentyfourcell = threecubes.permute(qOne, {colorpermutations:[1,1,1,1,1,1],name:"twentyfourcell"})
-twentyfourcell.fordisplayQ=true; 
-
-
-
-///// a little gray code action:
-
-
-
-
-	
-const graycode = new hdlomodel(
-	{
-	name:'gray codes',
-    listofedmodels:[
-        {indices:[22,57,23,49,86,37,-51,-21,-62,39,85,38,84,-73,20,56],
-            distributeby:true,
-            edgemodel:new edgemodel({coloringfunctionname:1, direction:1})
-            },
-    {indices:[61,72,63,74,-87,25,50,24,48,26,59,75,60,-58,-27,-36],distributeby:true,
-            edgemodel:new edgemodel({coloringfunctionname:2, direction:1})}
-],fordisplayQ:true, 
-        addToRegistryQ:true,})
 */
- 
