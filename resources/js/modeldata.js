@@ -1016,7 +1016,7 @@ twentyfourcell.fordisplayQ=true;
 
 
 
-/*
+
 const test=new hdlomodel({
     name:'test',
     listofedmodels:[
@@ -1032,7 +1032,7 @@ const test=new hdlomodel({
             {coloringfunctionindex:5, coloringfunctionname:5})},
         {indices:[5],edgemodel:new edgemodel(
             {coloringfunctionindex:6, coloringfunctionname:6})}],fordisplayQ:true,addToRegistryQ:true})
-*/
+
  
 ////////////////////////////
 ////

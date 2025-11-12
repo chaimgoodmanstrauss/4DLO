@@ -13,6 +13,10 @@
 #include <vector>
 #include <map>
 
+// Audio switching thresholds (defined in sequences.cpp)
+extern const float AUDIO_PALETTE_SWITCH_THRESHOLD;
+extern const float AUDIO_TIMEOUT_SECONDS;
+
 // Audio source configuration
 struct AudioSourceConfig {
     enum SourceType { MICROPHONE, SD_CARD, LINE_IN };
@@ -385,8 +389,8 @@ struct SequenceBuilder {
     // duration is in SECONDS, will be converted to milliseconds
     // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
     void addstep(String modelName, float durationSeconds, 
-                 TransitionType transition = INSTANT, float speed = 1.0f,
-                 bool acceptAudio = true, float audioThreshold = 0.1f, float audioTimeout = 2.0f) {
+                 TransitionType transition = INSTANT, float speed = 1.0,
+                 bool acceptAudio = true) {
         
         if(!useDualPalettes && currentPalettes.empty()) {
             Serial.println("Error: No palettes defined. Call addpalette() or setaudiopalette/setbackgroundpalette first.");
@@ -416,9 +420,9 @@ struct SequenceBuilder {
                 backgroundFunctions.push_back(buildFunctionWithPalette(def));
             }
             
-            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(model, audioFunctions, backgroundFunctions, durationMs, 
-                                     acceptAudio, audioThreshold, audioTimeout, transition, speed));
+                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, AUDIO_TIMEOUT_SECONDS, transition, speed));
         } else {
             // Legacy single palette mode
             std::vector<FunctionWithPalette> functions;
@@ -428,7 +432,7 @@ struct SequenceBuilder {
                 functions.push_back(buildFunctionWithPalette(def));
             }
             
-            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(model, functions, durationMs, transition, speed));
         }
     }
@@ -462,8 +466,8 @@ public:
     // duration is in SECONDS, will be converted to milliseconds
     // speed: for FADE/WIPE transitions, 1.0 = 3.141 seconds
     void addstep(String modelName, String permName, float durationSeconds, 
-                 TransitionType transition = INSTANT, float speed = 1.0f,
-                 bool acceptAudio = true, float audioThreshold = 0.1f, float audioTimeout = 2.0f) {
+                 TransitionType transition = INSTANT, float speed = 1.0,
+                 bool acceptAudio = true) {
         
         if(!useDualPalettes && currentPalettes.empty()) {
             Serial.println("Error: No palettes defined. Call addpalette() or setaudiopalette/setbackgroundpalette first.");
@@ -508,9 +512,9 @@ public:
                 backgroundFunctions.push_back(buildFunctionWithPalette(def));
             }
             
-            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(permutedModel, audioFunctions, backgroundFunctions, durationMs, 
-                                     acceptAudio, audioThreshold, audioTimeout, transition, speed));
+                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, AUDIO_TIMEOUT_SECONDS, transition, speed));
         } else {
             // Legacy single palette mode
             std::vector<FunctionWithPalette> functions;
@@ -520,7 +524,7 @@ public:
                 functions.push_back(buildFunctionWithPalette(def));
             }
             
-            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
+            unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed));
         }
     }

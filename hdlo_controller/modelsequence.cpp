@@ -83,7 +83,23 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     }
     
     unsigned long currentTime = millis();
-    float audioLevel = AudioSystem::getLevel();
+    float audioLevel = AudioSystem::getMaxBand();  // Use max band instead of average
+    
+    // Debug output every 2 seconds
+    static unsigned long lastDebugTime = 0;
+    if(currentTime - lastDebugTime > 2000) {
+        Serial.print("Audio: maxBand=");
+        Serial.print(audioLevel, 4);
+        Serial.print(", avgLevel=");
+        Serial.print(AudioSystem::getLevel(), 4);
+        Serial.print(", threshold=");
+        Serial.print(step.audioThreshold, 4);
+        Serial.print(", fadeProgress=");
+        Serial.print(audioFadeProgress, 3);
+        Serial.print(", active=");
+        Serial.println(audioActive ? "YES" : "NO");
+        lastDebugTime = currentTime;
+    }
     
     // Check if audio is above threshold
     if(audioLevel > step.audioThreshold) {
@@ -95,6 +111,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             audioFading = true;
             fadingToAudio = true;
             audioFadeStartTime = currentTime;
+            Serial.println(">>> AUDIO DETECTED - fading to audio palette");
         }
     }
     
@@ -105,6 +122,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             audioFading = true;
             fadingToAudio = false;
             audioFadeStartTime = currentTime;
+            Serial.println("<<< AUDIO TIMEOUT - fading to background palette");
         }
     }
     
@@ -130,6 +148,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     }
 }
 
+
 void modelsequence::applyFunctionsToModel() {
     if(currentStep < 0 || currentStep >= numSteps || !steps[currentStep].model) {
         Serial.println("applyFunctionsToModel: Invalid step or null model");
@@ -154,27 +173,54 @@ void modelsequence::applyFunctionsToModel() {
     Serial.print(audioFadeProgress);
     Serial.println(")");
     
+    // First, clear ALL edges to ensure no old functions remain
+    for(int edge = 0; edge < 120; edge++) {
+        model->setColorFunction(edge, "dark", "", {});
+    }
+    
     int appliedCount = 0;
+    int skippedCount = 0;
+    
     // Apply each function to its designated edges based on model data
     for(int edge = 0; edge < 120; edge++) {
         int funcIndex = model->getEdgeFunctionIndex(edge);
-        if(funcIndex >= 0 && funcIndex < numFunctions) {
+        
+        if(funcIndex >= 0) {
+            // Use modulo to ensure we don't go out of bounds
+            int safeIndex = funcIndex % numFunctions;
+            
             const FunctionWithPalette& func = useAudioPalette ? 
-                step.audioPalettes[funcIndex] : step.backgroundPalettes[funcIndex];
+                step.audioPalettes[safeIndex] : step.backgroundPalettes[safeIndex];
+            
             model->setColorFunction(edge, func.functionName, func.paletteName, func.parameters);
             appliedCount++;
+            
+            // Debug output for first few edges
+            if(edge < 3) {
+                Serial.print("  Edge ");
+                Serial.print(edge);
+                Serial.print(" -> ");
+                Serial.print(func.functionName);
+                Serial.print(" / ");
+                Serial.println(func.paletteName);
+            }
+        } else {
+            skippedCount++;
+            // Edge has no function index - already set to dark above
         }
     }
     
     Serial.print("Applied functions to ");
     Serial.print(appliedCount);
+    Serial.print(" edges, skipped ");
+    Serial.print(skippedCount);
     Serial.println(" edges");
 }
 
 void modelsequence::update() {
     unsigned long currentTime = millis();
     
-    // Update audio fade state for current step
+    // Update audio fade state for current step CONTINUOUSLY
     if(currentStep >= 0 && currentStep < numSteps) {
         updateAudioFade(steps[currentStep]);
     }

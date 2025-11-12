@@ -1,0 +1,148 @@
+////////////////////////////////////
+//
+//   sequences_simple_test.cpp
+//
+// Simple test to verify dual palette system is working
+// Replace your sequences.cpp with this temporarily for testing
+//
+
+#include "namedpermutations.h"
+#include "modelsequence.h"
+#include "hdlo_models.h"
+
+// Global sequence object
+modelsequence mainSequence;
+
+void initializeSequences() {
+    Serial.println("\n=== SIMPLE DUAL PALETTE TEST ===");
+    
+    // Check if we have the basic functions
+    ColorFunctionFactory& factory = ColorFunctionFactory::getInstance();
+    
+    if(!factory.hasFunction("solid")) {
+        Serial.println("ERROR: 'solid' function not found!");
+        Serial.println("This is a basic function - something is very wrong.");
+        return;
+    }
+    
+    // Get test model
+    colormodel* testModel = colormodel::findModelByName("test");
+    if(!testModel) {
+        Serial.println("ERROR: test model not found!");
+        return;
+    }
+    
+    SequenceBuilder seq(&mainSequence);
+    
+    // === ULTRA SIMPLE TEST ===
+    mainSequence.beginRegistry("Color Test", 60.0f, true);
+    
+    // Audio palette = ALL RED
+    seq.setaudiopalette({
+        {"solid", "red"},
+        {"solid", "red"},
+        {"solid", "red"},
+        {"solid", "red"},
+        {"solid", "red"},
+        {"solid", "red"},
+        {"solid", "red"}
+    });
+    
+    // Background palette = ALL BLUE  
+    seq.setbackgroundpalette({
+        {"solid", "blue"},
+        {"solid", "blue"},
+        {"solid", "blue"},
+        {"solid", "blue"},
+        {"solid", "blue"},
+        {"solid", "blue"},
+        {"solid", "blue"}
+    });
+    
+    // Super sensitive audio trigger
+    seq.addstep("test", 60.0f, INSTANT, 1.0f, true, 0.001f, 1.0f);
+    
+    mainSequence.endRegistry();
+    
+    // === BREATHING TEST ===
+    mainSequence.beginRegistry("Breathing Test", 60.0f, true);
+    
+    // Audio = fast green breathing
+    seq.setaudiopalette({
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f},
+        {"breathing", "green", 2.0f}
+    });
+    
+    // Background = slow white breathing
+    seq.setbackgroundpalette({
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f},
+        {"breathing", "white", 0.3f}
+    });
+    
+    seq.addstep("test", 60.0f, INSTANT, 1.0f, true, 0.01f, 2.0f);
+    
+    mainSequence.endRegistry();
+    
+    // Start
+    mainSequence.reset();
+    
+    Serial.println("\n=== TEST SEQUENCES READY ===");
+    Serial.println("Expected behavior:");
+    Serial.println("  1. Color Test: BLUE normally, RED when any sound");
+    Serial.println("  2. Breathing Test: Slow WHITE normally, Fast GREEN when sound");
+    Serial.println("\nIf you see something else, the palette system isn't working.");
+    Serial.println("If you see cylon patterns, old functions are stuck.\n");
+}
+
+void updateSequence() {
+    mainSequence.update();
+    
+    // Print audio status every 2 seconds
+    static unsigned long lastPrint = 0;
+    if(millis() - lastPrint > 2000) {
+        Serial.print("Audio level: ");
+        Serial.print(AudioSystem::getLevel());
+        Serial.print(" | Palette: ");
+        
+        // Check which palette is active based on audio fade progress
+        // This is a bit of a hack but helps debug
+        colormodel* model = mainSequence.getCurrentModel();
+        if(model) {
+            // Get a sample color to see what's actually being shown
+            CRGB testColor = mainSequence.getColor(0, 0.5f);
+            if(testColor.r > 200 && testColor.g < 50 && testColor.b < 50) {
+                Serial.println("RED (audio active)");
+            } else if(testColor.r < 50 && testColor.g < 50 && testColor.b > 200) {
+                Serial.println("BLUE (background)");
+            } else if(testColor.g > 200) {
+                Serial.println("GREEN (audio active)");
+            } else if(testColor.r > 200 && testColor.g > 200 && testColor.b > 200) {
+                Serial.println("WHITE (background)");
+            } else {
+                Serial.print("UNKNOWN (");
+                Serial.print(testColor.r);
+                Serial.print(",");
+                Serial.print(testColor.g);
+                Serial.print(",");
+                Serial.print(testColor.b);
+                Serial.println(")");
+            }
+        }
+        
+        lastPrint = millis();
+    }
+}
+
+CRGB getSequenceColor(int edgeindex, float position) {
+    return mainSequence.getColor(edgeindex, position);
+}

@@ -78,6 +78,9 @@ public:
     // Get high treble level
     virtual float getHighTreble() = 0;
     
+    // Get maximum band value (useful for audio detection)
+    virtual float getMaxBand() = 0;
+    
     // Print current levels (debugging)
     virtual void printLevels() = 0;
 };
@@ -126,6 +129,7 @@ public:
     float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
     float getTreble() override { return getBandRange(TREBLE_BAND_START, TREBLE_BAND_END); }
     float getHighTreble() override { return getBandRange(HIGH_TREBLE_BAND_START, HIGH_TREBLE_BAND_END); }
+    float getMaxBand();  // Get maximum band value (for audio detection)
     
     void setMicGain(float gain);
     void setLineInLevel(float level);
@@ -187,6 +191,7 @@ public:
     float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
     float getTreble() override { return getBandRange(TREBLE_BAND_START, TREBLE_BAND_END); }
     float getHighTreble() override { return getBandRange(HIGH_TREBLE_BAND_START, HIGH_TREBLE_BAND_END); }
+    float getMaxBand();  // Get maximum band value (for audio detection)
     
     void printLevels() override;
 };
@@ -235,6 +240,7 @@ public:
     static float getMid() { return currentSource ? currentSource->getMid() : 0.0f; }
     static float getTreble() { return currentSource ? currentSource->getTreble() : 0.0f; }
     static float getHighTreble() { return currentSource ? currentSource->getHighTreble() : 0.0f; }
+    static float getMaxBand() { return currentSource ? currentSource->getMaxBand() : 0.0f; }
     
     // Convenience methods with alternative names
     static float getBassLevel() { return getBass(); }

@@ -12,7 +12,7 @@ private:
     bool shouldRegister;
     
     // Global permutation registry
-    static const int MAX_PERMUTATIONS = 50;
+    static const int MAX_PERMUTATIONS = 70;
     static EdgePermutation* permutationRegistry[MAX_PERMUTATIONS];
     static String permutationNameRegistry[MAX_PERMUTATIONS];
     static int numRegisteredPermutations;

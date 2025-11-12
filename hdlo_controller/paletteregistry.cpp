@@ -60,13 +60,6 @@ DEFINE_GRADIENT_PALETTE( CustomPlasma_gp ) {
    255, 255,  255,  0   // Yellow
 };
 
-DEFINE_GRADIENT_PALETTE( CustomOcean_gp ) {
-    0,    0,   0,   32,  // Very dark blue
-   64,   0,   32,  64,  // Dark blue
-   128,  0,   64,  128, // Medium blue
-   192,  32,  128, 192, // Light blue
-   255,  128, 255, 255  // Cyan
-};
 
 DEFINE_GRADIENT_PALETTE( CustomForest_gp ) {
     0,    0,   40,  0,   // Dark green
@@ -211,7 +204,7 @@ void PaletteRegistry::initialize() {
     registerPalette("bluefire", CustomBlueFire_gp);
     registerPalette("greenfire", CustomGreenFire_gp);
     registerPalette("plasma", CustomPlasma_gp);
-    registerPalette("ocean", CustomOcean_gp);
+    registerPalette("ocean", OceanColors_p);
     registerPalette("forest", CustomForest_gp);
     registerPalette("sunset", CustomSunset_gp);
     registerPalette("rainbow", CustomRainbow_gp);
@@ -231,7 +224,6 @@ void PaletteRegistry::initialize() {
     registerPalette("heat", HeatColors_p);
     registerPalette("party", PartyColors_p);
     registerPalette("cloud", CloudColors_p);
-    registerPalette("ocean_builtin", OceanColors_p);
     registerPalette("forest_builtin", ForestColors_p);
     registerPalette("rainbow_builtin", RainbowColors_p);
     registerPalette("rainbowstripe", RainbowStripeColors_p);

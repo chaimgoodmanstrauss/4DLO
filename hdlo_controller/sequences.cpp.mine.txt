@@ -1,0 +1,164 @@
+////////////////////////////////////
+//
+//   sequences.cpp
+//
+// Sequences with dual palette audio system
+//
+
+#include "namedpermutations.h"
+#include "modelsequence.h"
+#include "hdlo_models.h"
+
+// Global sequence object
+modelsequence mainSequence;
+
+////////////////////
+// Ad hoc helpers and parameters
+//
+
+const float fftthreshold = .008; // needed for the fftfire, tuned to the physical microphone
+/*
+void octaswirl(SequenceBuilder& seq,  char* modelname ="octahedron",float steplength=1,float fadelength=.3){
+  for(int i=0; i<24;i++){
+    seq.addstep(modelname, octacellperms[i],steplength,FADE,fadelength);
+  }
+}*/
+
+/////////////////////////////////////////
+// SEQUENCE BUILDERS
+/////////////////////////////////////////
+
+void buildMainSequence(SequenceBuilder& seq) {
+    mainSequence.beginRegistry("Main Show", 3000.0, true);
+
+    //===========================================
+    // MAIN SHOW SEQUENCE - Standard display with audio reactivity
+    //===========================================
+    
+    //octaswirl(seq);
+    
+    // Section 1: Opening with subtle audio response
+    seq.setaudiopalette({
+        "dark",
+        {"fftfire", "fire", 30.0, 0, fftthreshold},
+        {"fftfire", "heat", 30.0, 0, fftthreshold},
+        {"fftfire", "rainbow", 30.0, 0, fftthreshold},
+        {"fftfire", "ice", 30.0, 0, fftthreshold},
+        {"fftfire", "sunset", 30.0, 0, fftthreshold},
+        {"fftfire", "forest", 30.0, 0, fftthreshold}
+    });
+    
+    seq.setbackgroundpalette({
+        "dark",
+        {"noiseperlin", "cloud", 7.0, 20},
+        {"noiseperlin", "forest", 7.0, 20},
+        {"noiseperlin", "heat", 7.0, 20},
+        {"noiseperlin", "sunset", 7.0, 20},
+        {"noiseperlin", "ocean", 7.0, 20},
+        {"noiseperlin", "lava", 7.0, 20}
+    });
+    
+    // Add steps with audio parameters
+    seq.addstep("test", 5.0, FADE, 0.4, true, 0.1, 2.0f);
+    seq.addstep("test", "simpletest", 5.0, FADE, 2.0, true, 0.08, 1.5f);   
+    seq.addstep("test", "simpletest2", 5.0, FADE, 6.0, true, 0.12, 3.0f);
+
+/*
+    // Section 2: ETC
+    seq.setaudiopalette({
+        "breathing",
+        {"fftfire", "magma"},
+        {"fftfire", "lava"},
+        {"fftplasma", "fire", 2.0},
+        {"fftplasma", "rainbow", 1.5},
+        {"fftfire", "ocean"},
+        {"fftfire", "party"}
+    });
+    
+    seq.setbackgroundpalette({
+        "breathing",
+        {"plasma", "ocean_builtin", -1},
+        {"noiseperlin", "forest", 3.0, 5.0},
+        {"noiseperlin", "rainbow", 1.0, 20.0},
+        {"noiseperlin", "ocean_builtin", 5.0, 20.0},
+        {"plasma", "sunset", 1.0, 10.0},
+        {"noiseperlin", "heat", 5.0, 5.0}
+    });
+    
+    seq.addstep("test_merged", 20.0, FADE, 1.0, true, 0.1, 2.5f);
+    */
+    mainSequence.endRegistry();
+}
+
+void buildNightSequence(SequenceBuilder& seq) {
+    mainSequence.beginRegistry("Night Mode", 90.0, false);
+    
+    seq.setaudiopalette({
+        {"breathing", "", 0.6},                    // Slightly faster breathing when audio
+        {"plasma", "ocean", 0.7},                  
+        {"noiseperlin", "ice", 6.0, 20.0},        
+        {"plasma", "cloud", 0.8},                  
+        {"noiseperlin", "ocean", 8.0, 25.0},       
+        {"simplecolor", "cyan"},                   
+        {"plasma", "forest", 0.6}                  
+    });
+    
+    seq.setbackgroundpalette({
+        {"breathing", "", 0.4},                    // Very slow breathing
+        {"plasma", "ocean", 0.5},                  
+        {"noiseperlin", "ice", 8.0, 25.0},        
+        {"plasma", "cloud", 0.6},                  
+        {"noiseperlin", "ocean", 10.0, 30.0},      
+        {"simplecolor", "blue"},                   
+        {"plasma", "forest", 0.4}                  
+    });
+    
+    // Night mode: higher threshold, longer timeout for minimal disruption
+    seq.addstep("test", 15.0, FADE, 0.3, true, 0.3, 5.0f);
+    
+    mainSequence.endRegistry();
+}
+
+
+/////////////////////////////////////////
+// INITIALIZATION
+/////////////////////////////////////////
+
+void initializeSequences() {
+    Serial.println("Initializing sequences...");
+    
+    colormodel* testModel = colormodel::findModelByName("test");
+    
+    if(!testModel) {
+        Serial.println("ERROR: test model not found!");
+        colormodel::printRegistry();
+        return;
+    }
+    
+    Serial.print("Found model: ");
+    Serial.println(testModel->getModelName());
+    
+    // Build all sequences
+    SequenceBuilder seq(&mainSequence);
+    
+    buildMainSequence(seq);
+    buildNightSequence(seq);
+   
+    // Start with Main Show (first registry entry)
+    mainSequence.reset();
+    
+    Serial.println("Sequences initialized!");
+    Serial.print("Total registry entries: ");
+    Serial.println(mainSequence.getNumRegistryEntries());
+    mainSequence.printSequenceInfo();
+}
+
+// Call this from loop()
+void updateSequence() {
+    mainSequence.update();
+}
+
+// Get color for rendering
+CRGB getSequenceColor(int edgeindex, float position) {
+    return mainSequence.getColor(edgeindex, position);
+}

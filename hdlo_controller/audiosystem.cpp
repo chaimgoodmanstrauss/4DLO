@@ -99,6 +99,16 @@ float MicrophoneSource::getBandRange(int startBand, int endBand) {
     return (count > 0) ? (sum / count) : 0.0;
 }
 
+float MicrophoneSource::getMaxBand() {
+    float maxVal = 0.0;
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
+        if(cachedBands[i] > maxVal) {
+            maxVal = cachedBands[i];
+        }
+    }
+    return maxVal;
+}
+
 void MicrophoneSource::setMicGain(float gain) {
     if(!initialized) return;
     gain = constrain(gain, 0.0, 1.0);
@@ -275,6 +285,16 @@ float SDCardSource::getBandRange(int startBand, int endBand) {
         count++;
     }
     return (count > 0) ? (sum / count) : 0.0;
+}
+
+float SDCardSource::getMaxBand() {
+    float maxVal = 0.0;
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
+        if(cachedBands[i] > maxVal) {
+            maxVal = cachedBands[i];
+        }
+    }
+    return maxVal;
 }
 
 void SDCardSource::printLevels() {
