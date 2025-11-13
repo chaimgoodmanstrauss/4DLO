@@ -38,7 +38,7 @@ import GUI from './resources/lib/lilgui.js';
 
 var ourguiparams = {};
 
-var ourgui = new GUI();
+var ourgui = new GUI({ title: '24-cell visualizer' });
 
 // to add a parameter, add its key to the ourguiparams dictionary, and then ourgui.add(it).
 // See the documentation for lots of ways to use this. 
@@ -57,8 +57,8 @@ ourguiparams['show as'] = 'four-d';
 // which model should we display? 
 // TBD: turn this into entire programs, add options for color ways, etc.
 
-ourguiparams['the model'] = defaultmodel
-//ourgui.add(ourguiparams,'the model',ourmodels.map(x=>x.name)).onChange(theModelChanged);
+ourguiparams['choose a model:'] = defaultmodel
+//ourgui.add(ourguiparams,'choose a model:',ourmodels.map(x=>x.name)).onChange(theModelChanged);
 
 var displaymodelkeys = Object.keys(ourModelRegistry).filter(key => {
     // For each key, check if its value is an object and has a key `foo` with a value of `true`.
@@ -66,7 +66,7 @@ var displaymodelkeys = Object.keys(ourModelRegistry).filter(key => {
     return ourModelRegistry[key]?.fordisplayQ === true;
   })
 
-ourgui.add(ourguiparams,'the model',displaymodelkeys).onChange(theModelChanged);
+ourgui.add(ourguiparams,'choose a model:',displaymodelkeys).onChange(theModelChanged);
 
 
 //ourguiparams['color way']=defaultcolorway
@@ -104,23 +104,24 @@ ourguiparams['show axes']=false;
 //ourguiparams['Shade by depth']=true
 //ourgui.add( ourguiparams, 'Shade by depth').onChange(theModelChanged);
 
-
-ourguiparams['offset 1 to I by'] = 0.1;
-ourgui.add( ourguiparams, 'offset 1 to I by', 0,1).onChange(updateoffset); // and then call theModelChanged
-
-
-ourguiparams['offset 1 to 1111 by'] = 0.1;
-ourgui.add( ourguiparams, 'offset 1 to 1111 by', 0,1).onChange(updateoffset) // and then call theModelChanged
+const positionFolder = ourgui.addFolder('Rotate in 4D');
+positionFolder.close();
+ourguiparams['roll 1000 to 0100 by'] = 0.1;
+positionFolder.add( ourguiparams, 'roll 1000 to 0100 by', 0,1).onChange(updateoffset); // and then call theModelChanged
 
 
+ourguiparams['roll 1000 to 1111 by'] = 0.1;
+positionFolder.add( ourguiparams, 'roll 1000 to 1111 by', 0,1).onChange(updateoffset) // and then call theModelChanged
 
-ourguiparams['Multiply the motion on the']='right'
-//ourgui.add(ourguiparams,'Multiply the motion on the',['left','right']).onChange(theModelChanged);
+
+
+ourguiparams['multiplying on the']='right'
+positionFolder.add(ourguiparams,'multiplying on the',['left','right']).onChange(theModelChanged);
 
 
 function updateoffset(){
-	var s = .5*3.1415*ourguiparams['offset 1 to I by']; // up to Pi
-	var t = .5*2.0944*ourguiparams['offset 1 to 1111 by'];  //up to 2 Pi/3
+	var s = .5*3.1415*ourguiparams['roll 1000 to 0100 by']; // up to Pi
+	var t = .5*2.0944*ourguiparams['roll 1000 to 1111 by'];  //up to 2 Pi/3
 	var offset = new quat(Math.cos(s),Math.sin(s),0,0);
 	offset = offset.multby(new quat(Math.cos(t),Math.sin(t)/Math.sqrt(3),Math.sin(t)/Math.sqrt(3),Math.sin(t)/Math.sqrt(3)))
 	ourguiparams['the offset']= offset
@@ -212,10 +213,10 @@ function updatethedrawing(){
 	var offset = ourguiparams['the offset']
 	//offset =qOne.positivize();
 
-	//ourmodeldata = ourmodels[ourguiparams['the model']];
+	//ourmodeldata = ourmodels[ourguiparams['choose a model:']];
 
 	// Use the find() method to get the dictionary where foo is 'fee'
-	var ourmodeldata = ourModelRegistry[ourguiparams['the model']]
+	var ourmodeldata = ourModelRegistry[ourguiparams['choose a model:']]
 
 
 	// hide all of the meshes in case they're showing. 
@@ -245,7 +246,7 @@ function updatethedrawing(){
 			//edgeindex = 79;
 			var m = edgegroup[edgeindex]
 			
-			if(ourguiparams['Multiply the motion on the']=='left'){
+			if(ourguiparams['multiplying on the']=='left'){
 				e0 = offset.mult(m.acton(edgebase0));
 				e1 = offset.mult(m.acton(edgebase1));
 			}
@@ -309,7 +310,7 @@ function updatethedrawing(){
 			// TBD: add this to the model, as it was in earlier versions of the code.
 			
 			var vert = vdata[0] 
-			if(ourguiparams['Multiply the motion on the']=='left'){
+			if(ourguiparams['multiplying on the']=='left'){
 				vert = offset.mult(vert);
 			}
 			else {
@@ -359,12 +360,19 @@ theModelChanged();
 
 
 
-////////////
-// If we are printing out the models to a file that 
-// the teensy hdlo controller manages, uncomment this 
-// (which is defined and managed around line 720 of modeldata.js)
+/////////////////////////////////////////////////
+//
+//	PRINTING FOR THE CONTROLLER
+// These commands create files that are then 
+// interpreted by the HDLO controller on the teensy. 
+//
+// By default these are commented out.
+//
+// They are defined and managed in modeldata.js
 
-writeModelsToFile(ourModelRegistry)
+//uncomment this to print out the models:
+
+//writeModelsToFile(ourModelRegistry)
 
 var exportpermlist = [];
 
@@ -379,9 +387,10 @@ exportpermlist=exportpermlist.concat([
  [new qAction(qOne,qI),"onetoi"],
  ])
 
+ // uncomment this to print out the permutations:
+
  //writeSeveralActionsAsPermutationsToAFile(exportpermlist)
- 
-// or comment to turn this off
+
 
 function animate() {
             requestAnimationFrame(animate);

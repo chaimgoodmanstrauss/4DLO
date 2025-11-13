@@ -86,8 +86,8 @@ struct SequenceStep {
           numAudioFunctions(0),
           numBackgroundFunctions(0),
           acceptAudio(false),
-          audioThreshold(0.1f),
-          audioTimeout(2.0f),
+          audioThreshold(AUDIO_PALETTE_SWITCH_THRESHOLD),
+          audioTimeout(AUDIO_TIMEOUT_SECONDS),
           duration(5000),
           transitionType(INSTANT),
           transitionDuration(0),
@@ -106,8 +106,8 @@ struct SequenceStep {
                  AudioSourceConfig audio = AudioSourceConfig())
         : model(m),
           acceptAudio(false),
-          audioThreshold(0.1f),
-          audioTimeout(2.0f),
+          audioThreshold(AUDIO_PALETTE_SWITCH_THRESHOLD),
+          audioTimeout(AUDIO_TIMEOUT_SECONDS),
           duration(dur),
           transitionType(trans),
           transitionDuration(transDur),
@@ -138,8 +138,8 @@ struct SequenceStep {
                  const std::vector<FunctionWithPalette>& backgroundFuncs,
                  unsigned long dur,
                  bool acceptAud = true,
-                 float audThresh = 0.1f,
-                 float audTimeout = 2.0f,
+                 float audThresh = AUDIO_PALETTE_SWITCH_THRESHOLD,
+                 float audTimeout = AUDIO_TIMEOUT_SECONDS,
                  TransitionType trans = INSTANT,
                  float transSpeed = 1.0f,
                  AudioSourceConfig audio = AudioSourceConfig())
@@ -253,6 +253,7 @@ private:
     unsigned long audioLastActiveTime;  // When audio was last above threshold
     bool audioFading;                // Currently fading between palettes
     float audioFadeProgress;         // 0.0 = background, 1.0 = audio
+    float audioFadeStartProgress;    // Progress when current fade began
     unsigned long audioFadeStartTime;
     bool fadingToAudio;              // Direction of fade
     static constexpr float AUDIO_FADE_IN_TIME = 0.2f;  // Quick fade to audio (seconds)

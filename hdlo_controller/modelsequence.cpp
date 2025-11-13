@@ -24,6 +24,7 @@ modelsequence::modelsequence()
       audioLastActiveTime(0),
       audioFading(false),
       audioFadeProgress(0.0),
+      audioFadeStartProgress(0.0),
       audioFadeStartTime(0),
       fadingToAudio(false) {}
 
@@ -110,17 +111,25 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             audioActive = true;
             audioFading = true;
             fadingToAudio = true;
+            audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
             Serial.println(">>> AUDIO DETECTED - fading to audio palette");
+        } else if(audioFading && !fadingToAudio) {
+            // Currently fading TO background, but audio returned - reverse direction
+            fadingToAudio = true;
+            audioFadeStartProgress = audioFadeProgress;  // Start from current position
+            audioFadeStartTime = currentTime;
+            Serial.println(">>> AUDIO RETURNED - reversing fade back to audio palette");
         }
     }
     
     // Check if we should fade back to background
-    if(audioActive && (currentTime - audioLastActiveTime) > (unsigned long)(step.audioTimeout * 1000.0f)) {
+    if(audioActive && (currentTime - audioLastActiveTime) > (unsigned long)(step.audioTimeout * 1000.0)) {
         if(!audioFading || fadingToAudio) {
             // Start fading back to background
             audioFading = true;
             fadingToAudio = false;
+            audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
             Serial.println("<<< AUDIO TIMEOUT - fading to background palette");
         }
@@ -130,19 +139,22 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     if(audioFading) {
         float fadeDuration = fadingToAudio ? AUDIO_FADE_IN_TIME : step.audioTimeout;
         unsigned long fadeElapsed = currentTime - audioFadeStartTime;
-        float fadeProgress = min(1.0f, fadeElapsed / (fadeDuration * 1000.0f));
+        float rawProgress = min(1.0, fadeElapsed / (fadeDuration * 1000.0));
         
         if(fadingToAudio) {
-            audioFadeProgress = fadeProgress;
+            // Interpolate from start towards 1.0 (full audio)
+            audioFadeProgress = audioFadeStartProgress + (1.0 - audioFadeStartProgress) * rawProgress;
+            if(rawProgress >= 1.0) {
+                audioFading = false;
+                audioFadeProgress = 1.0;
+            }
         } else {
-            audioFadeProgress = 1.0f - fadeProgress;
-        }
-        
-        if(fadeProgress >= 1.0f) {
-            audioFading = false;
-            if(!fadingToAudio) {
+            // Interpolate from start towards 0.0 (full background)
+            audioFadeProgress = audioFadeStartProgress * (1.0 - rawProgress);
+            if(rawProgress >= 1.0) {
+                audioFading = false;
                 audioActive = false;
-                audioFadeProgress = 0.0f;
+                audioFadeProgress = 0.0;
             }
         }
     }

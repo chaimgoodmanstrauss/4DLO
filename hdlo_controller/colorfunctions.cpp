@@ -75,6 +75,10 @@ void registerAllColorFunctions() {
         return new FFTFireColorFunction();
     });
     
+    factory.registerFunction("fftspectrum", []() {
+        return new FFTSpectrumColorFunction();
+    });
+    
     factory.registerFunction("perlin", []() {
         return new PerlinColorFunction();
     });
@@ -83,5 +87,5 @@ void registerAllColorFunctions() {
         return new SimpleColorViewer();
     });
     
-    Serial.println("Registered 16 color functions");
+    Serial.println("Registered 17 color functions");
 }

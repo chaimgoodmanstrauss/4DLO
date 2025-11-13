@@ -498,7 +498,7 @@ std::array<std::array<int, 6>, 120> twentyfourcelldata={{
 }};//end of twentyfourcelldata
 
 std::array<std::array<int, 6>, 120> testdata={{
-  {{1,0,0,10000,0,10000}},   // edge 0
+  {{1,1,0,10000,0,10000}},   // edge 0
   {{2,1,0,10000,0,10000}},   // edge 1
   {{3,1,0,10000,0,10000}},   // edge 2
   {{4,1,0,10000,0,10000}},   // edge 3

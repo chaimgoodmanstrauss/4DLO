@@ -41,7 +41,7 @@ const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
 
 // Audio reactive constants (aligned with FFT Fire algorithm)
-const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢brightness scale
+const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢brightness scale
 const int AUDIO_MAX_BRIGHTNESS = 160;          // Cap to prevent oversaturation
 const float AUDIO_FFT_THRESHOLD = 0.01;        // Minimum FFT value to detect (noise filter)
 
@@ -834,8 +834,8 @@ public:
           phase(phaseSpeed),
           phaseOffset(0.0),
           paletteName(palette) {
-        // Scale speed: speed=1.0 means one complete bounce in 2Ãâ‚¬ seconds
-        // velocity per update = speed * (0.020 / Ãâ‚¬)
+        // Scale speed: speed=1.0 means one complete bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
+        // velocity per update = speed * (0.020 / ÃƒÂÃ¢â€šÂ¬)
         // Initialize direction based on loopMode
         if(loopMode == -1) {
             velocity = -(speed * 0.00636620); // Start moving backwards
@@ -884,8 +884,8 @@ public:
         }
         
         // Update phase offset for palette cycling
-        // phase=1.0 means one complete palette cycle in 2Ãâ‚¬ seconds (matching speed scaling)
-        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2Ãâ‚¬) Ã¢â€°Ë† 0.815
+        // phase=1.0 means one complete palette cycle in 2ÃƒÂÃ¢â€šÂ¬ seconds (matching speed scaling)
+        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2ÃƒÂÃ¢â€šÂ¬) ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  0.815
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
     
@@ -927,8 +927,8 @@ public:
     
     void setSpeed(float newSpeed) { 
         speed = abs(newSpeed);
-        // Apply speed scaling: speed=1.0 means one bounce in 2Ãâ‚¬ seconds
-        float scaledSpeed = speed * 0.00636620; // 0.020 / Ãâ‚¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
+        float scaledSpeed = speed * 0.00636620; // 0.020 / ÃƒÂÃ¢â€šÂ¬
         if(velocity > 0) velocity = scaledSpeed;
         else velocity = -scaledSpeed;
     }
@@ -1031,8 +1031,8 @@ public:
         
         // Speed modulation: 0.5x to (0.5 + audioLevel * 2 * sensitivity)x base speed
         float speedMultiplier = 0.5 + (audioLevel * 2 * sensitivity);
-        // Apply speed scaling: speed=1.0 means one bounce in 2Ãâ‚¬ seconds
-        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / Ãâ‚¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
+        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / ÃƒÂÃ¢â€šÂ¬
         
         // Update velocity magnitude while preserving direction
         if(velocity > 0) {
@@ -1406,9 +1406,9 @@ private:
     int cooling;              // Cooling rate (20 in original)
     int numFFTBins;           // How many FFT bins to read (60 in original)
     float fftThreshold;       // Minimum FFT value to trigger
-    int brightnessScale;      // Multiplier for FFTÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢brightness
+    int brightnessScale;      // Multiplier for FFTÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢brightness
     int maxBrightness;        // Cap on brightness
-    int hueMultiplier;        // FFT bin ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ hue mapping (6 in original)
+    int hueMultiplier;        // FFT bin ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ hue mapping (6 in original)
     bool useHSVMode;          // true = HSV colors from frequency, false = use palette
     String paletteName;       // Optional: for non-HSV mode
     
@@ -1531,6 +1531,106 @@ public:
     
     StatefulColorFunction* clone() const override {
         return new FFTFireColorFunction(name, cooling, numFFTBins, fftThreshold, brightnessScale, maxBrightness, hueMultiplier, useHSVMode, paletteName);
+    }
+};
+
+/////////////////////////////////////////
+// FFT SPECTRUM COLOR FUNCTION
+// Maps position (0-1) to FFT bin, returns palette color at that bin's level
+//
+
+class FFTSpectrumColorFunction : public StatefulColorFunction {
+private:
+    static const int MIN_BIN = 1;    //2 is ~86 Hz (F2)
+    static const int MAX_BIN = 9;   //9 is ~387 Hz (G3)
+    float fftThreshold;
+    int brightnessScale;
+    int maxBrightness;
+    String paletteName;
+    
+public:
+    FFTSpectrumColorFunction(String functionName = "fftspectrum",
+                             float threshold = AUDIO_FFT_THRESHOLD,
+                             int brightScale = AUDIO_BRIGHTNESS_MULTIPLIER,
+                             int maxBright = AUDIO_MAX_BRIGHTNESS,
+                             String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          fftThreshold(threshold),
+          brightnessScale(brightScale),
+          maxBrightness(maxBright),
+          paletteName(palette) {
+    }
+    
+    void reset() override {}
+    
+    void updateState() override {
+        // Debug: Print bin levels once per second
+        static unsigned long lastPrint = 0;
+        unsigned long now = millis();
+        if(now - lastPrint > 1000) {
+            Serial.print("Bins 0-12: ");
+            for(int i = 0; i <= 12; i++) {
+                Serial.print(AudioSystem::getBin(i), 4);
+                if(i < 12) Serial.print(" ");
+            }
+            Serial.println();
+            lastPrint = now;
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        // Map position (0-1) to vocal fundamental bins 2-9
+        // Use fractional binIndex for interpolation
+        float floatBinIndex = MIN_BIN + (position * (MAX_BIN - MIN_BIN));
+        int bin1 = (int)floatBinIndex;
+        int bin2 = bin1 + 1;
+        float fraction = floatBinIndex - bin1;
+        
+        // Constrain bins
+        bin1 = constrain(bin1, MIN_BIN, MAX_BIN);
+        bin2 = constrain(bin2, MIN_BIN, MAX_BIN);
+        
+        // Read both bins
+        float level1 = AudioSystem::getBin(bin1);
+        float level2 = AudioSystem::getBin(bin2);
+        
+        // Linear interpolation
+        float interpolatedLevel = level1 * (1.0 - fraction) + level2 * fraction;
+        
+        // Apply threshold and calculate brightness
+        int brightness = 0;
+        if(interpolatedLevel > fftThreshold) {
+            brightness = (int)(interpolatedLevel * brightnessScale);
+            brightness = constrain(brightness, 0, maxBrightness);
+        }
+        
+        // Get palette
+        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+        if(palette == nullptr) {
+            palette = PaletteRegistry::findByName("rainbow");
+        }
+        
+        // Map position to palette index
+        byte paletteIndex = (byte)(position * 255);
+        CRGB color = ColorFromPalette(*palette, paletteIndex);
+        color.nscale8(brightness);
+        
+        return color;
+    }
+    
+    void setFFTThreshold(float value) { fftThreshold = constrain(value, 0.001, 0.1); }
+    void setBrightnessScale(int value) { brightnessScale = constrain(value, 1000, 8000); }
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+    
+    void setParameters(const std::vector<FunctionParameter>& params) override {
+        if(params.size() >= 1) setBrightnessScale((int)params[0].value);
+        if(params.size() >= 2) setFFTThreshold(params[1].value);
+    }
+    
+    StatefulColorFunction* clone() const override {
+        return new FFTSpectrumColorFunction(name, fftThreshold, brightnessScale, maxBrightness, paletteName);
     }
 };
 
@@ -1728,9 +1828,9 @@ public:
     
     void updateState() override {
         if(pace > 0) {
-            // pace = 1 means one complete palette roll (256 units) in Ãâ‚¬ seconds
+            // pace = 1 means one complete palette roll (256 units) in ÃƒÂÃ¢â€šÂ¬ seconds
             // Update interval is 20ms = 0.020s
-            // Phase advance = (256 / Ãâ‚¬) * 0.020 * pace Ã¢â€°Ë† 1.630 * pace per update
+            // Phase advance = (256 / ÃƒÂÃ¢â€šÂ¬) * 0.020 * pace ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  1.630 * pace per update
             phaseOffset += 1.630 * pace;
             if(phaseOffset >= 256) phaseOffset -= 256;
         }
@@ -1805,9 +1905,9 @@ public:
     }
     
     void updateState() override {
-        // pace = 1 means one complete hue roll (256 units) in Ãâ‚¬ seconds
+        // pace = 1 means one complete hue roll (256 units) in ÃƒÂÃ¢â€šÂ¬ seconds
         // Update interval is 20ms = 0.020s
-        // Phase advance = (256 / Ãâ‚¬) * 0.020 * pace Ã¢â€°Ë† 1.630 * pace per update
+        // Phase advance = (256 / ÃƒÂÃ¢â€šÂ¬) * 0.020 * pace ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  1.630 * pace per update
         phaseOffset += 1.630 * pace;
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
@@ -1849,7 +1949,7 @@ public:
     
     CRGB getColor(float position) override {
         // pace scales the breathing speed
-        // pace = 1.0 means one complete breath cycle in 2Ãâ‚¬ seconds
+        // pace = 1.0 means one complete breath cycle in 2ÃƒÂÃ¢â€šÂ¬ seconds
         float breathAmount = (sin(millis() / 1000.0 * pace) + 1.0) / 2.0;
         
         CRGB color(red, green, blue);
