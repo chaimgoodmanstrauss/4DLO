@@ -190,12 +190,12 @@ private:
         
         // Default background palette
         backgroundPalettes[0] = FunctionWithPalette("breathing", "");
-        backgroundPalettes[1] = FunctionWithPalette("noiseperlin", "heat");
-        backgroundPalettes[2] = FunctionWithPalette("noiseperlin", "cloud");
-        backgroundPalettes[3] = FunctionWithPalette("noiseperlin", "forest");
-        backgroundPalettes[4] = FunctionWithPalette("noiseperlin", "rainbow");
-        backgroundPalettes[5] = FunctionWithPalette("noiseperlin", "sunset");
-        backgroundPalettes[6] = FunctionWithPalette("noiseperlin", "ocean_builtin");
+        backgroundPalettes[1] = FunctionWithPalette("perlin", "heat");
+        backgroundPalettes[2] = FunctionWithPalette("perlin", "cloud");
+        backgroundPalettes[3] = FunctionWithPalette("perlin", "forest");
+        backgroundPalettes[4] = FunctionWithPalette("perlin", "rainbow");
+        backgroundPalettes[5] = FunctionWithPalette("perlin", "sunset");
+        backgroundPalettes[6] = FunctionWithPalette("perlin", "ocean_builtin");
         numBackgroundFunctions = 7;
     }
     

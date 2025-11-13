@@ -75,8 +75,8 @@ void registerAllColorFunctions() {
         return new FFTFireColorFunction();
     });
     
-    factory.registerFunction("noiseperlin", []() {
-        return new NoisePerlinColorFunction();
+    factory.registerFunction("perlin", []() {
+        return new PerlinColorFunction();
     });
     
     factory.registerFunction("simplecolor", []() {
