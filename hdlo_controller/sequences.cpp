@@ -32,15 +32,18 @@ void initializeSequences() {
     // Main sequence with dual palettes
     mainSequence.beginRegistry("Main Show", 3000.0, true);
     
+    //seq.setaudiotimeout(10.0);
     // Audio palette - activated by sound
     seq.setaudiopalette({
         "dark",
-        {"fftspectrum", "sunset", fftspectrumsensitivity, fftspectrumthreshold},
-        {"fftspectrum", "party", fftspectrumsensitivity, fftspectrumthreshold},
-        {"fftspectrum", "rainbow", fftspectrumsensitivity, fftspectrumthreshold},
-        {"fftfire", "heat", 30.0, 0.0, fftthreshold},
-        {"fftfire", "rainbow", 30.0, 0.0, fftthreshold},
-        {"fftfire", "rainbow", 30.0, 0.0, fftthreshold}
+        //threshold,  velocity, gravity, size, bounce decay
+        {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
+        {"fftballs", "rainbow", 0.002, 0.1, 0.002, 0.01, 0.2},
+        {"fftballs", "rainbow", 0.005, 0.1, 0.002, 0.01, 0.3},
+        {"fftballs", "rainbow", 0.008, 0.1, 0.002, 0.04, 0.2},
+        {"fftballs", "rainbow", 0.01, 0.1, 0.002, 0.025, 0.6},
+        {"fftballs", "rainbow", 0.02, 0.1, 0.002, 0.04, 0.8},
+     
     });
     
     // Background palette - when quiet
@@ -66,12 +69,12 @@ void initializeSequences() {
     {"dualblobs", "red", 0.012, 10, 0.6}*/
 
     // Pure palette colors (randomColors=0)
-    {"dualblobs", "ocean", 0.02, 1, 1,  0,5},
-    {"dualblobs", "ocean", 0.02, 1, 1.0,1,5},
-    {"dualblobs", "ocean", 0.02, 1, 1.0,0,1},
-    {"dualblobs", "ocean", 0.02, 1, 1.0,1,1},
-    {"dualblobs", "ocean", 0.02, 1, 1.0,0,20},
-    {"dualblobs", "ocean", 0.02, 1, 1.0,1,20},/*
+    {"perlin", "ocean"},//, 0.02, 1, 1,  0,5},
+    {"perlin", "ocean", 0.02, 1, 1.0,1,5},
+    {"perlin", "ocean", 0.02, 1, 1.0,0,1},
+    {"perlin", "ocean", 0.02, 1, 1.0,1,1},
+    {"perlin", "ocean", 0.02, 1, 1.0,0,20},
+    {"perlin", "ocean", 0.02, 1, 1.0,1,20},/*
     {"dualblobs", "white",   0.010, 2, 0.5, 0, 5},  // Default
     {"dualblobs", "ocean",   0.020, 1, 1.0, 0, 3},  // Fast, dense, long trails - PURE OCEAN COLORS
     {"dualblobs", "heat",    0.015, 1, 0.8, 0, 4},  // Quick sparkly fade
@@ -83,8 +86,8 @@ void initializeSequences() {
 */
     });
     
-    seq.addstep("test", 10.0, FADE, 0.4);
-    seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
+ seq.addstep("test", 10.0, FADE, 0.4);
+   // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
     
     mainSequence.endRegistry();
     

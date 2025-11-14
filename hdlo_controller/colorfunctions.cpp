@@ -91,5 +91,9 @@ void registerAllColorFunctions() {
         return new DualBlobsColorFunction();
     });
     
-    Serial.println("Registered 18 color functions");
+    factory.registerFunction("fftballs", []() {
+        return new FFTBouncingBallsColorFunction();
+    });
+    
+    Serial.println("Registered 19 color functions");
 }

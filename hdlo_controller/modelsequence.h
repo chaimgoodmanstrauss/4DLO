@@ -360,12 +360,13 @@ struct SequenceBuilder {
     std::vector<FunctionDef> currentAudioPalettes;
     std::vector<FunctionDef> currentBackgroundPalettes;
     bool useDualPalettes;
+    float audioTimeoutSeconds;  // Configurable timeout for audio palette fade
     
     // Cache for permuted models: key = "modelName_permName", value = created model pointer
     // Models registered in global registry, so safe to keep pointers
     std::map<String, colormodel*> permutedModelCache;
     
-    SequenceBuilder(modelsequence* s) : seq(s), useDualPalettes(false) {}
+    SequenceBuilder(modelsequence* s) : seq(s), useDualPalettes(false), audioTimeoutSeconds(AUDIO_TIMEOUT_SECONDS) {}
     
     // Set palette definitions to be used by subsequent addstep() calls (legacy)
     void addpalette(std::initializer_list<FunctionDef> funcDefs) {
@@ -392,6 +393,11 @@ struct SequenceBuilder {
             currentBackgroundPalettes.push_back(def);
         }
         useDualPalettes = true;
+    }
+    
+    // Set audio timeout (seconds) - how long to wait before fading back to background
+    void setaudiotimeout(float seconds) {
+        audioTimeoutSeconds = seconds;
     }
     
     // Add step using previously defined palettes
@@ -529,7 +535,7 @@ public:
             
             unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(permutedModel, audioFunctions, backgroundFunctions, durationMs, 
-                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, AUDIO_TIMEOUT_SECONDS, transition, speed));
+                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, audioTimeoutSeconds, transition, speed));
         } else {
             // Legacy single palette mode
             std::vector<FunctionWithPalette> functions;

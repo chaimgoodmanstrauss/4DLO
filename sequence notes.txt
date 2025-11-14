@@ -27,7 +27,8 @@ seq.addpalette({
 // nice dual blobs 
 {"dualblobs", "ocean", 0.02, 1, 1.0},
 
-
+ {"dualblobs", "ocean", 0.02, 1, 1.0,0,1},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,1,1},
 
 
 

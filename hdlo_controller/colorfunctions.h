@@ -41,7 +41,7 @@ const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
 
 // Audio reactive constants (aligned with FFT Fire algorithm)
-const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢brightness scale
+const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢brightness scale
 const int AUDIO_MAX_BRIGHTNESS = 160;          // Cap to prevent oversaturation
 const float AUDIO_FFT_THRESHOLD = 0.01;        // Minimum FFT value to detect (noise filter)
 
@@ -834,8 +834,8 @@ public:
           phase(phaseSpeed),
           phaseOffset(0.0),
           paletteName(palette) {
-        // Scale speed: speed=1.0 means one complete bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
-        // velocity per update = speed * (0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬)
+        // Scale speed: speed=1.0 means one complete bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
+        // velocity per update = speed * (0.020 / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬)
         // Initialize direction based on loopMode
         if(loopMode == -1) {
             velocity = -(speed * 0.00636620); // Start moving backwards
@@ -884,8 +884,8 @@ public:
         }
         
         // Update phase offset for palette cycling
-        // phase=1.0 means one complete palette cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds (matching speed scaling)
-        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  0.815
+        // phase=1.0 means one complete palette cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds (matching speed scaling)
+        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â  0.815
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
     
@@ -927,8 +927,8 @@ public:
     
     void setSpeed(float newSpeed) { 
         speed = abs(newSpeed);
-        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
-        float scaledSpeed = speed * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
+        float scaledSpeed = speed * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬
         if(velocity > 0) velocity = scaledSpeed;
         else velocity = -scaledSpeed;
     }
@@ -1031,8 +1031,8 @@ public:
         
         // Speed modulation: 0.5x to (0.5 + audioLevel * 2 * sensitivity)x base speed
         float speedMultiplier = 0.5 + (audioLevel * 2 * sensitivity);
-        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
-        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
+        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬
         
         // Update velocity magnitude while preserving direction
         if(velocity > 0) {
@@ -1406,9 +1406,9 @@ private:
     int cooling;              // Cooling rate (20 in original)
     int numFFTBins;           // How many FFT bins to read (60 in original)
     float fftThreshold;       // Minimum FFT value to trigger
-    int brightnessScale;      // Multiplier for FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢brightness
+    int brightnessScale;      // Multiplier for FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢brightness
     int maxBrightness;        // Cap on brightness
-    int hueMultiplier;        // FFT bin ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ hue mapping (6 in original)
+    int hueMultiplier;        // FFT bin ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ hue mapping (6 in original)
     bool useHSVMode;          // true = HSV colors from frequency, false = use palette
     String paletteName;       // Optional: for non-HSV mode
     
@@ -1852,9 +1852,9 @@ public:
     
     void updateState() override {
         if(pace > 0) {
-            // pace = 1 means one complete palette roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+            // pace = 1 means one complete palette roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
             // Update interval is 20ms = 0.020s
-            // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  1.630 * pace per update
+            // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â  1.630 * pace per update
             phaseOffset += 1.630 * pace;
             if(phaseOffset >= 256) phaseOffset -= 256;
         }
@@ -1929,9 +1929,9 @@ public:
     }
     
     void updateState() override {
-        // pace = 1 means one complete hue roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+        // pace = 1 means one complete hue roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
         // Update interval is 20ms = 0.020s
-        // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  1.630 * pace per update
+        // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â  1.630 * pace per update
         phaseOffset += 1.630 * pace;
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
@@ -1973,7 +1973,7 @@ public:
     
     CRGB getColor(float position) override {
         // pace scales the breathing speed
-        // pace = 1.0 means one complete breath cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+        // pace = 1.0 means one complete breath cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ seconds
         float breathAmount = (sin(millis() / 1000.0 * pace) + 1.0) / 2.0;
         
         CRGB color(red, green, blue);
@@ -2049,6 +2049,183 @@ inline CRGB callStatefulColorFunction(int index, float position) {
 inline CRGB simpleColor(float position) {
     return callStatefulColorFunction(12, position);
 }
+
+/////////////////////////////////////////
+// FFT BOUNCING BALLS
+// Audio-reactive physics balls that shoot from strip end, bounce with gravity
+//
+// Structure:
+// - Each FFT bin (0-59) can trigger a ball launch
+// - Velocity scaled by bin amplitude
+// - Color from bin frequency (low=red, high=blue via palette)
+// - Physics: gravity pulls balls back, bounce at pos 0 with decay
+// - Max 10 active balls to prevent clutter
+//
+// Parameters:
+//   1. sensitivity (float): Min FFT amplitude to trigger, default 0.01 (lower = more sensitive)
+//   2. velocityScale (float): Initial velocity multiplier, default 0.02 (higher = faster/farther)
+//   3. gravity (float): Gravitational pull toward 0, default 0.0005 (higher = faster return)
+//   4. ballSize (float): Visual ball radius, default 0.03 (higher = wider blur)
+//   5. bounceDamping (float): Energy retention on bounce, default 0.7 (0-1, higher = bouncier)
+//
+class FFTBouncingBallsColorFunction : public StatefulColorFunction {
+private:
+    static const int MAX_BALLS = 100;
+    
+    struct Ball {
+        float position;      // 0.0 to 1.0
+        float velocity;      // negative = toward 0
+        byte hue;           // Color based on frequency
+        bool active;
+        
+        Ball() : position(0), velocity(0), hue(0), active(false) {}
+    };
+    
+    Ball balls[MAX_BALLS];
+    float threshold;         // Min FFT value to spawn ball
+    float velocityScale;     // FFT amplitude to initial velocity
+    float gravity;           // Acceleration toward 0
+    float ballSize;          // Visual ball radius
+    float bounceDamping;     // Velocity multiplier on bounce (0-1)
+    String paletteName;
+    
+    void spawnBall(int binIndex, float amplitude) {
+        // Find inactive slot
+        for(int i = 0; i < MAX_BALLS; i++) {
+            if(!balls[i].active) {
+                balls[i].active = true;
+                balls[i].position = 1.0; // Start at end
+                balls[i].velocity = -amplitude * velocityScale; // Shoot toward 0
+                // Map bin to hue: low freq = 0 (red), high freq = 170 (blue)
+                balls[i].hue = map(binIndex, 0, 59, 0, 1023)%255;
+                break;
+            }
+        }
+    }
+    
+public:
+    FFTBouncingBallsColorFunction(String functionName = "fftballs",
+                                  float thresh = 0.01,
+                                  float velScale = 0.02,
+                                  float grav = 0.0005,
+                                  float size = 0.03,
+                                  float bounce = 0.7,
+                                  String palette = "rainbow")
+        : StatefulColorFunction(functionName, 20),
+          threshold(thresh),
+          velocityScale(velScale),
+          gravity(grav),
+          ballSize(size),
+          bounceDamping(bounce),
+          paletteName(palette) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < MAX_BALLS; i++) {
+            balls[i] = Ball();
+        }
+    }
+    
+    void updateState() override {
+        // Check FFT bins for new ball triggers
+        int highestbin = 0;
+        float highestamplitude = AudioSystem::getBin(0);
+        for(int bin = 1;bin<60;bin++){
+          float amplitude = AudioSystem::getBin(bin);
+          if(amplitude>highestamplitude){
+            highestamplitude=amplitude;
+            highestbin=bin;
+          }
+        }
+        spawnBall(highestbin,highestamplitude);
+        
+        /*
+        for(int bin = 0; bin < 60; bin++) {
+            float amplitude = AudioSystem::getBin(bin);
+            if(amplitude > threshold) {
+                spawnBall(bin, amplitude);
+            }
+        }*/
+        
+        // Update physics for all active balls
+        for(int i = 0; i < MAX_BALLS; i++) {
+            if(balls[i].active) {
+                // Apply gravity (always pulls toward 0)
+                balls[i].velocity += gravity;
+                
+                // Update position
+                balls[i].position += balls[i].velocity;
+                
+                // Bounce at position 0
+                if(balls[i].position <= 0) {
+                    balls[i].position = 0;
+                    balls[i].velocity = -balls[i].velocity * bounceDamping;
+                    
+                    // Deactivate if velocity too low (at rest)
+                    if(abs(balls[i].velocity) < 0.0001) {
+                        balls[i].active = false;
+                    }
+                }
+                
+                // bounce if too high
+                if(balls[i].position > 1.0) {
+                    balls[i].position = 2.0-balls[i].position;
+                }
+                // Deactivate if out of bounds
+                if(balls[i].position > 2.0 ||balls[i].position < 0.0) {
+                    balls[i].active = false;
+                }
+            }
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        CRGB totalColor = CRGB::Black;
+        
+        for(int i = 0; i < MAX_BALLS; i++) {
+            if(balls[i].active) {
+                float distance = abs(balls[i].position - position);
+                
+                if(distance < ballSize) {
+                    // Gaussian-like falloff
+                    float influence = (ballSize - distance) / ballSize;
+                    influence = influence * influence; // Squaring for smoother falloff
+                    
+                    // Get color from palette
+                    CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+                    if(palette == nullptr) {
+                        palette = PaletteRegistry::findByName("rainbow");
+                    }
+                    
+                    CRGB ballColor = ColorFromPalette(*palette, balls[i].hue);
+                    ballColor.nscale8(influence * 255);
+                    totalColor += ballColor;
+                }
+            }
+        }
+        
+        return totalColor;
+    }
+    
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+    
+    void setParameters(const std::vector<FunctionParameter>& params) override {
+        if(params.size() >= 1) threshold = params[0].value;
+        if(params.size() >= 2) velocityScale = params[1].value;
+        if(params.size() >= 3) gravity = params[2].value;
+        if(params.size() >= 4) ballSize = params[3].value;
+        if(params.size() >= 5) bounceDamping = constrain(params[4].value, 0.0f, 1.0f);
+    }
+    
+    StatefulColorFunction* clone() const override {
+        return new FFTBouncingBallsColorFunction(name, threshold, velocityScale, 
+                                                  gravity, ballSize, bounceDamping, paletteName);
+    }
+};
+
 
 /////////////////////////////////////////
 // DUAL BLOBS EFFECT
