@@ -52,12 +52,35 @@ void initializeSequences() {
         {"perlin", "cloud", 7.0, 20.0,1},
         {"perlin", "cloud", 15.0, 20.0,1},
         {"perlin", "cloud", 7.0, 20.0}*/
-        {"perlin", "cloud",  2.0,3,.03},
+        /*{"perlin", "cloud",  2.0,3,.03},
         {"perlin", "heat",   2,3,.1},
         {"perlin", "ocean",  2,100,.2},
         {"perlin", "sunset",  10,3,0},
         {"perlin", "forest",  10,3,.5},
-        {"perlin", "rainbow",  10,3,.5}
+        {"perlin", "rainbow",  10,3,.5}*/
+       /* {"dualblobs", "white", 0.05, .5, 0.5},    // Default settings
+    {"dualblobs", "heat", 0.1, 1, 0.8},    // Faster, more particles, more sparkle
+    {"dualblobs", "forest", 0.2, 3, 0.3},  // Slower, fewer particles, less sparkle
+    {"dualblobs", "ocean", 0.02, 1, 1.0},    // Fast, dense, max sparkle
+    {"dualblobs", "party", 0.03, 4, 0.2},   // Very slow drift, minimal sparkle
+    {"dualblobs", "red", 0.012, 10, 0.6}*/
+
+    // Pure palette colors (randomColors=0)
+    {"dualblobs", "ocean", 0.02, 1, 1,  0,5},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,1,5},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,0,1},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,1,1},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,0,20},
+    {"dualblobs", "ocean", 0.02, 1, 1.0,1,20},/*
+    {"dualblobs", "white",   0.010, 2, 0.5, 0, 5},  // Default
+    {"dualblobs", "ocean",   0.020, 1, 1.0, 0, 3},  // Fast, dense, long trails - PURE OCEAN COLORS
+    {"dualblobs", "heat",    0.015, 1, 0.8, 0, 4},  // Quick sparkly fade
+    {"dualblobs", "forest",  0.008, 3, 0.3, 0, 8},  // Slow, long, subtle
+    
+    // Random multi-hue (randomColors=1)
+    {"dualblobs", "rainbow", 0.015, 1, 0.7, 1, 5},  // Sample random rainbow colors
+
+*/
     });
     
     seq.addstep("test", 10.0, FADE, 0.4);

@@ -335,6 +335,14 @@ struct FunctionDef {
     FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4) 
         : functionName(fn), paletteName(pn), params{p1, p2, p3, p4} {}
     
+    // Constructors with 5 float parameters
+    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4, float p5) 
+        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4, p5} {}
+    
+    // Constructors with 6 float parameters
+    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4, float p5, float p6) 
+        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4, p5, p6} {}
+    
     // Constructor from initializer_list (for backward compatibility with string params)
     FunctionDef(std::initializer_list<String> def) {
         auto it = def.begin();
@@ -454,9 +462,15 @@ private:
                     return FunctionWithPalette(def.functionName, def.paletteName, 
                         {def.params[0], def.params[1], def.params[2]});
                 case 4:
-                default:
                     return FunctionWithPalette(def.functionName, def.paletteName, 
                         {def.params[0], def.params[1], def.params[2], def.params[3]});
+                case 5:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0], def.params[1], def.params[2], def.params[3], def.params[4]});
+                case 6:
+                default:
+                    return FunctionWithPalette(def.functionName, def.paletteName, 
+                        {def.params[0], def.params[1], def.params[2], def.params[3], def.params[4], def.params[5]});
             }
         }
     }

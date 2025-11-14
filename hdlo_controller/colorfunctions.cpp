@@ -87,5 +87,9 @@ void registerAllColorFunctions() {
         return new SimpleColorViewer();
     });
     
-    Serial.println("Registered 17 color functions");
+    factory.registerFunction("dualblobs", []() {
+        return new DualBlobsColorFunction();
+    });
+    
+    Serial.println("Registered 18 color functions");
 }

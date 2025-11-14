@@ -24,8 +24,8 @@ seq.addpalette({
 });
 
 
-
-
+// nice dual blobs 
+{"dualblobs", "ocean", 0.02, 1, 1.0},
 
 
 

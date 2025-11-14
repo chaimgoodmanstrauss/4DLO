@@ -41,7 +41,7 @@ const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
 
 // Audio reactive constants (aligned with FFT Fire algorithm)
-const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢brightness scale
+const int AUDIO_BRIGHTNESS_MULTIPLIER = 4000;  // Standard FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢brightness scale
 const int AUDIO_MAX_BRIGHTNESS = 160;          // Cap to prevent oversaturation
 const float AUDIO_FFT_THRESHOLD = 0.01;        // Minimum FFT value to detect (noise filter)
 
@@ -834,8 +834,8 @@ public:
           phase(phaseSpeed),
           phaseOffset(0.0),
           paletteName(palette) {
-        // Scale speed: speed=1.0 means one complete bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
-        // velocity per update = speed * (0.020 / ÃƒÂÃ¢â€šÂ¬)
+        // Scale speed: speed=1.0 means one complete bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+        // velocity per update = speed * (0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬)
         // Initialize direction based on loopMode
         if(loopMode == -1) {
             velocity = -(speed * 0.00636620); // Start moving backwards
@@ -884,8 +884,8 @@ public:
         }
         
         // Update phase offset for palette cycling
-        // phase=1.0 means one complete palette cycle in 2ÃƒÂÃ¢â€šÂ¬ seconds (matching speed scaling)
-        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2ÃƒÂÃ¢â€šÂ¬) ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  0.815
+        // phase=1.0 means one complete palette cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds (matching speed scaling)
+        phaseOffset += speed * phase * 0.815; // 256 / (50 * 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  0.815
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
     
@@ -927,8 +927,8 @@ public:
     
     void setSpeed(float newSpeed) { 
         speed = abs(newSpeed);
-        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
-        float scaledSpeed = speed * 0.00636620; // 0.020 / ÃƒÂÃ¢â€šÂ¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+        float scaledSpeed = speed * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
         if(velocity > 0) velocity = scaledSpeed;
         else velocity = -scaledSpeed;
     }
@@ -1031,8 +1031,8 @@ public:
         
         // Speed modulation: 0.5x to (0.5 + audioLevel * 2 * sensitivity)x base speed
         float speedMultiplier = 0.5 + (audioLevel * 2 * sensitivity);
-        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÂÃ¢â€šÂ¬ seconds
-        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / ÃƒÂÃ¢â€šÂ¬
+        // Apply speed scaling: speed=1.0 means one bounce in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
+        float currentSpeed = baseSpeed * speedMultiplier * 0.00636620; // 0.020 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
         
         // Update velocity magnitude while preserving direction
         if(velocity > 0) {
@@ -1406,9 +1406,9 @@ private:
     int cooling;              // Cooling rate (20 in original)
     int numFFTBins;           // How many FFT bins to read (60 in original)
     float fftThreshold;       // Minimum FFT value to trigger
-    int brightnessScale;      // Multiplier for FFTÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢brightness
+    int brightnessScale;      // Multiplier for FFTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢brightness
     int maxBrightness;        // Cap on brightness
-    int hueMultiplier;        // FFT bin ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ hue mapping (6 in original)
+    int hueMultiplier;        // FFT bin ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ hue mapping (6 in original)
     bool useHSVMode;          // true = HSV colors from frequency, false = use palette
     String paletteName;       // Optional: for non-HSV mode
     
@@ -1541,24 +1541,33 @@ public:
 
 class FFTSpectrumColorFunction : public StatefulColorFunction {
 private:
-    static const int MIN_BIN = 1;    //2 is ~86 Hz (F2)
-    static const int MAX_BIN = 9;   //9 is ~387 Hz (G3)
+    int minBin;
+    int maxBin;
     float fftThreshold;
     int brightnessScale;
     int maxBrightness;
+    float motion;  // Palette rotation speed (1.0 = 1 revolution per second)
     String paletteName;
+    unsigned long startTime;
     
 public:
     FFTSpectrumColorFunction(String functionName = "fftspectrum",
                              float threshold = AUDIO_FFT_THRESHOLD,
                              int brightScale = AUDIO_BRIGHTNESS_MULTIPLIER,
                              int maxBright = AUDIO_MAX_BRIGHTNESS,
-                             String palette = "rainbow")
+                             String palette = "rainbow",
+                             float motionSpeed = 0.0,
+                             int minBinNum = 2,
+                             int maxBinNum = 9)
         : StatefulColorFunction(functionName, 20),
+          minBin(minBinNum),
+          maxBin(maxBinNum),
           fftThreshold(threshold),
           brightnessScale(brightScale),
           maxBrightness(maxBright),
-          paletteName(palette) {
+          motion(motionSpeed),
+          paletteName(palette),
+          startTime(millis()) {
     }
     
     void reset() override {}
@@ -1568,10 +1577,14 @@ public:
         static unsigned long lastPrint = 0;
         unsigned long now = millis();
         if(now - lastPrint > 1000) {
-            Serial.print("Bins 0-12: ");
-            for(int i = 0; i <= 12; i++) {
+            Serial.print("Bins ");
+            Serial.print(minBin);
+            Serial.print("-");
+            Serial.print(maxBin);
+            Serial.print(": ");
+            for(int i = minBin; i <= maxBin; i++) {
                 Serial.print(AudioSystem::getBin(i), 4);
-                if(i < 12) Serial.print(" ");
+                if(i < maxBin) Serial.print(" ");
             }
             Serial.println();
             lastPrint = now;
@@ -1579,16 +1592,16 @@ public:
     }
     
     CRGB getColor(float position) override {
-        // Map position (0-1) to vocal fundamental bins 2-9
+        // Map position (0-1) to frequency bins minBin-maxBin
         // Use fractional binIndex for interpolation
-        float floatBinIndex = MIN_BIN + (position * (MAX_BIN - MIN_BIN));
+        float floatBinIndex = minBin + (position * (maxBin - minBin));
         int bin1 = (int)floatBinIndex;
         int bin2 = bin1 + 1;
         float fraction = floatBinIndex - bin1;
         
         // Constrain bins
-        bin1 = constrain(bin1, MIN_BIN, MAX_BIN);
-        bin2 = constrain(bin2, MIN_BIN, MAX_BIN);
+        bin1 = constrain(bin1, minBin, maxBin);
+        bin2 = constrain(bin2, minBin, maxBin);
         
         // Read both bins
         float level1 = AudioSystem::getBin(bin1);
@@ -1610,8 +1623,13 @@ public:
             palette = PaletteRegistry::findByName("rainbow");
         }
         
-        // Map position to palette index
-        byte paletteIndex = (byte)(position * 255);
+        // Calculate palette index with motion offset
+        float timeOffset = 0.0;
+        if(motion != 0.0) {
+            float elapsed = (millis() - startTime) / 1000.0;  // seconds
+            timeOffset = elapsed * motion;  // motion = revolutions per second
+        }
+        byte paletteIndex = (byte)((position + timeOffset) * 255.0);
         CRGB color = ColorFromPalette(*palette, paletteIndex);
         color.nscale8(brightness);
         
@@ -1620,6 +1638,9 @@ public:
     
     void setFFTThreshold(float value) { fftThreshold = constrain(value, 0.001, 0.1); }
     void setBrightnessScale(int value) { brightnessScale = constrain(value, 1000, 8000); }
+    void setMotion(float speed) { motion = speed; }
+    void setMinBin(int bin) { minBin = constrain(bin, 0, 59); }
+    void setMaxBin(int bin) { maxBin = constrain(bin, 0, 59); }
     void setPaletteName(String name) { paletteName = name; }
     String getPaletteName() const override { return paletteName; }
     void setPalette(String name) override { setPaletteName(name); }
@@ -1627,10 +1648,13 @@ public:
     void setParameters(const std::vector<FunctionParameter>& params) override {
         if(params.size() >= 1) setBrightnessScale((int)params[0].value);
         if(params.size() >= 2) setFFTThreshold(params[1].value);
+        if(params.size() >= 3) setMotion(params[2].value);
+        if(params.size() >= 4) setMinBin((int)params[3].value);
+        if(params.size() >= 5) setMaxBin((int)params[4].value);
     }
     
     StatefulColorFunction* clone() const override {
-        return new FFTSpectrumColorFunction(name, fftThreshold, brightnessScale, maxBrightness, paletteName);
+        return new FFTSpectrumColorFunction(name, fftThreshold, brightnessScale, maxBrightness, paletteName, motion, minBin, maxBin);
     }
 };
 
@@ -1828,9 +1852,9 @@ public:
     
     void updateState() override {
         if(pace > 0) {
-            // pace = 1 means one complete palette roll (256 units) in ÃƒÂÃ¢â€šÂ¬ seconds
+            // pace = 1 means one complete palette roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
             // Update interval is 20ms = 0.020s
-            // Phase advance = (256 / ÃƒÂÃ¢â€šÂ¬) * 0.020 * pace ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  1.630 * pace per update
+            // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  1.630 * pace per update
             phaseOffset += 1.630 * pace;
             if(phaseOffset >= 256) phaseOffset -= 256;
         }
@@ -1905,9 +1929,9 @@ public:
     }
     
     void updateState() override {
-        // pace = 1 means one complete hue roll (256 units) in ÃƒÂÃ¢â€šÂ¬ seconds
+        // pace = 1 means one complete hue roll (256 units) in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
         // Update interval is 20ms = 0.020s
-        // Phase advance = (256 / ÃƒÂÃ¢â€šÂ¬) * 0.020 * pace ÃƒÂ¢Ã¢â‚¬Â°Ã‹â€  1.630 * pace per update
+        // Phase advance = (256 / ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬) * 0.020 * pace ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â  1.630 * pace per update
         phaseOffset += 1.630 * pace;
         if(phaseOffset >= 256) phaseOffset -= 256;
     }
@@ -1949,7 +1973,7 @@ public:
     
     CRGB getColor(float position) override {
         // pace scales the breathing speed
-        // pace = 1.0 means one complete breath cycle in 2ÃƒÂÃ¢â€šÂ¬ seconds
+        // pace = 1.0 means one complete breath cycle in 2ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ seconds
         float breathAmount = (sin(millis() / 1000.0 * pace) + 1.0) / 2.0;
         
         CRGB color(red, green, blue);
@@ -2025,6 +2049,183 @@ inline CRGB callStatefulColorFunction(int index, float position) {
 inline CRGB simpleColor(float position) {
     return callStatefulColorFunction(12, position);
 }
+
+/////////////////////////////////////////
+// DUAL BLOBS EFFECT
+// Emits sparkling particles from both ends toward center
+//
+// Parameters:
+//   1. speed (float): Particle velocity, default 0.01 (range 0.001-0.05)
+//   2. emitRate (int): Frames between emissions, default 2 (lower = more dense)
+//   3. sparkle (float): Sparkle intensity 0.0-1.0, default 0.5
+//   4. randomColors (bool): Color mode, default 0
+//      - 0 (false) = Use palette colors sequentially
+//      - 1 (true)  = Full rainbow spectrum (ignores palette parameter)
+//   5. decay (int): Life decay per frame, default 5 (range 1-20, lower = longer trails)
+//
+class DualBlobsColorFunction : public StatefulColorFunction {
+private:
+    static const int MAX_PARTICLES = 30;
+    static const int NUM_LEDS = 128;
+    
+    struct Particle {
+        float position;
+        float velocity;
+        byte life;
+        byte hue;
+        bool fromStart;  // True if emitted from position 0, false if from position 1
+        float sparkle;   // Cached sparkle multiplier for this particle
+        
+        Particle() : position(0), velocity(0), life(0), hue(0), fromStart(true), sparkle(1.0) {}
+    };
+    
+    Particle particles[MAX_PARTICLES];
+    float speed;
+    int emissionRate;
+    int emissionCounter;
+    String paletteName;
+    bool randomColors;
+    float sparkleVariation;  // Controls sparkle intensity (brightness variation)
+    int decayRate;  // Life decay per frame (higher = faster fade)
+    
+    void emitParticle(bool fromStart) {
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life == 0) {
+                particles[i].fromStart = fromStart;
+                
+                if(fromStart) {
+                    particles[i].position = 0.0;
+                    particles[i].velocity = (random8(30, 100) / 100.0) * speed;
+                } else {
+                    particles[i].position = 1.0;
+                    particles[i].velocity = -(random8(30, 100) / 100.0) * speed;
+                }
+                
+                // Add sparkle variation to life - creates flickering effect
+                particles[i].life = random8(200, 255);
+                particles[i].hue = randomColors ? random8() : (i * 255 / MAX_PARTICLES);
+                particles[i].sparkle = 0.7 + (random8(30) / 100.0) * sparkleVariation;
+                break;
+            }
+        }
+    }
+    
+public:
+    DualBlobsColorFunction(String functionName = "dualblobs",
+                           float particleSpeed = 0.01,
+                           int emitRate = 2,
+                           String palette = "rainbow",
+                           bool randColors = false,  // Changed to false so palettes show properly
+                           float sparkle = 0.5,
+                           int decay = 5)  // Added decay parameter
+        : StatefulColorFunction(functionName, 20),
+          speed(particleSpeed),
+          emissionRate(emitRate),
+          emissionCounter(0),
+          paletteName(palette),
+          randomColors(randColors),
+          sparkleVariation(sparkle),
+          decayRate(decay) {
+        reset();
+    }
+    
+    void reset() override {
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            particles[i] = Particle();
+        }
+        emissionCounter = 0;
+    }
+    
+    void updateState() override {
+        // Update existing particles
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life > 0) {
+                particles[i].position += particles[i].velocity;
+                
+                // Apply decay - now configurable
+                particles[i].life = max(0, particles[i].life - decayRate);
+                
+                // Refresh sparkle value occasionally for twinkling
+                if(random8(100) < 10) {  // 10% chance per update
+                    particles[i].sparkle = 0.7 + (random8(30) / 100.0) * sparkleVariation;
+                }
+                
+                // Kill particles that go out of bounds
+                if(particles[i].position < 0 || particles[i].position > 1) {
+                    particles[i].life = 0;
+                }
+            }
+        }
+        
+        // Emit new particles from both ends
+        emissionCounter++;
+        if(emissionCounter >= emissionRate) {
+            emissionCounter = 0;
+            emitParticle(true);   // From start (0)
+            emitParticle(false);  // From end (1)
+        }
+    }
+    
+    CRGB getColor(float position) override {
+        CRGB totalColor = CRGB::Black;
+        
+        for(int i = 0; i < MAX_PARTICLES; i++) {
+            if(particles[i].life > 0) {
+                float distance = abs(particles[i].position - position);
+                
+                // Blob size varies with sparkle
+                float blobSize = 0.03 + (sparkleVariation * 0.02);
+                
+                if(distance < blobSize) {
+                    float influence = (blobSize - distance) / blobSize;
+                    
+                    // Use cached sparkle value
+                    influence *= (particles[i].life / 255.0) * particles[i].sparkle;
+                    
+                    CRGB particleColor;
+                    
+                    if(randomColors) {
+                        // Random colors mode: Use pure HSV rainbow, ignore palette
+                        particleColor = CHSV(particles[i].hue, 255, 255);
+                    } else {
+                        // Palette mode: Sample from specified palette
+                        CRGBPalette16* palette = PaletteRegistry::findByName(paletteName);
+                        if(palette == nullptr) {
+                            palette = PaletteRegistry::findByName("rainbow");
+                        }
+                        particleColor = ColorFromPalette(*palette, particles[i].hue);
+                    }
+                    
+                    particleColor.nscale8(influence * 255);
+                    totalColor += particleColor;
+                }
+            }
+        }
+        
+        return totalColor;
+    }
+    
+    void setPaletteName(String name) { paletteName = name; }
+    String getPaletteName() const override { return paletteName; }
+    void setPalette(String name) override { setPaletteName(name); }
+    void setSpeed(float s) { speed = s; }
+    void setEmissionRate(int rate) { emissionRate = max(1, rate); }
+    void setRandomColors(bool random) { randomColors = random; }
+    void setSparkle(float s) { sparkleVariation = constrain(s, 0.0, 1.0); }
+    void setDecay(int d) { decayRate = constrain(d, 1, 20); }
+    
+    void setParameters(const std::vector<FunctionParameter>& params) override {
+        if(params.size() >= 1) setSpeed(params[0].value);
+        if(params.size() >= 2) setEmissionRate((int)params[1].value);
+        if(params.size() >= 3) setSparkle(params[2].value);
+        if(params.size() >= 4) setRandomColors((bool)params[3].value);
+        if(params.size() >= 5) setDecay((int)params[4].value);
+    }
+    
+    StatefulColorFunction* clone() const override {
+        return new DualBlobsColorFunction(name, speed, emissionRate, paletteName, randomColors, sparkleVariation, decayRate);
+    }
+};
 
 
 /////////////////////////////////////////
