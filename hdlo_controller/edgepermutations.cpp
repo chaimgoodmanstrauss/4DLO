@@ -44,8 +44,10 @@ void EdgePermutation::registerSelf() {
     numRegisteredPermutations++;
     numEdgePermutations = numRegisteredPermutations; // Update legacy variable
     
+    if(PRINTPERMUTATIONS){
     Serial.println("Registered permutation: " + name + " (total: " + String(numRegisteredPermutations) + ")");
-}
+    }
+} 
 
 EdgePermutation* EdgePermutation::findPermutationByName(String name) {
     for(int i = 0; i < numRegisteredPermutations; i++) {

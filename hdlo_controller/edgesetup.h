@@ -233,7 +233,7 @@ Serial.println(" cosine = " +String(cosangle));
 
 const int positionresolution = 10000;
 //const int temp = ledsperstrip * numberofpins;
-int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
+EXTMEM int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
 
 void constructstrandtable(){
   //we make a table of every led in every strand, mapping it to an 
@@ -248,8 +248,10 @@ void constructstrandtable(){
     // may be more than the number we _do_ need. In C, the remaining entries 
     // are zeroed out -- we check for this: 
   
-    if(stranddata[strandnumber][0][0]!=0){
-      // we proceed, otherwise, nothing happens for this strandnumber
+    Serial.print("strand number: ");
+    Serial.print(strandnumber);
+    //if(stranddata[strandnumber][0][0]!=0)
+    {
       
       int lengthofprevioussegments = 0;
 
@@ -257,7 +259,25 @@ void constructstrandtable(){
         
         // now we go through the segments, again discarding those that are zeroed out:
         if(stranddata[strandnumber][segmentnumber][0]!=0){
-          
+          // we proceed, otherwise, nothing happens for this strandnumber
+      Serial.print("From ");
+      Serial.print(lengthofprevioussegments);
+      Serial.print(" On strand # ");
+      Serial.print(strandnumber);
+      Serial.print(", ");
+      Serial.print(segmentnumber);
+      Serial.print("::");
+      Serial.print(stranddata[strandnumber][segmentnumber][0]);
+      Serial.print(", ");
+      Serial.print(stranddata[strandnumber][segmentnumber][1]);
+      Serial.print(", ");
+      Serial.print(stranddata[strandnumber][segmentnumber][2]);
+      Serial.println(" ");
+      
+
+
+
+
           // Check if this segment would exceed the strip length
           int segmentLength = stranddata[strandnumber][segmentnumber][0];
           int totalLEDsAfterSegment = lengthofprevioussegments + segmentLength;
@@ -292,10 +312,23 @@ void constructstrandtable(){
           }
           lengthofprevioussegments+=stranddata[strandnumber][segmentnumber][0];
         }// else there's no segment here
+      else{  Serial.print("Skipping # ");
+        Serial.print(strandnumber);
+        Serial.print(", ");
+        Serial.print(segmentnumber);
+        Serial.print("::");
+        Serial.print(stranddata[strandnumber][segmentnumber][0]);
+        Serial.print(", ");
+        Serial.print(stranddata[strandnumber][segmentnumber][1]);
+        Serial.print(", ");
+        Serial.print(stranddata[strandnumber][segmentnumber][2]);
+        Serial.println(" ");
+        }
       }
 
 
     } //else there's no strand here
+   // else{    }
 
     }
  }
@@ -313,16 +346,20 @@ void initedgedata(){
       positiononedge(lednumber,res,edgetype,1);
     }
   }*/
-  Serial.println("constructing the strand table...");
+  
+  
     constructstrandtable();
   
   //let's take a look at what we've got:
-/*
+
    for(int i = 0; i<numberofpins; i++){
-     Serial.println("pin # "+String(i)+":");
+     
      for(int j = 0; j<ledsperstrip;j++){
-       Serial.println("  led: "+String(j)+": "+String(strandtable[i*ledsperstrip+j][0])+" on edge "+String(strandtable[i*ledsperstrip+j][1]));
+      Serial.print("pin # "+String(i)+":");
+       Serial.println("  led: "+String(j)+": "+
+        String(strandtable[i*ledsperstrip+j][0])+" on edge "+
+        String(strandtable[i*ledsperstrip+j][1]));
      }
-   }*/
+   }
      
 }

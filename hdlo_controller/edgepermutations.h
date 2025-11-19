@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <array>
 
+const bool PRINTPERMUTATIONS = false;
+
 // Edge permutation class
 class EdgePermutation {
 private:
