@@ -21,9 +21,14 @@ MicrophoneSource::MicrophoneSource()
       currentLevel(0.0),
       peakLevel(0.0),
       lastPeakTime(0),
-      initialized(false) {
+      initialized(false),
+      cacheGeneration(0) {
     for(int i = 0; i < NUM_FFT_BANDS; i++) {
         cachedBands[i] = 0.0;
+    }
+    for(int i = 0; i < 512; i++) {
+        cachedBins[i] = 0.0;
+        binCached[i] = false;
     }
 }
 
@@ -53,10 +58,22 @@ void MicrophoneSource::update() {
     if(myFFT.available()) {
         lastFFTUpdate = currentTime;
         
+        // Invalidate bin cache for new FFT data
+        cacheGeneration++;
+        for(int i = 0; i < 512; i++) {
+            binCached[i] = false;
+        }
+        
+        // Calculate cached bands (still need these for audio detection)
         float sum = 0.0;
         for(int i = 0; i < NUM_FFT_BANDS; i++) {
             int binIndex = (i < HIGH_BAND_THRESHOLD) ? (i * LOW_BAND_BIN_MULTIPLIER) : (HIGH_BAND_BIN_OFFSET + (i - HIGH_BAND_THRESHOLD) * HIGH_BAND_BIN_MULTIPLIER);
-            cachedBands[i] = myFFT.read(binIndex);
+            // Read bin on-demand and cache it
+            if(!binCached[binIndex]) {
+                cachedBins[binIndex] = myFFT.read(binIndex);
+                binCached[binIndex] = true;
+            }
+            cachedBands[i] = cachedBins[binIndex];
             sum += cachedBands[i];
         }
         
@@ -80,7 +97,12 @@ float MicrophoneSource::getBand(int bandIndex) {
 
 float MicrophoneSource::getBin(int binIndex) {
     if(binIndex >= 0 && binIndex < 512) {
-        return myFFT.read(binIndex);
+        // Lazy load: read and cache on first access this frame
+        if(!binCached[binIndex]) {
+            cachedBins[binIndex] = myFFT.read(binIndex);
+            binCached[binIndex] = true;
+        }
+        return cachedBins[binIndex];
     }
     return 0.0;
 }
@@ -150,9 +172,14 @@ SDCardSource::SDCardSource()
       lastPeakTime(0),
       initialized(false),
       isPlaying(false),
-      loopPlayback(false) {
+      loopPlayback(false),
+      cacheGeneration(0) {
     for(int i = 0; i < NUM_FFT_BANDS; i++) {
         cachedBands[i] = 0.0;
+    }
+    for(int i = 0; i < 512; i++) {
+        cachedBins[i] = 0.0;
+        binCached[i] = false;
     }
 }
 
@@ -241,10 +268,22 @@ void SDCardSource::update() {
     if(myFFT.available()) {
         lastFFTUpdate = currentTime;
         
+        // Invalidate bin cache for new FFT data
+        cacheGeneration++;
+        for(int i = 0; i < 512; i++) {
+            binCached[i] = false;
+        }
+        
+        // Calculate cached bands (still need these for audio detection)
         float sum = 0.0;
         for(int i = 0; i < NUM_FFT_BANDS; i++) {
             int binIndex = (i < HIGH_BAND_THRESHOLD) ? (i * LOW_BAND_BIN_MULTIPLIER) : (HIGH_BAND_BIN_OFFSET + (i - HIGH_BAND_THRESHOLD) * HIGH_BAND_BIN_MULTIPLIER);
-            cachedBands[i] = myFFT.read(binIndex);
+            // Read bin on-demand and cache it
+            if(!binCached[binIndex]) {
+                cachedBins[binIndex] = myFFT.read(binIndex);
+                binCached[binIndex] = true;
+            }
+            cachedBands[i] = cachedBins[binIndex];
             sum += cachedBands[i];
         }
         
@@ -268,7 +307,12 @@ float SDCardSource::getBand(int bandIndex) {
 
 float SDCardSource::getBin(int binIndex) {
     if(binIndex >= 0 && binIndex < 512) {
-        return myFFT.read(binIndex);
+        // Lazy load: read and cache on first access this frame
+        if(!binCached[binIndex]) {
+            cachedBins[binIndex] = myFFT.read(binIndex);
+            binCached[binIndex] = true;
+        }
+        return cachedBins[binIndex];
     }
     return 0.0;
 }

@@ -258,9 +258,16 @@ private:
     bool fadingToAudio;              // Direction of fade
     static constexpr float AUDIO_FADE_IN_TIME = 0.2f;  // Quick fade to audio (seconds)
     
+    // Cached color functions for audio fade blending (avoid recreation per LED)
+    std::unique_ptr<StatefulColorFunction> cachedBgFunctions[SequenceStep::MAX_FUNCTIONS];
+    std::unique_ptr<StatefulColorFunction> cachedAudioFunctions[SequenceStep::MAX_FUNCTIONS];
+    bool audioCacheValid;
+    int cachedStepIndex;
+    
     void applyFunctionsToModel();
     void configureAudioSource(const AudioSourceConfig& config);
     void updateAudioFade(const SequenceStep& step);
+    void updateAudioFadeCache();
     
 public:
     modelsequence();
@@ -278,6 +285,7 @@ public:
     
     // Playback control
     void update();
+    void updateCachedFunctions();  // Update cached audio functions once per frame
     colormodel* getCurrentModel();
     CRGB getColor(int edgeindex, float position);
     

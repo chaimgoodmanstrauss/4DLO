@@ -18,7 +18,7 @@ const float fftspectrumsensitivity = 20000;//increase the intensity when it is s
 const float fftspectrumthreshold = .008;// but raise the gate to show it. 
 
 // Palette switching threshold - when to switch from background to audio palette
-const float AUDIO_PALETTE_SWITCH_THRESHOLD = 0.025; //somehow none of these seem to be on the same scale. 
+const float AUDIO_PALETTE_SWITCH_THRESHOLD = 0.03; //somehow none of these seem to be on the same scale. 
 
 // How long (seconds) to wait after audio drops below threshold before fading back to background
 const float AUDIO_TIMEOUT_SECONDS = 2.0;
@@ -37,12 +37,19 @@ void initializeSequences() {
     seq.setaudiopalette({
         "dark",
         //threshold,  velocity, gravity, size, bounce decay
+      /*  {"fftspectrum", "heat"},  
         {"fftspectrum", "heat"},  
-        {"fftspectrum", "party"},  
-        {"fftspectrum", "ocean"},  
-        {"fftspectrum", "rainbow"},  
+        {"fftspectrum", "heat"},  
+        {"fftspectrum", "heat"},  
+         {"fftspectrum", "heat"},  
+        {"fftspectrum", "heat"},*/
+        {"fftspectrum","party",1},
         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
+        {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
+         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
         {"fftfire", "sunset", 30.0, 0,fftthreshold},
+         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
+     //   {"fftfire", "sunset", 30.0, 0,fftthreshold},
         
 
 
@@ -95,15 +102,14 @@ void initializeSequences() {
 */
     });
 
-      seq.addstep("allcycles", 10.0, FADE, 2);
+    seq.addstep("allcycles", 10.0, FADE, 2);
 
     seq.addstep("sixpaths", 10.0, FADE, 2);
-   // seq.addstep("test", "simpletest", 10.0, FADE, 2.0); 
-
+   
     seq.addstep("hypercubes", 10.0, FADE, 2);
-   // seq.addstep("test", "simpletest", 10.0, FADE, 2.0); 
     
- seq.addstep("twentyfourcell", 10.0, FADE, 0.4);
+    seq.addstep("twentyfourcell", 1000, FADE, 0.4);
+  
    // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
     
     mainSequence.endRegistry();

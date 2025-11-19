@@ -112,9 +112,24 @@ void setup() {
     Serial.println("Commands: 's' = status, 'n' = next step, 'a' = audio info, 'h' = help");
 }
 
+unsigned long lasttime = 0;
+unsigned long lastsecond = 0;
 void loop() {
+
     unsigned long currentTime = millis();
-    
+    unsigned long currentsecond = millis()/100;
+    if(currentsecond>lastsecond){
+      lastsecond= currentsecond;
+      Serial.print("seconds:");
+      Serial.print(currentsecond/10);
+      Serial.print(".");
+      Serial.print(currentsecond%10);
+      Serial.print(" time since last loop: ");
+      Serial.print((currentTime-lasttime));
+      Serial.println(" milliseconds");
+    }
+    lasttime=currentTime;
+
     // Update audio system
     AudioSystem::update();
     
@@ -123,6 +138,9 @@ void loop() {
     
     // Increment global frame counter
     StatefulColorFunction::beginFrame();
+    
+    // Update cached audio functions once per frame (before rendering)
+    mainSequence.updateCachedFunctions();
     
     // Render LEDs using strand table
     colormodel* currentModel = mainSequence.getCurrentModel();

@@ -102,6 +102,9 @@ private:
     AudioControlSGTL5000 audioShield;
     
     float cachedBands[NUM_FFT_BANDS];
+    float cachedBins[512];       // Lazy cache for bins
+    bool binCached[512];          // Track which bins are cached
+    unsigned long cacheGeneration; // Invalidate cache each update
     unsigned long lastFFTUpdate;
     static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
     
@@ -153,6 +156,9 @@ private:
     AudioControlSGTL5000 audioShield;
     
     float cachedBands[NUM_FFT_BANDS];
+    float cachedBins[512];       // Lazy cache for bins
+    bool binCached[512];          // Track which bins are cached
+    unsigned long cacheGeneration; // Invalidate cache each update
     unsigned long lastFFTUpdate;
     static const unsigned long FFT_UPDATE_INTERVAL = 20; // 20ms
     

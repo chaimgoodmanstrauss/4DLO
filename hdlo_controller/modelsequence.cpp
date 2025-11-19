@@ -26,7 +26,9 @@ modelsequence::modelsequence()
       audioFadeProgress(0.0),
       audioFadeStartProgress(0.0),
       audioFadeStartTime(0),
-      fadingToAudio(false) {}
+      fadingToAudio(false),
+      audioCacheValid(false),
+      cachedStepIndex(-1) {}
 
 void modelsequence::addStep(const SequenceStep& step) {
     if(numSteps < MAX_STEPS) {
@@ -158,6 +160,56 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             }
         }
     }
+}
+
+void modelsequence::updateAudioFadeCache() {
+    const auto& step = steps[currentStep];
+    
+    // Check if cache is valid
+    if(audioCacheValid && cachedStepIndex == currentStep) {
+        return;  // Cache already populated for this step
+    }
+    
+    // Invalidate and clear old cache
+    audioCacheValid = false;
+    for(int i = 0; i < SequenceStep::MAX_FUNCTIONS; i++) {
+        cachedBgFunctions[i].reset();
+        cachedAudioFunctions[i].reset();
+    }
+    
+    // Create background functions
+    for(int i = 0; i < step.numBackgroundFunctions; i++) {
+        const FunctionWithPalette& func = step.backgroundPalettes[i];
+        StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(func.functionName);
+        if(newFunc) {
+            if(func.paletteName.length() > 0) {
+                newFunc->setPalette(func.paletteName);
+            }
+            if(func.parameters.size() > 0) {
+                newFunc->setParameters(func.parameters);
+            }
+            cachedBgFunctions[i].reset(newFunc);
+        }
+    }
+    
+    // Create audio functions
+    for(int i = 0; i < step.numAudioFunctions; i++) {
+        const FunctionWithPalette& func = step.audioPalettes[i];
+        StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(func.functionName);
+        if(newFunc) {
+            if(func.paletteName.length() > 0) {
+                newFunc->setPalette(func.paletteName);
+            }
+            if(func.parameters.size() > 0) {
+                newFunc->setParameters(func.parameters);
+            }
+            cachedAudioFunctions[i].reset(newFunc);
+        }
+    }
+    
+    // Mark cache as valid
+    audioCacheValid = true;
+    cachedStepIndex = currentStep;
 }
 
 
@@ -322,6 +374,31 @@ void modelsequence::update() {
     }
 }
 
+void modelsequence::updateCachedFunctions() {
+    // Only update if we're using audio palette system
+    if(currentStep < 0 || currentStep >= numSteps) return;
+    const auto& step = steps[currentStep];
+    
+    // Update cache whenever audio is active (fadeProgress > 0.001)
+    if(step.acceptAudio && audioFadeProgress > 0.001f) {
+        // Ensure cache is populated
+        if(currentStep != cachedStepIndex || !audioCacheValid) {
+            updateAudioFadeCache();
+        }
+        
+        // Update cached functions once per frame
+        unsigned long currentTime = millis();
+        for(int i = 0; i < SequenceStep::MAX_FUNCTIONS; i++) {
+            if(cachedBgFunctions[i]) {
+                cachedBgFunctions[i]->updateIfNeeded(currentTime);
+            }
+            if(cachedAudioFunctions[i]) {
+                cachedAudioFunctions[i]->updateIfNeeded(currentTime);
+            }
+        }
+    }
+}
+
 colormodel* modelsequence::getCurrentModel() {
     if(currentStep >= 0 && currentStep < numSteps) {
         return steps[currentStep].model;
@@ -338,45 +415,58 @@ CRGB modelsequence::getColor(int edgeindex, float position) {
     const auto& step = steps[currentStep];
     CRGB currentColor;
     
-    // Handle audio palette fading if this step accepts audio
-    if(step.acceptAudio && audioFadeProgress > 0.001f && audioFadeProgress < 0.999f) {
-        // Need to blend between background and audio palettes
+    // Handle audio palette system if this step accepts audio
+    if(step.acceptAudio && audioFadeProgress > 0.001f) {
+        // Populate cache if needed
+        if(currentStep != cachedStepIndex || !audioCacheValid) {
+            updateAudioFadeCache();
+        }
+        
+        // Bounds check
+        if(edgeindex < 0 || edgeindex >= 120) {
+            return CRGB::Black;
+        }
+        
         int funcIndex = model->getEdgeFunctionIndex(edgeindex);
         
-        // Get color from background palette
-        CRGB bgColor = CRGB::Black;
-        if(funcIndex >= 0 && funcIndex < step.numBackgroundFunctions) {
-            const FunctionWithPalette& bgFunc = step.backgroundPalettes[funcIndex];
-            model->setColorFunction(edgeindex, bgFunc.functionName, bgFunc.paletteName, bgFunc.parameters);
-            bgColor = model->getcolorfunction(edgeindex, position);
+        // Transform position (replicate logic from colormodel::getcolorfunction)
+        const auto& edgeModels = model->getEdgeModels();
+        int direction = edgeModels[edgeindex][1];
+        float workingPosition = position;
+        if(direction < 0) {
+            workingPosition = 1.0 - workingPosition;
         }
-        
-        // Get color from audio palette  
-        CRGB audioColor = CRGB::Black;
-        if(funcIndex >= 0 && funcIndex < step.numAudioFunctions) {
-            const FunctionWithPalette& audioFunc = step.audioPalettes[funcIndex];
-            model->setColorFunction(edgeindex, audioFunc.functionName, audioFunc.paletteName, audioFunc.parameters);
-            audioColor = model->getcolorfunction(edgeindex, position);
+        if(direction == 0) {
+            workingPosition = 2.0 * abs(0.5 - workingPosition);
         }
+        float startPos = edgeModels[edgeindex][2] / 10000.0;
+        float scale = edgeModels[edgeindex][3] / 10000.0;
+        float transformedPosition = startPos + scale * workingPosition;
         
-        // Blend between the two
-        uint8_t blendAmount = (uint8_t)(audioFadeProgress * 255);
-        currentColor = blend(bgColor, audioColor, blendAmount);
-        
-        // Restore the dominant function for consistency with applyFunctionsToModel
-        if(audioFadeProgress > 0.5f) {
-            if(funcIndex >= 0 && funcIndex < step.numAudioFunctions) {
-                const FunctionWithPalette& func = step.audioPalettes[funcIndex];
-                model->setColorFunction(edgeindex, func.functionName, func.paletteName, func.parameters);
+        if(audioFadeProgress < 0.999f) {
+            // Blending mode - mix background and audio
+            CRGB bgColor = CRGB::Black;
+            if(funcIndex >= 0 && funcIndex < step.numBackgroundFunctions && cachedBgFunctions[funcIndex]) {
+                bgColor = cachedBgFunctions[funcIndex]->getColor(transformedPosition);
             }
+            
+            CRGB audioColor = CRGB::Black;
+            if(funcIndex >= 0 && funcIndex < step.numAudioFunctions && cachedAudioFunctions[funcIndex]) {
+                audioColor = cachedAudioFunctions[funcIndex]->getColor(transformedPosition);
+            }
+            
+            uint8_t blendAmount = (uint8_t)(audioFadeProgress * 255);
+            currentColor = blend(bgColor, audioColor, blendAmount);
         } else {
-            if(funcIndex >= 0 && funcIndex < step.numBackgroundFunctions) {
-                const FunctionWithPalette& func = step.backgroundPalettes[funcIndex];
-                model->setColorFunction(edgeindex, func.functionName, func.paletteName, func.parameters);
+            // Fully audio - use cached audio function directly
+            if(funcIndex >= 0 && funcIndex < step.numAudioFunctions && cachedAudioFunctions[funcIndex]) {
+                currentColor = cachedAudioFunctions[funcIndex]->getColor(transformedPosition);
+            } else {
+                currentColor = CRGB::Black;
             }
         }
     } else {
-        // Use single palette (either fully audio or fully background)
+        // No audio or fully background - use model's current functions
         currentColor = model->getcolorfunction(edgeindex, position);
     }
     
