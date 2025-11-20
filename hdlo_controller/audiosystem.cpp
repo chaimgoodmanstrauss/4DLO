@@ -155,6 +155,141 @@ void MicrophoneSource::printLevels() {
 }
 
 /////////////////////////////////////////
+// LINE IN SOURCE IMPLEMENTATION
+//
+
+LineInSource::LineInSource()
+    : audioInput(),
+      myFFT(),
+      peakDetector(),
+      patchCord1(audioInput, 0, myFFT, 0),
+      patchCord2(audioInput, 0, peakDetector, 0),
+      audioShield(),
+      lastFFTUpdate(0),
+      currentLevel(0.0),
+      peakLevel(0.0),
+      lastPeakTime(0),
+      initialized(false),
+      cacheGeneration(0) {
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
+        cachedBands[i] = 0.0;
+    }
+    for(int i = 0; i < 512; i++) {
+        cachedBins[i] = 0.0;
+        binCached[i] = false;
+    }
+}
+
+void LineInSource::initialize() {
+    if(initialized) return;
+    
+    audioShield.enable();
+    audioShield.inputSelect(AUDIO_INPUT_LINEIN);
+    audioShield.lineInLevel(12);
+    audioShield.volume(0.5);
+    
+    initialized = true;
+    Serial.println("Line-in source initialized");
+}
+
+bool LineInSource::available() {
+    return myFFT.available();
+}
+
+void LineInSource::update() {
+    unsigned long currentTime = millis();
+    
+    if(currentTime - lastFFTUpdate < FFT_UPDATE_INTERVAL) {
+        return;
+    }
+    
+    if(myFFT.available()) {
+        lastFFTUpdate = currentTime;
+        
+        cacheGeneration++;
+        for(int i = 0; i < 512; i++) {
+            binCached[i] = false;
+        }
+        
+        float sum = 0.0;
+        for(int i = 0; i < NUM_FFT_BANDS; i++) {
+            int binIndex = (i < HIGH_BAND_THRESHOLD) ? 
+                          i * LOW_BAND_BIN_MULTIPLIER : 
+                          HIGH_BAND_BIN_OFFSET + (i - HIGH_BAND_THRESHOLD) * HIGH_BAND_BIN_MULTIPLIER;
+            
+            cachedBands[i] = myFFT.read(binIndex);
+            sum += cachedBands[i];
+        }
+        
+        currentLevel = sum / NUM_FFT_BANDS;
+        
+        if(peakDetector.available()) {
+            float newPeak = peakDetector.read();
+            if(newPeak > peakLevel || currentTime - lastPeakTime > PEAK_HOLD_TIME) {
+                peakLevel = newPeak;
+                lastPeakTime = currentTime;
+            }
+        }
+    }
+}
+
+float LineInSource::getBand(int bandIndex) {
+    if(bandIndex < 0 || bandIndex >= NUM_FFT_BANDS) return 0.0;
+    return cachedBands[bandIndex];
+}
+
+float LineInSource::getBin(int binIndex) {
+    if(binIndex < 0 || binIndex >= 512) return 0.0;
+    
+    if(!binCached[binIndex]) {
+        cachedBins[binIndex] = myFFT.read(binIndex);
+        binCached[binIndex] = true;
+    }
+    return cachedBins[binIndex];
+}
+
+float LineInSource::getBandRange(int startBand, int endBand) {
+    if(startBand < 0 || endBand >= NUM_FFT_BANDS || startBand > endBand) {
+        return 0.0;
+    }
+    
+    float sum = 0.0;
+    int count = 0;
+    for(int i = startBand; i <= endBand; i++) {
+        sum += cachedBands[i];
+        count++;
+    }
+    
+    return (count > 0) ? (sum / count) : 0.0;
+}
+
+float LineInSource::getMaxBand() {
+    float maxVal = 0.0;
+    for(int i = 0; i < NUM_FFT_BANDS; i++) {
+        if(cachedBands[i] > maxVal) {
+            maxVal = cachedBands[i];
+        }
+    }
+    return maxVal;
+}
+
+void LineInSource::setLineInLevel(float level) {
+    if(!initialized) return;
+    level = constrain(level, 0.0, 1.0);
+    audioShield.lineInLevel(level * MAX_LINE_IN_LEVEL);
+    Serial.println("Line in level: " + String(level));
+}
+
+void LineInSource::printLevels() {
+    Serial.println("Line-In Levels:");
+    Serial.println("  Overall: " + String(currentLevel, 4));
+    Serial.println("  Peak: " + String(peakLevel, 4));
+    Serial.println("  Bass: " + String(getBass(), 4));
+    Serial.println("  Mid: " + String(getMid(), 4));
+    Serial.println("  Treble: " + String(getTreble(), 4));
+}
+
+/////////////////////////////////////////
 // SD CARD SOURCE IMPLEMENTATION
 //
 
@@ -358,6 +493,7 @@ void SDCardSource::printLevels() {
 
 AudioSource* AudioSystem::currentSource = nullptr;
 MicrophoneSource* AudioSystem::micSource = nullptr;
+LineInSource* AudioSystem::lineInSource = nullptr;
 SDCardSource* AudioSystem::sdSource = nullptr;
 bool AudioSystem::initialized = false;
 
@@ -395,6 +531,21 @@ void AudioSystem::useMicrophone() {
     
     currentSource = micSource;
     Serial.println("Switched to Microphone");
+}
+
+void AudioSystem::useLineIn() {
+    if(!initialized) {
+        Serial.println("AudioSystem not initialized!");
+        return;
+    }
+    
+    if(!lineInSource) {
+        lineInSource = new LineInSource();
+        lineInSource->initialize();
+    }
+    
+    currentSource = lineInSource;
+    Serial.println("Switched to Line-In");
 }
 
 bool AudioSystem::useSDCard(const char* filename, float rate) {
@@ -468,6 +619,9 @@ void AudioSystem::setLineInLevel(float level) {
     if(micSource) {
         micSource->setLineInLevel(level);
     }
+    if(lineInSource) {
+        lineInSource->setLineInLevel(level);
+    }
 }
 
 void AudioSystem::printLevels() {
@@ -478,6 +632,7 @@ void AudioSystem::printLevels() {
 
 String AudioSystem::getCurrentSourceType() {
     if(currentSource == micSource) return "Microphone";
+    if(currentSource == lineInSource) return "Line-In";
     if(currentSource == sdSource) return "SD Card";
     return "None";
 }

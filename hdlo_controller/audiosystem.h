@@ -140,6 +140,58 @@ public:
 };
 
 /////////////////////////////////////////
+// LINE IN SOURCE
+//
+// Line-level audio input with FFT analysis
+//
+
+class LineInSource : public AudioSource {
+private:
+    AudioInputI2S audioInput;
+    AudioAnalyzeFFT1024 myFFT;
+    AudioAnalyzePeak peakDetector;
+    AudioConnection patchCord1; // input left -> FFT
+    AudioConnection patchCord2; // input left -> peak
+    AudioControlSGTL5000 audioShield;
+    
+    float cachedBands[NUM_FFT_BANDS];
+    float cachedBins[512];
+    bool binCached[512];
+    unsigned long cacheGeneration;
+    unsigned long lastFFTUpdate;
+    static const unsigned long FFT_UPDATE_INTERVAL = 20;
+    
+    float currentLevel;
+    float peakLevel;
+    unsigned long lastPeakTime;
+    static const unsigned long PEAK_HOLD_TIME = 300;
+    
+    bool initialized;
+    
+public:
+    LineInSource();
+    ~LineInSource() {}
+    
+    void initialize();
+    bool available() override;
+    void update() override;
+    
+    float getLevel() override { return currentLevel; }
+    float getPeakLevel() override { return peakLevel; }
+    float getBand(int bandIndex) override;
+    float getBin(int binIndex) override;
+    float getBandRange(int startBand, int endBand) override;
+    float getBass() override { return getBandRange(BASS_BAND_START, BASS_BAND_END); }
+    float getMid() override { return getBandRange(MID_BAND_START, MID_BAND_END); }
+    float getTreble() override { return getBandRange(TREBLE_BAND_START, TREBLE_BAND_END); }
+    float getHighTreble() override { return getBandRange(HIGH_TREBLE_BAND_START, HIGH_TREBLE_BAND_END); }
+    float getMaxBand();
+    
+    void setLineInLevel(float level);
+    void printLevels() override;
+};
+
+/////////////////////////////////////////
 // SD CARD SOURCE
 //
 // Playback from SD card with variable speed and FFT analysis
@@ -212,6 +264,7 @@ class AudioSystem {
 private:
     static AudioSource* currentSource;
     static MicrophoneSource* micSource;
+    static LineInSource* lineInSource;
     static SDCardSource* sdSource;
     static bool initialized;
     
@@ -221,6 +274,7 @@ public:
     
     // Switch audio sources
     static void useMicrophone();
+    static void useLineIn();
     static bool useSDCard(const char* filename, float rate = 1.0);
     
     // SD card controls

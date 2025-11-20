@@ -369,12 +369,17 @@ struct SequenceBuilder {
     std::vector<FunctionDef> currentBackgroundPalettes;
     bool useDualPalettes;
     float audioTimeoutSeconds;  // Configurable timeout for audio palette fade
+    AudioSourceConfig currentAudioSource;  // Audio source for subsequent steps
     
     // Cache for permuted models: key = "modelName_permName", value = created model pointer
     // Models registered in global registry, so safe to keep pointers
     std::map<String, colormodel*> permutedModelCache;
     
-    SequenceBuilder(modelsequence* s) : seq(s), useDualPalettes(false), audioTimeoutSeconds(AUDIO_TIMEOUT_SECONDS) {}
+    SequenceBuilder(modelsequence* s) 
+        : seq(s), 
+          useDualPalettes(false), 
+          audioTimeoutSeconds(AUDIO_TIMEOUT_SECONDS),
+          currentAudioSource() {}
     
     // Set palette definitions to be used by subsequent addstep() calls (legacy)
     void addpalette(std::initializer_list<FunctionDef> funcDefs) {
@@ -406,6 +411,11 @@ struct SequenceBuilder {
     // Set audio timeout (seconds) - how long to wait before fading back to background
     void setaudiotimeout(float seconds) {
         audioTimeoutSeconds = seconds;
+    }
+    
+    // Set audio source for subsequent addstep() calls
+    void setaudiosource(AudioSourceConfig::SourceType type, String filename = "", bool loop = false) {
+        currentAudioSource = AudioSourceConfig(type, filename, loop);
     }
     
     // Add step using previously defined palettes
@@ -445,7 +455,8 @@ struct SequenceBuilder {
             
             unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(model, audioFunctions, backgroundFunctions, durationMs, 
-                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, AUDIO_TIMEOUT_SECONDS, transition, speed));
+                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, audioTimeoutSeconds, 
+                                     transition, speed, currentAudioSource));
         } else {
             // Legacy single palette mode
             std::vector<FunctionWithPalette> functions;
@@ -456,7 +467,7 @@ struct SequenceBuilder {
             }
             
             unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
-            seq->addStep(SequenceStep(model, functions, durationMs, transition, speed));
+            seq->addStep(SequenceStep(model, functions, durationMs, transition, speed, 0, currentAudioSource));
         }
     }
     
@@ -543,7 +554,8 @@ public:
             
             unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
             seq->addStep(SequenceStep(permutedModel, audioFunctions, backgroundFunctions, durationMs, 
-                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, audioTimeoutSeconds, transition, speed));
+                                     acceptAudio, AUDIO_PALETTE_SWITCH_THRESHOLD, audioTimeoutSeconds, 
+                                     transition, speed, currentAudioSource));
         } else {
             // Legacy single palette mode
             std::vector<FunctionWithPalette> functions;
@@ -554,7 +566,7 @@ public:
             }
             
             unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0);
-            seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed));
+            seq->addStep(SequenceStep(permutedModel, functions, durationMs, transition, speed, 0, currentAudioSource));
         }
     }
     
@@ -612,7 +624,7 @@ public:
         
         // Convert seconds to milliseconds
         unsigned long durationMs = (unsigned long)(durationSeconds * 1000.0f);
-        seq->addStep(SequenceStep(model, functions, durationMs));
+        seq->addStep(SequenceStep(model, functions, durationMs, INSTANT, 1.0f, 0, currentAudioSource));
     }
 };
 

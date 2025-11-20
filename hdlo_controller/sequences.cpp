@@ -32,7 +32,14 @@ void initializeSequences() {
     // Main sequence with dual palettes
     mainSequence.beginRegistry("Main Show", 3000.0, true);
     
-    seq.setaudiotimeout(2.0);
+    seq.setaudiotimeout(2.0); // I think this is currently blanked out and is a const, easily reset.
+
+    seq.setaudiosource(AudioSourceConfig::LINE_IN);
+    // Switch to SD card with looping
+    // seq.setaudiosource(AudioSourceConfig::SD_CARD, "music.wav", true);
+    // Switch back to microphone
+    //seq.setaudiosource(AudioSourceConfig::MICROPHONE);
+    
     // Audio palette - activated by sound
     seq.setaudiopalette({
         "dark",

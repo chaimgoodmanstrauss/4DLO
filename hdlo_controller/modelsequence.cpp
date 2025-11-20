@@ -602,8 +602,8 @@ void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
             break;
             
         case AudioSourceConfig::LINE_IN:
-            AudioSystem::useMicrophone();  // Line in uses same hardware as mic
-            AudioSystem::setLineInLevel(0.8);  // Set appropriate line in level
+            AudioSystem::useLineIn();
+            AudioSystem::setLineInLevel(0.8);
             Serial.println("Audio: Switched to line in");
             break;
             
