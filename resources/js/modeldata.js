@@ -982,8 +982,8 @@ const basichdlomodel = new hdlomodel({name:'basicModel'})
 
 basichdlomodel.name = 'basicModel'
 
-defaultmodel ='six paths'
-
+//defaultmodel ='six paths'
+defaultmodel = 'strands'
 
 const hypercube = new hdlomodel ({name:'hypercube',
     listofedmodels:
@@ -1116,6 +1116,35 @@ const basiccube = new hdlomodel({name:'cube',
     fordisplayQ:true,
     addToRegistryQ:true})
         
+const strandinfo= new hdlomodel({name:'strands',
+    listofedmodels:
+    [
+     //   {indices:[39,-71,-29,62],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:1})},
+    //   {indices:[-57,80,90,23],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:2})},
+  {indices:[79,-46,85],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:3})},
+    {indices:[55,-18,48],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:1})},
+    {indices:[-14,7,74,-95,-41],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:2})},
+  //  {indices:[9,0],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:6})},
+  //  {indices:[-64,24,-33],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:7})}
+   ],
+    fordisplayQ:true,
+    addToRegistryQ:true})
+
+
+
+const allstrandinfo= new hdlomodel({name:'all strands',
+    listofedmodels:
+    [
+        {indices:[39,-71,-29,62],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:1})},
+       {indices:[-57,80,90,23],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:2})},
+    {indices:[-14,46,85],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:3})},
+    {indices:[-7,-18,48],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:4})},
+    {indices:[79,-55,74,-95,-41],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:5})},
+    {indices:[-9,0],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:6})},
+    {indices:[-64,24,-33],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:7})}
+   ],
+    fordisplayQ:true,
+    addToRegistryQ:true})
 
 /*
 const basiccube = new hdlomodel({name:'cube',

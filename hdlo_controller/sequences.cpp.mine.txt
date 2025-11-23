@@ -35,7 +35,8 @@ void buildMainSequence(SequenceBuilder& seq) {
     // MAIN SHOW SEQUENCE - Standard display with audio reactivity
     //===========================================
     
-    //octaswirl(seq);
+    
+    
     
     // Section 1: Opening with subtle audio response
     seq.setaudiopalette({

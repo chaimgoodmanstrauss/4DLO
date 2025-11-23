@@ -9,6 +9,21 @@
 #include "modelsequence.h"
 #include "hdlo_models.h"
 
+
+void octaswirl(SequenceBuilder& seq, String modelname = "octahedron", 
+               float steplength = 1.0, float fadelength = 0.3) {
+    for(int i = 0; i < 24; i++) {
+        seq.addstep(modelname, octacellperms[i], steplength, FADE, fadelength);
+    }
+}
+
+  void cubeswirl(SequenceBuilder& seq,  String modelname ="cube",float steplength=1,float fadelength=.3){
+  for(int i=0; i<24;i++){
+    seq.addstep(modelname, cubecellperms[i],steplength,FADE,fadelength);
+  }}
+
+
+
 // Global sequence object
 modelsequence mainSequence;
 
@@ -18,7 +33,7 @@ const float fftspectrumsensitivity = 20000;//increase the intensity when it is s
 const float fftspectrumthreshold = .008;// but raise the gate to show it. 
 
 // Palette switching threshold - when to switch from background to audio palette
-const float AUDIO_PALETTE_SWITCH_THRESHOLD = 0.03; //somehow none of these seem to be on the same scale. 
+const float AUDIO_PALETTE_SWITCH_THRESHOLD = 0.020; //somehow none of these seem to be on the same scale. 
 
 // How long (seconds) to wait after audio drops below threshold before fading back to background
 const float AUDIO_TIMEOUT_SECONDS = 2.0;
@@ -30,15 +45,15 @@ void initializeSequences() {
     SequenceBuilder seq(&mainSequence);
     
     // Main sequence with dual palettes
-    mainSequence.beginRegistry("Main Show", 3000.0, true);
+    mainSequence.beginRegistry("Main Show", 3600.0, true);
     
     seq.setaudiotimeout(2.0); // I think this is currently blanked out and is a const, easily reset.
 
-    seq.setaudiosource(AudioSourceConfig::LINE_IN);
+    //seq.setaudiosource(AudioSourceConfig::LINE_IN);
     // Switch to SD card with looping
     // seq.setaudiosource(AudioSourceConfig::SD_CARD, "music.wav", true);
     // Switch back to microphone
-    //seq.setaudiosource(AudioSourceConfig::MICROPHONE);
+    seq.setaudiosource(AudioSourceConfig::MICROPHONE);
     
     // Audio palette - activated by sound
     seq.setaudiopalette({
@@ -50,8 +65,9 @@ void initializeSequences() {
         {"fftspectrum", "heat"},  
          {"fftspectrum", "heat"},  
         {"fftspectrum", "heat"},*/
-        {"fftspectrum","party",1},
         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
+
+        {"fftspectrum","party",1},
         {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
          {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
         {"fftfire", "sunset", 30.0, 0,fftthreshold},
@@ -109,13 +125,19 @@ void initializeSequences() {
 */
     });
 
-    seq.addstep("allcycles", 10.0, FADE, 2);
+    //seq.applyEdgePermutationSequence("octahedron","octacellperms",1,.3);
 
-    seq.addstep("sixpaths", 10.0, FADE, 2);
+   // octaswirl(seq);
+
+   // cubeswirl(seq);
+
+    /*seq.addstep("allcycles", 30.0, FADE, 2);
+
+    seq.addstep("sixpaths", 30.0, FADE, 2);
    
-    seq.addstep("hypercubes", 10.0, FADE, 2);
+    seq.addstep("hypercubes", 30.0, FADE, 2);*/
     
-    seq.addstep("twentyfourcell", 1000, FADE, 0.4);
+    seq.addstep("twentyfourcell", 3600, FADE, 2);
   
    // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
     

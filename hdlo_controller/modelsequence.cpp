@@ -90,11 +90,13 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     
     // Debug output every 2 seconds
     static unsigned long lastDebugTime = 0;
-    if(currentTime - lastDebugTime > 2000) {
+    if(currentTime - lastDebugTime > 200) {
         Serial.print("Audio: maxBand=");
         Serial.print(audioLevel, 4);
         Serial.print(", avgLevel=");
         Serial.print(AudioSystem::getLevel(), 4);
+        Serial.print(", totalLevel=");
+        Serial.print(AudioSystem::getPeakLevel(), 4);
         Serial.print(", threshold=");
         Serial.print(step.audioThreshold, 4);
         Serial.print(", fadeProgress=");

@@ -94,8 +94,8 @@ function thecamerachanged(){
 	}}
 
 
-ourguiparams['show axes']=false;
-//ourgui.add( ourguiparams, 'show axes').onChange(theModelChanged)
+ourguiparams['show axes']=true;
+ourgui.add( ourguiparams, 'show axes').onChange(theModelChanged)
 
 // // these will remain switched as is for now:
 //ourguiparams['Show pedagogy']=false

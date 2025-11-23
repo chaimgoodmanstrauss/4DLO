@@ -364,7 +364,7 @@ void colormodel::printRegistry() {
 
 void initializefancymodels() {
     Serial.println("\n=== Creating Fancy Models ===");
-    
+    /*
     // Create test_permed model
     colormodel* result = colormodel::applyEdgePermutation("test", "simpletest", "test_permed");
     if(result) {
@@ -372,9 +372,7 @@ void initializefancymodels() {
         Serial.println(result->getModelName());
     } else {
         Serial.println("ERROR: Failed to create test_permed");
-    }
-    
-    Serial.println("Fancy models created");
-    Serial.println("=============================\n");
+    }*/
+   
 }
 
