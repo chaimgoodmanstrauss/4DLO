@@ -118,7 +118,7 @@ void loop() {
 
     unsigned long currentTime = millis();
     unsigned long currentsecond = millis()/100;
-    if(currentsecond>lastsecond){
+    /*if(currentsecond>lastsecond){
       lastsecond= currentsecond;
       Serial.print("seconds:");
       Serial.print(currentsecond/10);
@@ -127,7 +127,7 @@ void loop() {
       Serial.print(" time since last loop: ");
       Serial.print((currentTime-lasttime));
       Serial.println(" milliseconds");
-    }
+    }*/
     lasttime=currentTime;
 
     // Update audio system

@@ -122,7 +122,10 @@ function vertexindexpermutation(aqaction){
 var qone =qOne.positivize() // TBD: is qOne (still) messed up? What was the issue?
 
 
-var edgebase0 = qOne.positivize(), edgebase1=  new quat(.5,.5,.5,.5);
+///NOTE THE ENDS OF THE EDGES:
+
+var edgebase0 = qOne.positivize()
+var edgebase1=  new quat(.5,.5,.5,.5);
 
 // positioning the edges in a canonical way:
 
@@ -587,7 +590,7 @@ let ourModelRegistry=[]//,names:[],order:[]}
 
 class hdlomodel{
     constructor(options={}){
-        
+        this.options= options;
         this.addToRegistryQ = false
         if("addToRegistryQ" in options){
             this.addToRegistryQ=options.addToRegistryQ

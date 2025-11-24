@@ -44,7 +44,8 @@ public:
     
     // Static method to compose multiple permutations by name
     // Applies permutations left-to-right: name1, then name2, then name3, etc.
-    static EdgePermutation* composeByName(const String* permNames, int numPerms, String newName, bool registerResult = true);
+    // FIXED: Returns by value to avoid memory leak
+    static EdgePermutation composeByName(const String* permNames, int numPerms, String newName, bool registerResult = true);
     
     // Static methods to access the global registry
     static EdgePermutation** getPermutationRegistry() { return permutationRegistry; }

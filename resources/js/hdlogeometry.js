@@ -12,12 +12,28 @@
 // 
 
 
+function simpleprint(q){
+    //works only for the special points in OxO
+    var s="";
+    [q.r,q.i,q.j,q.k].map(r=>
+    {   
+        if(Math.abs(r)<.00001){
+            s+="0"
+        }
+        else if(r<0){s+="-"}
+        else {s+="+"}
+        })
+        return s
+}
 
+
+//jj=0;out = "";edgegroup.map(g=>([qI,qmW].map(q=>simpleprint(g.acton(q))))).map(e=>(jj<10?" ":"")+jj+++" "+e[0]+" : "+e[1]+"\n").map(s=>out+=s);out
 
 const qOne = new quat(1.0,0,0,0).positivize()
 
 const qW = new quat(-.5,.5,.5,.5) // note normalized
 const qWp= new quat(.5,.5,.5,.5)
+const qmW = qWp
 const qWi= new quat(.5,-.5,.5,.5)
 const qWj= new quat(.5,.5,-.5,.5)
 const qWk= new quat(.5,.5,.5,-.5)

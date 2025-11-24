@@ -9,6 +9,13 @@
 #include "audiosystem.h"
 #include <FastLED.h>  // For blend() function
 
+// Memory diagnostics - add to beginning of file
+extern "C" char* sbrk(int incr);
+int getFreeRam() {
+    char top;
+    return &top - reinterpret_cast<char*>(sbrk(0));
+}
+
 modelsequence::modelsequence()
     : numSteps(0),
       currentStep(0),
@@ -88,22 +95,30 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     unsigned long currentTime = millis();
     float audioLevel = AudioSystem::getMaxBand();  // Use max band instead of average
     
-    // Debug output every 2 seconds
+    // Reduce debug output frequency - every 10 seconds instead of 200ms
     static unsigned long lastDebugTime = 0;
-    if(currentTime - lastDebugTime > 200) {
-        Serial.print("Audio: maxBand=");
+    static unsigned long lastMemoryReport = 0;
+    if(currentTime - lastDebugTime > 10000) {
+        Serial.print("Audio: max=");
         Serial.print(audioLevel, 4);
-        Serial.print(", avgLevel=");
-        Serial.print(AudioSystem::getLevel(), 4);
-        Serial.print(", totalLevel=");
-        Serial.print(AudioSystem::getPeakLevel(), 4);
-        Serial.print(", threshold=");
+        Serial.print(" thresh=");
         Serial.print(step.audioThreshold, 4);
-        Serial.print(", fadeProgress=");
+        Serial.print(" fade=");
         Serial.print(audioFadeProgress, 3);
-        Serial.print(", active=");
-        Serial.println(audioActive ? "YES" : "NO");
+        Serial.print(" active=");
+        Serial.println(audioActive ? 1 : 0);
         lastDebugTime = currentTime;
+    }
+    
+    // Memory report every 60 seconds
+    if(currentTime - lastMemoryReport > 60000) {
+        int freeRam = getFreeRam();
+        Serial.print("FREE RAM: ");
+        Serial.print(freeRam);
+        Serial.print(" bytes, uptime: ");
+        Serial.print(currentTime / 1000);
+        Serial.println("s");
+        lastMemoryReport = currentTime;
     }
     
     // Check if audio is above threshold
@@ -117,13 +132,13 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             fadingToAudio = true;
             audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
-            Serial.println(">>> AUDIO DETECTED - fading to audio palette");
+            Serial.println(">>> AUDIO ON");
         } else if(audioFading && !fadingToAudio) {
             // Currently fading TO background, but audio returned - reverse direction
             fadingToAudio = true;
             audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
-            Serial.println(">>> AUDIO RETURNED - reversing fade back to audio palette");
+            Serial.println(">>> AUDIO RETURN");
         }
     }
     
@@ -135,7 +150,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             fadingToAudio = false;
             audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
-            Serial.println("<<< AUDIO TIMEOUT - fading to background palette");
+            Serial.println("<<< AUDIO TIMEOUT");
         }
     }
     
@@ -231,13 +246,10 @@ void modelsequence::applyFunctionsToModel() {
     bool useAudioPalette = (audioFadeProgress > 0.5f);
     int numFunctions = useAudioPalette ? step.numAudioFunctions : step.numBackgroundFunctions;
     
-    Serial.print("Applying functions to model: ");
-    Serial.print(model->getModelName());
-    Serial.print(" (");
+    Serial.print("Applying ");
     Serial.print(numFunctions);
     Serial.print(" functions, audio=");
-    Serial.print(audioFadeProgress);
-    Serial.println(")");
+    Serial.println(audioFadeProgress, 2);
     
     // First, clear ALL edges to ensure no old functions remain
     for(int edge = 0; edge < 120; edge++) {
@@ -260,27 +272,16 @@ void modelsequence::applyFunctionsToModel() {
             
             model->setColorFunction(edge, func.functionName, func.paletteName, func.parameters);
             appliedCount++;
-            
-            // Debug output for first few edges
-            if(edge < 3) {
-                Serial.print("  Edge ");
-                Serial.print(edge);
-                Serial.print(" -> ");
-                Serial.print(func.functionName);
-                Serial.print(" / ");
-                Serial.println(func.paletteName);
-            }
         } else {
             skippedCount++;
             // Edge has no function index - already set to dark above
         }
     }
     
-    Serial.print("Applied functions to ");
+    Serial.print("Applied: ");
     Serial.print(appliedCount);
-    Serial.print(" edges, skipped ");
-    Serial.print(skippedCount);
-    Serial.println(" edges");
+    Serial.print(" Skipped: ");
+    Serial.println(skippedCount);
 }
 
 void modelsequence::update() {
@@ -293,7 +294,8 @@ void modelsequence::update() {
     
     // Check if we need to switch registry entries
     if(currentRegistryIndex >= 0 && currentRegistryIndex < numRegistryEntries) {
-        if(currentTime - registryStartTime >= registry[currentRegistryIndex].duration) {
+        unsigned long registryElapsed = currentTime - registryStartTime;
+        if(registryElapsed >= registry[currentRegistryIndex].duration) {
             // Find next enabled entry
             int nextIndex = (currentRegistryIndex + 1) % numRegistryEntries;
             while(!registry[nextIndex].enabled && nextIndex != currentRegistryIndex) {
@@ -304,7 +306,7 @@ void modelsequence::update() {
                 previousStep = currentStep;  // Track for potential transition
                 currentRegistryIndex = nextIndex;
                 currentStep = registry[currentRegistryIndex].startStepIndex;
-                registryStartTime = currentTime;
+                registryStartTime = currentTime;  // RESET registry timer
                 stepStartTime = currentTime;
                 inTransition = false;  // No transition between registry entries
                 applyFunctionsToModel();
@@ -359,14 +361,11 @@ void modelsequence::update() {
                 inTransition = true;
                 transitionStartTime = currentTime;
                 transitionProgress = 0.0;
-                Serial.print("Starting transition: type=");
-                Serial.print(steps[currentStep].transitionType == FADE ? "FADE" : "WIPE");
-                Serial.print(", duration=");
-                Serial.print(steps[currentStep].transitionDuration);
-                Serial.println("ms");
+                Serial.print("Transition: ");
+                Serial.println(steps[currentStep].transitionType == FADE ? "FADE" : "WIPE");
             } else {
                 inTransition = false;
-                Serial.println("INSTANT transition");
+                Serial.println("INSTANT");
             }
             
             // Always apply functions immediately (needed for current colors during transition)
