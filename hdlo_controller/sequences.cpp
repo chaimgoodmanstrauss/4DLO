@@ -108,9 +108,19 @@ void initializeSequences() {
     {"dualblobs", "red", 0.012, 10, 0.6}*/
 
     // Pure palette colors (randomColors=0)
-    {"perlin", "ocean"},//, 0.02, 1, 1,  0,5},
+   /* {"simplecolor", "white", 4},
+    {"simplecolor", "blue", 4},
+    {"simplecolor", "red", 4},*/
+       {"perlin", "ocean"},
     {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
-    {"simplecolor", "rainbow", 1},
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
+   {"simplecolor", "forest", 1.5},
+   {"simplecolor", "rainbow", 1.5},
+   {"simplecolor", "ocean", .4},
+    {"perlin", "ocean"},//, 0.02, 1, 1,  0,5},
+    
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
     {"simplecolor", "heat", 2},
     {"perlin", "cloud", 0.02, 1, 5.0,0,20},
     {"simplecolor", "forest", 4, 1, 1.0,1,20},/*
@@ -138,7 +148,7 @@ void initializeSequences() {
     seq.addstep("hypercubes", 30.0, FADE, 2);*/
     
     seq.addstep("twentyfourcell", 3600, FADE, 2);
-  
+  //  seq.addstep("hypercubes", 3600, FADE, 2);
    // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
     
     mainSequence.endRegistry();

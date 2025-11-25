@@ -19,9 +19,10 @@ extern std::array<std::array<int, 6>, 120> graycodesdata;
 extern std::array<std::array<int, 6>, 120> sixpathsdata;
 extern std::array<std::array<int, 6>, 120> octahedrondata;
 extern std::array<std::array<int, 6>, 120> cubedata;
+extern std::array<std::array<int, 6>, 120> testerdata;
 // array of pointers
-const int nummodels = 11;
-extern colormodel* ourcolormodels[11];
+const int nummodels = 12;
+extern colormodel* ourcolormodels[12];
 
 extern String modelNames[11]; // Model names matching ourcolormodels order
 void initializemodels();
