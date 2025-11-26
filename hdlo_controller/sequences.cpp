@@ -45,7 +45,7 @@ void initializeSequences() {
     SequenceBuilder seq(&mainSequence);
     
     // Main sequence with dual palettes
-    mainSequence.beginRegistry("Main Show", 3600.0, true);
+    mainSequence.beginRegistry("Main Show", 84600.0, true);
     
     seq.setaudiotimeout(2.0); // I think this is currently blanked out and is a const, easily reset.
 
@@ -108,10 +108,10 @@ void initializeSequences() {
     {"dualblobs", "red", 0.012, 10, 0.6}*/
 
     // Pure palette colors (randomColors=0)
-   /* {"simplecolor", "white", 4},
-    {"simplecolor", "blue", 4},
-    {"simplecolor", "red", 4},*/
-       {"perlin", "ocean"},
+    {"simplecolor", "rainbow", 2},
+    {"simplecolor", "blue", 2},
+    {"simplecolor", "red", 2},
+   {"perlin", "ocean"},
     {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
     {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
     {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
@@ -141,14 +141,18 @@ void initializeSequences() {
 
    // cubeswirl(seq);
 
-    /*seq.addstep("allcycles", 30.0, FADE, 2);
+    seq.addstep("tester", 10, FADE, 2);
+    /*seq.addstep("allcycles", 10.0, FADE, 2);
 
-    seq.addstep("sixpaths", 30.0, FADE, 2);
+    seq.addstep("sixpaths", 10.0, FADE, 2);
    
-    seq.addstep("hypercubes", 30.0, FADE, 2);*/
+    seq.addstep("hypercubes", 10.0, FADE, 2);
     
-    seq.addstep("twentyfourcell", 3600, FADE, 2);
-  //  seq.addstep("hypercubes", 3600, FADE, 2);
+    seq.addstep("twentyfourcell", 10, FADE, 2);
+    seq.addstep("hypercubes", 10, FADE, 2);
+*/
+
+
    // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
     
     mainSequence.endRegistry();

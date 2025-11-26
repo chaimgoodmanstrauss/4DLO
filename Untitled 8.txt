@@ -1,0 +1,28 @@
+
+INCORRECTLY MAPPING:
+
+strand 80 isn't the right length in the model; however 65 is. ?
+strands 66 and 87 as well
+strand 61
+
+4000's need to go away.
+
+
+strand 2-0 has a fault at {0, 100, 1},||{103, 43, -1}, {0, 105, 1}, {81, 21, -1}
+
+Strand 2-2 {287, 60, -1} is missing
+
+
+strand 3-2  {103, 3, 1} is broken?
+
+strand 2-4 is reflected?
+
+
+
+original:
+
+3,9,6,2 ,1, 10, 4, 
+24,28, 27, 12, 11,29, 25, 
+30, 34,35, 31, 32, 33, 37, 
+38, 16, 17, 39, 40, 15, 13
+  
