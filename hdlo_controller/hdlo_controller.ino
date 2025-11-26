@@ -179,7 +179,7 @@ void loop() {
     
     // Optional: Print status every 10 seconds
     static unsigned long lastStatusTime = 0;
-    if(currentTime - lastStatusTime >= 10000) {
+    if(currentTime - lastStatusTime >= 1000000) {
         printStatus();
         lastStatusTime = currentTime;
     }

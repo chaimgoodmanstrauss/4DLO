@@ -5,6 +5,7 @@
 // Sequence implementation
 //
 
+
 #include "modelsequence.h"
 #include "audiosystem.h"
 #include <FastLED.h>  // For blend() function
@@ -98,7 +99,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     // Reduce debug output frequency - every 10 seconds instead of 200ms
     static unsigned long lastDebugTime = 0;
     static unsigned long lastMemoryReport = 0;
-    if(currentTime - lastDebugTime > 10000) {
+    if(currentTime - lastDebugTime > 60000 && AUDIODEBUGGING) {
         Serial.print("Audio: max=");
         Serial.print(audioLevel, 4);
         Serial.print(" thresh=");
@@ -138,7 +139,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             fadingToAudio = true;
             audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
-            Serial.println(">>> AUDIO RETURN");
+           if(AUDIODEBUGGING){ Serial.println(">>> AUDIO RETURN");}
         }
     }
     
@@ -150,7 +151,7 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             fadingToAudio = false;
             audioFadeStartProgress = audioFadeProgress;  // Start from current position
             audioFadeStartTime = currentTime;
-            Serial.println("<<< AUDIO TIMEOUT");
+            if(AUDIODEBUGGING){Serial.println("<<< AUDIO TIMEOUT");}
         }
     }
     

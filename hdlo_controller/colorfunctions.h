@@ -37,6 +37,7 @@
 #include "paletteregistry.h"
 #include "audiosystem.h"  // Centralized audio system with FFT
 
+
 const int numcolorfunctions = 100;  // Maximum number of color functions
 const int MAXBRIGHTNESS = 160;
 
@@ -388,7 +389,7 @@ public:
         bool printDiag = (now - lastDiagnostic > 500);
         
         if(printDiag) {
-            Serial.print("Bins: [");
+            if(AUDIODEBUGGING){Serial.print("Bins: [");}
         }
         
         for(int bin = 2; bin <= 9; bin++) {  // Vocal fundamental range (~86-387 Hz)
@@ -400,7 +401,7 @@ public:
             convolved += AudioSystem::getBin(bin + 1) * 0.2;
             convolved += AudioSystem::getBin(bin + 2) * 0.1;
             
-            if(printDiag) {
+            if(printDiag && AUDIODEBUGGING) {
                 Serial.print(AudioSystem::getBin(bin), 3);
                 Serial.print("(");
                 Serial.print(convolved, 3);
@@ -414,7 +415,7 @@ public:
             }
         }
         
-        if(printDiag) {
+        if(printDiag && AUDIODEBUGGING) {
             Serial.print("] Winner: bin ");
             Serial.print(dominantBin);
             Serial.print(" (~");
@@ -1584,7 +1585,7 @@ public:
         // Debug: Print bin levels once per second
         static unsigned long lastPrint = 0;
         unsigned long now = millis();
-        if(now - lastPrint > 1000) {
+        if(now - lastPrint > 1000 && AUDIODEBUGGING) {
             Serial.print("Bins ");
             Serial.print(minBin);
             Serial.print("-");
@@ -1772,7 +1773,7 @@ public:
         
        /* // DEBUG: Show what coordinates we're sampling
         static int sampleCount = 0;
-        if(sampleCount < 20) {
+        if(sampleCount < 20 && AUDIODEBUGGING) {
             Serial.print("pos="); Serial.print(position, 4);
             Serial.print(" totalIdx="); Serial.print(totalIndex);
             Serial.print(" (i,j)=("); Serial.print(i); Serial.print(","); Serial.print(j);

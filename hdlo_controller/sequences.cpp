@@ -141,7 +141,7 @@ void initializeSequences() {
 
    // cubeswirl(seq);
 
-    seq.addstep("tester", 10, FADE, 2);
+    seq.addstep("tester", 10000, FADE, 2);
     /*seq.addstep("allcycles", 10.0, FADE, 2);
 
     seq.addstep("sixpaths", 10.0, FADE, 2);

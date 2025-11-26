@@ -233,7 +233,9 @@ Serial.println(" cosine = " +String(cosangle));
 
 const int positionresolution = 10000;
 //const int temp = ledsperstrip * numberofpins;
-EXTMEM int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
+////////
+//EXTMEM 
+int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
 
 void constructstrandtable(){
   //we make a table of every led in every strand, mapping it to an 
@@ -263,7 +265,7 @@ void constructstrandtable(){
       Serial.print("From ");
       Serial.print(lengthofprevioussegments);
       Serial.print(" On strand # ");
-      Serial.print(strandnumber);
+      Serial.println(strandnumber);
       Serial.print(", ");
       Serial.print(segmentnumber);
       Serial.print("::");
@@ -355,7 +357,7 @@ void initedgedata(){
    for(int i = 0; i<numberofpins; i++){
      
      for(int j = 0; j<ledsperstrip;j++){
-      Serial.print("pin # "+String(i)+":");
+      Serial.print("pin # "+String(i)+"/ "+String(pinList[i])+":");
        Serial.println("  led: "+String(j)+": "+
         String(strandtable[i*ledsperstrip+j][0])+" on edge "+
         String(strandtable[i*ledsperstrip+j][1]));

@@ -7,6 +7,8 @@
 #ifndef MODELS_H
 #define MODELS_H
 
+ const bool AUDIODEBUGGING = false; // this is just upstream of everything else.
+
 #include <FastLED.h>
 #include <array>
 #include <map>
