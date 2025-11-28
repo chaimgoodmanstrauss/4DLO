@@ -16,6 +16,31 @@
 
 ColorFunctionFactory* ColorFunctionFactory::instance = nullptr;
 
+// Get or create shared instance from cache
+std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getShared(const String& name) {
+    // Check if already cached
+    auto cacheIt = cache.find(name);
+    if (cacheIt != cache.end()) {
+        return cacheIt->second;
+    }
+    
+    // Create new instance
+    auto creatorIt = creators.find(name);
+    if (creatorIt != creators.end()) {
+        StatefulColorFunction* rawPtr = creatorIt->second();
+        if (rawPtr) {
+            std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
+            cache[name] = sharedPtr;
+            Serial.println("ColorFunctionFactory: Cached new instance of '" + name + "'");
+            return sharedPtr;
+        }
+    }
+    
+    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
+    return nullptr;
+}
+
+// Legacy create method - creates unique instance (not cached)
 StatefulColorFunction* ColorFunctionFactory::create(const String& name) {
     auto it = creators.find(name);
     if (it != creators.end()) {
@@ -25,11 +50,38 @@ StatefulColorFunction* ColorFunctionFactory::create(const String& name) {
     return nullptr;
 }
 
+void ColorFunctionFactory::clearCache() {
+    cache.clear();
+    Serial.println("ColorFunctionFactory: Cache cleared");
+}
+
+void ColorFunctionFactory::clearFunction(const String& name) {
+    auto it = cache.find(name);
+    if (it != cache.end()) {
+        cache.erase(it);
+        Serial.println("ColorFunctionFactory: Cleared '" + name + "' from cache");
+    }
+}
+
 void ColorFunctionFactory::listFunctions() {
     Serial.println("Registered color functions:");
     for (auto& pair : creators) {
         Serial.println("  - " + pair.first);
     }
+}
+
+void ColorFunctionFactory::printCacheStats() {
+    Serial.println("\n=== Color Function Cache Stats ===");
+    Serial.print("Total cached instances: ");
+    Serial.println(cache.size());
+    
+    for (auto& pair : cache) {
+        Serial.print("  ");
+        Serial.print(pair.first);
+        Serial.print(": ref_count = ");
+        Serial.println(pair.second.use_count());
+    }
+    Serial.println("==================================\n");
 }
 
 ////////////////////////////////////
@@ -57,21 +109,14 @@ colormodel::colormodel(std::array<std::array<int, 6>, 120> importedgemodels,
   }
 }
 
-// Copy constructor - essential for proper unique_ptr handling
+// Copy constructor - shared_ptr handles reference counting automatically
 colormodel::colormodel(const colormodel& other)
   : edgemodels(other.edgemodels),
     modelname(other.modelname),
+    edgeFunctions(other.edgeFunctions),  // Shallow copy - shares instances
     edgePalettes(other.edgePalettes),
     shouldRegister(other.shouldRegister) {
-  
-  // Deep copy all StatefulColorFunction instances
-  for(int i = 0; i < 120; i++) {
-    if(other.edgeFunctions[i]) {
-      edgeFunctions[i].reset(other.edgeFunctions[i]->clone());
-    } else {
-      edgeFunctions[i] = nullptr;
-    }
-  }
+  // No deep copy needed - shared_ptr automatically manages references
 }
 
 void colormodel::registerSelf() {
@@ -137,22 +182,23 @@ void colormodel::setColorFunction(int edgeindex, const String& functionName,
     return;
   }
   
-  // Create new function instance from factory
-  StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(functionName);
+  // Get shared instance from factory cache
+  std::shared_ptr<StatefulColorFunction> sharedFunc = 
+      ColorFunctionFactory::getInstance().getShared(functionName);
   
-  if(newFunc) {
+  if(sharedFunc) {
     // Set palette if provided
     if(paletteName.length() > 0) {
-      newFunc->setPalette(paletteName);
+      sharedFunc->setPalette(paletteName);
     }
     
     // Set parameters if provided
     if(params.size() > 0) {
-      newFunc->setParameters(params);
+      sharedFunc->setParameters(params);
     }
     
-    // Store in unique_ptr (automatically deletes old)
-    edgeFunctions[edgeindex].reset(newFunc);
+    // Store shared_ptr (automatically manages reference counting)
+    edgeFunctions[edgeindex] = sharedFunc;
     edgePalettes[edgeindex] = paletteName;
   }
 }
@@ -210,11 +256,11 @@ colormodel* colormodel::applyEdgePermutation(const std::array<int, 120>& permArr
   
   colormodel* result = new colormodel(newEdgeModels, newName, registerModel);
   
-  // Copy color functions
+  // Copy shared pointers (no cloning needed - instances are shared)
   for(int i = 0; i < 120; i++) {
     int sourceIndex = permArray[i];
     if(sourceIndex >= 0 && sourceIndex < 120 && edgeFunctions[sourceIndex]) {
-      result->edgeFunctions[i].reset(edgeFunctions[sourceIndex]->clone());
+      result->edgeFunctions[i] = edgeFunctions[sourceIndex];  // Share the instance
       result->edgePalettes[i] = edgePalettes[sourceIndex];
     }
   }
@@ -309,13 +355,13 @@ colormodel* colormodel::mergeModels(const colormodel* model1, const colormodel* 
   
   colormodel* result = new colormodel(mergedEdgeModels, newName, true);
   
-  // Copy color functions - model1 takes priority, model2 fills in blanks
+  // Copy shared pointers - model1 takes priority, model2 fills in blanks
   for(int i = 0; i < 120; i++) {
     if(model1->edgemodels[i][0] != 0 && model1->edgeFunctions[i]) {
-      result->edgeFunctions[i].reset(model1->edgeFunctions[i]->clone());
+      result->edgeFunctions[i] = model1->edgeFunctions[i];  // Share the instance
       result->edgePalettes[i] = model1->edgePalettes[i];
     } else if(model2->edgeFunctions[i]) {
-      result->edgeFunctions[i].reset(model2->edgeFunctions[i]->clone());
+      result->edgeFunctions[i] = model2->edgeFunctions[i];  // Share the instance
       result->edgePalettes[i] = model2->edgePalettes[i];
     }
   }

@@ -191,46 +191,73 @@ void modelsequence::updateAudioFadeCache() {
         return;  // Cache already populated for this step
     }
     
-    // Invalidate and clear old cache
+    // Invalidate and clear old cache references
     audioCacheValid = false;
     for(int i = 0; i < SequenceStep::MAX_FUNCTIONS; i++) {
-        cachedBgFunctions[i].reset();
-        cachedAudioFunctions[i].reset();
+        cachedBgFunctions[i] = nullptr;
+        cachedAudioFunctions[i] = nullptr;
     }
     
-    // Create background functions
+    // Get or create background functions from sequence cache
     for(int i = 0; i < step.numBackgroundFunctions; i++) {
-        const FunctionWithPalette& func = step.backgroundPalettes[i];
-        StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(func.functionName);
-        if(newFunc) {
-            if(func.paletteName.length() > 0) {
-                newFunc->setPalette(func.paletteName);
-            }
-            if(func.parameters.size() > 0) {
-                newFunc->setParameters(func.parameters);
-            }
-            cachedBgFunctions[i].reset(newFunc);
-        }
+        cachedBgFunctions[i] = getCachedFunction(step.backgroundPalettes[i]);
     }
     
-    // Create audio functions
+    // Get or create audio functions from sequence cache
     for(int i = 0; i < step.numAudioFunctions; i++) {
-        const FunctionWithPalette& func = step.audioPalettes[i];
-        StatefulColorFunction* newFunc = ColorFunctionFactory::getInstance().create(func.functionName);
-        if(newFunc) {
-            if(func.paletteName.length() > 0) {
-                newFunc->setPalette(func.paletteName);
-            }
-            if(func.parameters.size() > 0) {
-                newFunc->setParameters(func.parameters);
-            }
-            cachedAudioFunctions[i].reset(newFunc);
-        }
+        cachedAudioFunctions[i] = getCachedFunction(step.audioPalettes[i]);
     }
     
     // Mark cache as valid
     audioCacheValid = true;
     cachedStepIndex = currentStep;
+}
+
+String modelsequence::makeCacheKey(const FunctionWithPalette& func) {
+    String key = func.functionName + ":" + func.paletteName;
+    
+    // Append parameters if any
+    if(func.parameters.size() > 0) {
+        key += ":";
+        for(size_t i = 0; i < func.parameters.size(); i++) {
+            if(i > 0) key += ",";
+            key += String(func.parameters[i].value, 3);  // 3 decimal places
+        }
+    }
+    
+    return key;
+}
+
+std::shared_ptr<StatefulColorFunction> modelsequence::getCachedFunction(const FunctionWithPalette& func) {
+    String key = makeCacheKey(func);
+    
+    // Check if already cached
+    auto it = sequenceFunctionCache.find(key);
+    if(it != sequenceFunctionCache.end()) {
+        return it->second;
+    }
+    
+    // Not cached - create new instance
+    StatefulColorFunction* rawPtr = ColorFunctionFactory::getInstance().create(func.functionName);
+    if(!rawPtr) {
+        return nullptr;
+    }
+    
+    // Configure it
+    if(func.paletteName.length() > 0) {
+        rawPtr->setPalette(func.paletteName);
+    }
+    if(func.parameters.size() > 0) {
+        rawPtr->setParameters(func.parameters);
+    }
+    
+    // Store in cache
+    std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
+    sequenceFunctionCache[key] = sharedPtr;
+    
+    Serial.println("Sequence cache: Created instance '" + key + "'");
+    
+    return sharedPtr;
 }
 
 
@@ -255,11 +282,6 @@ void modelsequence::applyFunctionsToModel() {
     Serial.print(" functions, audio=");
     Serial.println(audioFadeProgress, 2);
     
-    // First, clear ALL edges to ensure no old functions remain
-    for(int edge = 0; edge < 120; edge++) {
-        model->setColorFunction(edge, "dark", "", {});
-    }
-    
     int appliedCount = 0;
     int skippedCount = 0;
     
@@ -274,11 +296,18 @@ void modelsequence::applyFunctionsToModel() {
             const FunctionWithPalette& func = useAudioPalette ? 
                 step.audioPalettes[safeIndex] : step.backgroundPalettes[safeIndex];
             
-            model->setColorFunction(edge, func.functionName, func.paletteName, func.parameters);
-            appliedCount++;
+            // Get cached instance instead of creating new one
+            std::shared_ptr<StatefulColorFunction> cachedFunc = getCachedFunction(func);
+            
+            // Apply cached instance directly to model edge
+            if(cachedFunc) {
+                model->setColorFunction(edge, func.functionName, func.paletteName, func.parameters);
+                appliedCount++;
+            }
         } else {
+            // Edge has no function index - set to dark
+            model->setColorFunction(edge, "dark", "", {});
             skippedCount++;
-            // Edge has no function index - already set to dark above
         }
     }
     
@@ -623,4 +652,23 @@ void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
             }
             break;
     }
+}
+
+void modelsequence::printCacheStats() {
+    Serial.println("\n=== Sequence Function Cache Stats ===");
+    Serial.print("Total cached instances: ");
+    Serial.println(sequenceFunctionCache.size());
+    
+    for(auto& pair : sequenceFunctionCache) {
+        Serial.print("  ");
+        Serial.print(pair.first);
+        Serial.print(": ref_count = ");
+        Serial.println(pair.second.use_count());
+    }
+    Serial.println("======================================\n");
+}
+
+void modelsequence::clearFunctionCache() {
+    sequenceFunctionCache.clear();
+    Serial.println("Sequence function cache cleared");
 }

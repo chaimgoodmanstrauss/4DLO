@@ -23,11 +23,14 @@ class ColorFunctionFactory;
 class EdgePermutation;
 
 /////////////////////////////////////////
-// COLOR FUNCTION FACTORY
+// COLOR FUNCTION FACTORY with caching
+// Manages shared instances of color functions to reduce memory fragmentation
+// and ensure consistency (e.g., Perlin noise looks the same across all segments)
 //
 class ColorFunctionFactory {
 private:
     std::map<String, std::function<StatefulColorFunction*()>> creators;
+    std::map<String, std::shared_ptr<StatefulColorFunction>> cache;  // Shared instance cache
     static ColorFunctionFactory* instance;
     
     ColorFunctionFactory() {}
@@ -44,13 +47,24 @@ public:
         creators[name] = creator;
     }
     
+    // Get or create a shared instance from cache
+    std::shared_ptr<StatefulColorFunction> getShared(const String& name);
+    
+    // Legacy method - creates unique instance (for backwards compatibility)
     StatefulColorFunction* create(const String& name);
+    
+    // Clear all cached instances (useful for memory management)
+    void clearCache();
+    
+    // Clear specific function from cache
+    void clearFunction(const String& name);
     
     bool hasFunction(const String& name) const {
         return creators.find(name) != creators.end();
     }
     
     void listFunctions();
+    void printCacheStats();
 };
 
 ////////////////////////////////////
@@ -61,7 +75,7 @@ class colormodel {
 private: 
     std::array<std::array<int, 6>, 120> edgemodels;
     String modelname;
-    std::array<std::unique_ptr<StatefulColorFunction>, 120> edgeFunctions;
+    std::array<std::shared_ptr<StatefulColorFunction>, 120> edgeFunctions;  // Changed to shared_ptr
     std::array<String, 120> edgePalettes;
     bool shouldRegister;
 
