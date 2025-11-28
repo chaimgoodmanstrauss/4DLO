@@ -16,7 +16,7 @@
 
 ColorFunctionFactory* ColorFunctionFactory::instance = nullptr;
 
-// Get or create shared instance from cache
+// Get or create shared instance from cache (by name only)
 std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getShared(const String& name) {
     // Check if already cached
     auto cacheIt = cache.find(name);
@@ -32,6 +32,53 @@ std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getShared(const Str
             std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
             cache[name] = sharedPtr;
             Serial.println("ColorFunctionFactory: Cached new instance of '" + name + "'");
+            return sharedPtr;
+        }
+    }
+    
+    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
+    return nullptr;
+}
+
+// Get or create shared instance with full configuration
+std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getSharedConfigured(
+    const String& name,
+    const String& paletteName,
+    const std::vector<FunctionParameter>& params) {
+    
+    // Generate cache key: "functionName:paletteName:param1,param2,..."
+    String cacheKey = name + ":" + paletteName;
+    if(params.size() > 0) {
+        cacheKey += ":";
+        for(size_t i = 0; i < params.size(); i++) {
+            if(i > 0) cacheKey += ",";
+            cacheKey += String(params[i].value, 3);  // 3 decimal places
+        }
+    }
+    
+    // Check if already cached
+    auto cacheIt = cache.find(cacheKey);
+    if (cacheIt != cache.end()) {
+        return cacheIt->second;
+    }
+    
+    // Create new instance
+    auto creatorIt = creators.find(name);
+    if (creatorIt != creators.end()) {
+        StatefulColorFunction* rawPtr = creatorIt->second();
+        if (rawPtr) {
+            // Configure the instance
+            if(paletteName.length() > 0) {
+                rawPtr->setPalette(paletteName);
+            }
+            if(params.size() > 0) {
+                rawPtr->setParameters(params);
+            }
+            
+            // Cache and return
+            std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
+            cache[cacheKey] = sharedPtr;
+            Serial.println("ColorFunctionFactory: Cached new instance '" + cacheKey + "'");
             return sharedPtr;
         }
     }
@@ -182,21 +229,11 @@ void colormodel::setColorFunction(int edgeindex, const String& functionName,
     return;
   }
   
-  // Get shared instance from factory cache
+  // Get shared instance from factory cache with full configuration
   std::shared_ptr<StatefulColorFunction> sharedFunc = 
-      ColorFunctionFactory::getInstance().getShared(functionName);
+      ColorFunctionFactory::getInstance().getSharedConfigured(functionName, paletteName, params);
   
   if(sharedFunc) {
-    // Set palette if provided
-    if(paletteName.length() > 0) {
-      sharedFunc->setPalette(paletteName);
-    }
-    
-    // Set parameters if provided
-    if(params.size() > 0) {
-      sharedFunc->setParameters(params);
-    }
-    
     // Store shared_ptr (automatically manages reference counting)
     edgeFunctions[edgeindex] = sharedFunc;
     edgePalettes[edgeindex] = paletteName;

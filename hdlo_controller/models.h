@@ -47,8 +47,14 @@ public:
         creators[name] = creator;
     }
     
-    // Get or create a shared instance from cache
+    // Get or create a shared instance from cache (by function name only - deprecated)
     std::shared_ptr<StatefulColorFunction> getShared(const String& name);
+    
+    // Get or create a shared instance with full configuration (PREFERRED)
+    std::shared_ptr<StatefulColorFunction> getSharedConfigured(
+        const String& name,
+        const String& paletteName = "",
+        const std::vector<FunctionParameter>& params = {});
     
     // Legacy method - creates unique instance (for backwards compatibility)
     StatefulColorFunction* create(const String& name);

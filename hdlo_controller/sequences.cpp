@@ -173,7 +173,7 @@ void initializeSequences() {
 
     //seq.applyEdgePermutationSequence("octahedron","octacellperms",1,.3);
 
-  //octaswirl(seq,"octahedron",4,.3);
+  octaswirl(seq,"octahedron",4,.3);
 /*
 seq.setbackgroundpalette({
         "dark",
