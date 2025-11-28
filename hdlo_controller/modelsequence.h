@@ -62,7 +62,7 @@ struct FunctionWithPalette {
 
 // Sequence step structure
 struct SequenceStep {
-    static const int MAX_FUNCTIONS = 7;  // Matches current sequence design
+    static const int MAX_FUNCTIONS = 11;  // Matches current sequence design
     
     colormodel* model;
     

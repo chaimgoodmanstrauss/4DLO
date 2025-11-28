@@ -133,6 +133,7 @@ float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
           endpt[0] = .5,endpt[1]  = .5,endpt[2] = .5,endpt[3] = .5;
           break;  //
         case 2:   //from -111 to -∞∞∞
+         /// if(edgedirections[edgeindex<0]) thrdr
           adjt = 1 + t * SOMESCALINGTBD;//THIS IS IMPORTANT
           //so when t = 1, we are at SOMESCALINGTBD, the end of the strand, 
           //TBD: check how this is calculated. 
@@ -255,7 +256,7 @@ const int positionresolution = 10000;
 
 ////////******** External Memory flag *******
 //flip this switch to use an extra memory chip on the Teensy.
-//EXTMEM 
+EXTMEM 
 int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
 
 void constructstrandtable(){

@@ -1082,6 +1082,18 @@ const eighths = new hdlomodel({name:'eighths',
 {indices:[-14, -54, -17, -47, -7, -19, -45, -78, 74, 59, 27, 37, -95, -91, -34, -70, -41, -82, -67, -31, 9, 12, 4, 2, 0, 8, 13, 6, -64, -28, -42, -81, 24, 38, 73, 56, -33, -69, -92, -88],edgemodel:new edgemodel({coloringfunctionname:2})},
 ],fordisplayQ:true,addToRegistryQ:true})
 
+
+
+
+//// color by index of strand
+const strandsbyindex = new hdlomodel({name:'strandsbyindex',
+ listofedmodels:[
+{indices:[39, 75, 58, 25, -57, -26, -36, -72, 79, 5, 3, 11, -55, -1, -10, -15, -14, -54, -17, -47, 9, 12, 4, 2, -64, -28, -42, -81], edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[-71, -94, -89, -32, 80, 65, 30, 40, 46, 77, 52, 16, -18, -44, -76, -53, -7, -19, -45, -78, 0, 8, 13, 6, 24, 38, 73, 56], edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-29, -43, -83, -66, 90, 35, 68, 93, 85, 60, 20, 50, 48, 84, 61, 22, 74, 59, 27, 37, -33, -69, -92, -88], edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[62, 21, 51, 87, 23, 49, 86, 63, -95, -91, -34, -70], edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-41, -82, -67, -31], edgemodel:new edgemodel({coloringfunctionname:5})},
+],fordisplayQ:true,addToRegistryQ:true})
 //////////end of debugging models
 
 
@@ -1200,8 +1212,8 @@ const threecodes = graycode.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize(
     {name:'octahedron', 
     listofedmodels:[
         {indices:[91,43,-66,-70],distributeby:true, edgemodel:new edgemodel({
-            oloringfunctionname:1, shiftposition:.333})},
-            {indices:[95,29,-83,-34],distributeby:true, edgemodel:new edgemodel({
+            coloringfunctionname:1, shiftposition:.333})},
+        {indices:[95,29,-83,-34],distributeby:true, edgemodel:new edgemodel({
             coloringfunctionname:2, shiftposition:.667})},
         {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({
             coloringfunctionname:3})}
