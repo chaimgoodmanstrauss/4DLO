@@ -370,11 +370,15 @@ theModelChanged();
 //
 // They are defined and managed in modeldata.js
 
+/////////////////
+//
 //uncomment this to print out the models:
 
 //writeModelsToFile(ourModelRegistry)
 
-var exportpermlist = [];
+var exportpermlist = ["tester"];
+
+writeModelsToFile(exportpermlist)
 
 vertgroup.map(g=>{exportpermlist.push([g,"oneTo"+printvert(g.acton(qOne))])})
 vertgroup.map(g=>{exportpermlist.push([g,"i1To"+printvert(g.acton(q1I))])})

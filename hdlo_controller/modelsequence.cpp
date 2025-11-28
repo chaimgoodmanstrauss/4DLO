@@ -10,13 +10,16 @@
 #include "audiosystem.h"
 #include <FastLED.h>  // For blend() function
 
-// Memory diagnostics - add to beginning of file
-extern "C" char* sbrk(int incr);
-int getFreeRam() {
-    char top;
-    return &top - reinterpret_cast<char*>(sbrk(0));
-}
+extern unsigned long _heap_start;
+extern unsigned long _heap_end;
+extern char *__brkval;
 
+int getFreeRam() {
+    if (__brkval == 0) {
+        return ((int)&_heap_end - (int)&_heap_start);
+    }
+    return ((int)&_heap_end - (int)__brkval);
+}
 modelsequence::modelsequence()
     : numSteps(0),
       currentStep(0),

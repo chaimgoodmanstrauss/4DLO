@@ -48,7 +48,9 @@ float lifttoS3(float pt[],float spt[]){
 //     (upstairs edge #39); (1/sqrt(3)<t<sqrt(3))
 // 2: from -111 to -∞∞∞, best understood as (111) to some point (AAA),
 //      (edge # 64); (sqrt(3)<t<[[ some formula based on the length of the pipe we want]]
-const float SOMESCALINGTBD = .3;  // TBD! Need to work this out.
+
+//KLUDGE!!
+const float SOMESCALINGTBD = .3;  // TBD! 
 
 // We choose our other representatives from the circle centered at (011)/2, perp to 100,
 // parametrized by c*sqrt(3/2)*(011)/sqrt(2)+s*sqrt(3/2)*(100)+(011)/2.
@@ -77,10 +79,20 @@ const float angled = acos(23. / 27.);  // ~ 31.586°;
 // NOTE: LEDs are numbered in the human fashion, 1,2,3...
 
 // these are the types of each kind of edge:
-const int edgeclasses[120]={4,5,5,5,4,4,5,5,4,5,4,5,4,3,6,3,6,3,1,1,6,2,5,5,4,0,4,2,0,5,1,6,3,1,4,4,0,2,5,4,5,4,5,3,6,5,3,6,4,4,5,5,3,1,1,6,4,3,3,6,6,2,4,5,0,5,2,5,0,4,1,3,6,1,4,4,5,5,4,4,2,0,5,3,3,6,6,2,4,4,5,0,2,5,4,0,
+
+// HIGHLY SUSPECT!!!
+
+const int edgeclasses[120]={4,5,4,5,4,5,4,5,4,4,5,5,4,4,5,5,4,5,4,5,3,6,3,6,3,1,1,6,2,5,4,0,4,2,0,5,1,6,3,1,4,0,2,5,4,5,4,5,3,6,3,6,4,4,5,5,3,1,1,6,3,3,6,6,2,4,5,0,5,2,0,4,1,3,6,1,4,4,5,5,4,2,0,5,3,3,6,6,2,4,5,0,2,5,4,0,
+//{4,5,5,5,4,4,5,5,4,5,4,5,4,3,6,3,6,3,1,1,6,2,5,5,4,0,4,2,0,5,1,6,3,1,4,4,0,2,5,4,5,4,5,3,6,5,3,6,4,4,5,5,3,1,1,6,4,3,3,6,6,2,4,5,0,5,2,5,0,4,1,3,6,1,4,4,5,5,4,4,2,0,5,3,3,6,6,2,4,4,5,0,2,5,4,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
-const int edgedirections[120]={};
+
+const int edgedirections[120]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,1,1,1,-1,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};//{};// 
+// the signs are currently taken into account in led_constants.h
+// however, these need to be incorporated here: 
+
 
 float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
   
@@ -94,8 +106,12 @@ float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
   float t = (lednumber - .5) / numberofleds;// better distribution
   //float t = (lednumber-1.)/(numberofleds-1.);//easier to debug
 
+  // if the edge direction is -1, switch the parametrization:
+  if(edgedirections[edgeindex<0]){t=1-t;}
+
   // we next convert t to the appropriate domain, either along a straight segment 000 to ∞∞∞ or an arc on the
   // circle of radius sqrt(3/2) centered at 011/2 perp to 100
+
 
   float endpt[4], liftedpt[4];
   endpt[0] = endpt[1] = endpt[2] = endpt[3] = liftedpt[0] = liftedpt[1] = liftedpt[2] = liftedpt[3] = 0;
@@ -117,7 +133,9 @@ float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
           endpt[0] = .5,endpt[1]  = .5,endpt[2] = .5,endpt[3] = .5;
           break;  //
         case 2:   //from -111 to -∞∞∞
-          adjt = 1 + t * SOMESCALINGTBD;
+          adjt = 1 + t * SOMESCALINGTBD;//THIS IS IMPORTANT
+          //so when t = 1, we are at SOMESCALINGTBD, the end of the strand, 
+          //TBD: check how this is calculated. 
           endpt[0] = -.5;
           endpt[1] = endpt[2] = endpt[3] = .5;
           break;
@@ -189,12 +207,12 @@ float positiononedge(int lednumber, int numberofleds, int edgeindex, int sign) {
 
   position = acos(cosangle) / 3.1416 * 180./60.;//This should be a value between 0 and 1.
  
- // Reverse direction if the sign is negative (-1, presumably)
+ // Reverse direction if the sign of the input edge is negative (-1, presumably)
   if(sign<0){
     position = 1-position;
   }
 
-  //Reverse again if the direction is reversed***
+  //After reversing once if the direction of the edgeindex is reveresed relative to the edgetype
 
 //Serial.println(" led "+String(lednumber)+" on edge "+String(edgeindex)+" of class "+ String(edgeclass)+" has position "+String(position,5));
 /*Serial.print("   ");
@@ -233,7 +251,10 @@ Serial.println(" cosine = " +String(cosangle));
 
 const int positionresolution = 10000;
 //const int temp = ledsperstrip * numberofpins;
-////////
+
+
+////////******** External Memory flag *******
+//flip this switch to use an extra memory chip on the Teensy.
 //EXTMEM 
 int strandtable[ledsperstrip * numberofpins][2]={{1}}; // strips, then pins; edge index, position in 10,000ths.
 

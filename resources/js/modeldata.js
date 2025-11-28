@@ -894,13 +894,19 @@ function writeModelsToFile(modelRegistry) {
                         // entries above 96. TBD. For now we just make a stub
                     bodycontent+=
                         nname+","+
-                        ourModelRegistry[key].edgemodels[i].direction+","+
-                        Math.round(ourModelRegistry[key].edgemodels[i].shiftposition*10000)+","+
-                        Math.round(ourModelRegistry[key].edgemodels[i].scaleposition*10000)+","+
-                        Math.round(ourModelRegistry[key].edgemodels[i].shifttime*10000)+","+
-                        Math.round(ourModelRegistry[key].edgemodels[i].scaletime*10000)+'}},   // edge '+i+'\n'
+                        ourModelRegistry[key].edgemodels[i].direction+
+                        ","+
+                        Math.round(ourModelRegistry[key].edgemodels[i].shiftposition*10000)+
+                        ","+
+                        Math.round(ourModelRegistry[key].edgemodels[i].scaleposition*10000)+
+                        '}},   // edge '+i;
+                    switch(i-12){case 0: case 96: case 24: case 48: case 72: 
+                        bodycontent+=' of '+key;
                     }
-                    else bodycontent+="0,1,0,10000,0,10000}}, // vertex "+(i-96)+' (line '+i+')\n'
+                        
+                    bodycontent+='\n'
+                    }
+                    else bodycontent+="0,1,0,10000}}, // vertex "+(i-96)+' (line '+i+')\n'
                 
                 }
                 bodycontent+="}};//end of " +name+'data\n\n';
@@ -985,8 +991,102 @@ const basichdlomodel = new hdlomodel({name:'basicModel'})
 
 basichdlomodel.name = 'basicModel'
 
-//defaultmodel ='six paths'
-defaultmodel = 'strands'
+defaultmodel ='six paths'
+//defaultmodel = 'strands'
+
+
+
+/////////////////////////////
+//  color models for debugging the strands
+//
+
+//// color by type of strand
+const strandsbytype = new hdlomodel({name:'strandsbytype',
+ listofedmodels:[
+{indices:[39, -71, -29, 62], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[75, -94, -43, 21], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[58, -89, -83, 51], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[25, -32, -66, 87], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[-57, 80, 90, 23], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-26, 65, 35, 49], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-36, 30, 68, 86], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-72, 40, 93, 63], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[79, 46, 85], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[5, 77, 60], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[3, 52, 20], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[11, 16, 50], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[-55, -18, 48], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-1, -44, 84], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-10, -76, 61], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-15, -53, 22], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-14, -7, 74, -95, -41], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-54, -19, 59, -91, -82], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-17, -45, 27, -34, -67], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-47, -78, 37, -70, -31], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[9, 0], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[12, 8], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[4, 13], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[2, 6], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[-64, 24, -33], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-28, 38, -69], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-42, 73, -92], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-81, 56, -88], distributeby:true, edgemodel:new edgemodel({coloringfunctionname:7})},
+],fordisplayQ:true,addToRegistryQ:true})
+
+//// color by type of segment
+const strandsegmentlights = new hdlomodel({name:'strandsegmentlights',
+ listofedmodels:[
+{indices:[39, -71, -29, 62],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[75, -94, -43, 21],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[58, -89, -83, 51],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[25, -32, -66, 87],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[-57, 80, 90, 23],edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-26, 65, 35, 49],edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-36, 30, 68, 86],edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[-72, 40, 93, 63],edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[79, 46, 85],edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[5, 77, 60],edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[3, 52, 20],edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[11, 16, 50],edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[-55, -18, 48],edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-1, -44, 84],edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-10, -76, 61],edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-15, -53, 22],edgemodel:new edgemodel({coloringfunctionname:4})},
+{indices:[-14, -7, 74, -95, -41],edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-54, -19, 59, -91, -82],edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-17, -45, 27, -34, -67],edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[-47, -78, 37, -70, -31],edgemodel:new edgemodel({coloringfunctionname:5})},
+{indices:[9, 0],edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[12, 8],edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[4, 13],edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[2, 6],edgemodel:new edgemodel({coloringfunctionname:6})},
+{indices:[-64, 24, -33],edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-28, 38, -69],edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-42, 73, -92],edgemodel:new edgemodel({coloringfunctionname:7})},
+{indices:[-81, 56, -88],edgemodel:new edgemodel({coloringfunctionname:7})},
+],fordisplayQ:true,addToRegistryQ:true})
+
+//// color by type of quarter
+const quarters = new hdlomodel({name:'quarters',
+ listofedmodels:[
+{indices:[39, -71, -29, 62, -57, 80, 90, 23, 79, 46, 85, -55, -18, 48, -14, -7, 74, -95, -41, 9, 0, -64, 24, -33],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[75, -94, -43, 21, -26, 65, 35, 49, 5, 77, 60, -1, -44, 84, -54, -19, 59, -91, -82, 12, 8, -28, 38, -69],edgemodel:new edgemodel({coloringfunctionname:2})},
+{indices:[58, -89, -83, 51, -36, 30, 68, 86, 3, 52, 20, -10, -76, 61, -17, -45, 27, -34, -67, 4, 13, -42, 73, -92],edgemodel:new edgemodel({coloringfunctionname:3})},
+{indices:[25, -32, -66, 87, -72, 40, 93, 63, 11, 16, 50, -15, -53, 22, -47, -78, 37, -70, -31, 2, 6, -81, 56, -88],edgemodel:new edgemodel({coloringfunctionname:4})},
+],fordisplayQ:true,addToRegistryQ:true})
+
+//// color by top or bottom
+const eighths = new hdlomodel({name:'eighths',
+ listofedmodels:[
+{indices:[39, 75, 58, 25, -71, -94, -89, -32, -29, -43, -83, -66, 62, 21, 51, 87, -57, -26, -36, -72, 80, 65, 30, 40, 90, 35, 68, 93, 23, 49, 86, 63, 79, 5, 3, 11, 46, 77, 52, 16, 85, 60, 20, 50, -55, -1, -10, -15, -18, -44, -76, -53, 48, 84, 61, 22],edgemodel:new edgemodel({coloringfunctionname:1})},
+{indices:[-14, -54, -17, -47, -7, -19, -45, -78, 74, 59, 27, 37, -95, -91, -34, -70, -41, -82, -67, -31, 9, 12, 4, 2, 0, 8, 13, 6, -64, -28, -42, -81, 24, 38, 73, 56, -33, -69, -92, -88],edgemodel:new edgemodel({coloringfunctionname:2})},
+],fordisplayQ:true,addToRegistryQ:true})
+
+//////////end of debugging models
+
+
+
+const constantedgemodel = new edgemodel({coloringfunctionname:1})
 
 const hypercube = new hdlomodel ({name:'hypercube',
     listofedmodels:
@@ -994,9 +1094,9 @@ const hypercube = new hdlomodel ({name:'hypercube',
         63,49,50,60,
         62,51,48,61,
         39,58,57,36],
-        edgemodel:new edgemodel({coloringfunctionname:1, direction:1,scaleposition:.4})},
+        edgemodel:new edgemodel({coloringfunctionname:1, direction:1,scaleposition:1})},
     {indices:[74,27,24,73,87,21,22,84,23,86,20,85,75,25,26,72],
-        edgemodel:new edgemodel({coloringfunctionname:1, direction:-1,shiftposition:.4,scaleposition:.4})},
+        edgemodel:new edgemodel({coloringfunctionname:1, direction:-1,shiftposition:0,scaleposition:1})},
 ],fordisplayQ:true,addToRegistryQ:true})
 
 const shiftedcube = hypercube.applyactions([qW],
@@ -1017,7 +1117,11 @@ const threecubes = hypercube.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize
 const twentyfourcell = threecubes.permute(qOne, {colorpermutations:[1,1,1,1,1,1],name:"twentyfourcell"})
 twentyfourcell.fordisplayQ=true; 
 
-
+const tester = new hdlomodel ({name:'tester',
+    listofedmodels:
+    [{indices:range(96),
+        edgemodel:new edgemodel({coloringfunctionname:1, direction:1,scaleposition:1})},
+    ],fordisplayQ:true,addToRegistryQ:true})
 
 /*
 const test=new hdlomodel({
@@ -1096,11 +1200,11 @@ const threecodes = graycode.applyactions([qOne,qW,new quat(-1,-1,1,1).normalize(
     {name:'octahedron', 
     listofedmodels:[
         {indices:[91,43,-66,-70],distributeby:true, edgemodel:new edgemodel({
-            coloringfunctionindex:3, coloringfunctionname:1})},
+            oloringfunctionname:1, shiftposition:.333})},
             {indices:[95,29,-83,-34],distributeby:true, edgemodel:new edgemodel({
-            coloringfunctionindex:1, coloringfunctionname:2})},
+            coloringfunctionname:2, shiftposition:.667})},
         {indices:[21,51,87,62],distributeby:true, edgemodel:new edgemodel({
-            coloringfunctionindex:2,coloringfunctionname:3,scaletime:2})}
+            coloringfunctionname:3})}
     ],
     fordisplayQ:true,
     //forexportQ:true, 
@@ -1119,7 +1223,7 @@ const basiccube = new hdlomodel({name:'cube',
     fordisplayQ:true,
     addToRegistryQ:true})
         
-const strandinfo= new hdlomodel({name:'strands',
+/*const strandinfo= new hdlomodel({name:'strands',
     listofedmodels:
     [
      //   {indices:[39,-71,-29,62],distributeby:true,edgemodel:new edgemodel({coloringfunctionname:1})},
@@ -1133,7 +1237,8 @@ const strandinfo= new hdlomodel({name:'strands',
     fordisplayQ:true,
     addToRegistryQ:true})
 
-
+*/
+/*
 
 const allstrandinfo= new hdlomodel({name:'all strands',
     listofedmodels:
@@ -1148,7 +1253,7 @@ const allstrandinfo= new hdlomodel({name:'all strands',
    ],
     fordisplayQ:true,
     addToRegistryQ:true})
-
+*/
 /*
 const basiccube = new hdlomodel({name:'cube',
     listofedmodels:

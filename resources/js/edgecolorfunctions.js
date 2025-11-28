@@ -270,8 +270,13 @@ var temp=0
 const defaultcolorfunctions=[
   "huewheel",
  
+  "huewheel",
+  "huewheel",
+  "huewheel",
+  "huewheel",
+  "huewheel",
   //"crazy",
-   "huewheel",
+   //"huewheel",
   "bluespikepulse",
   "yellowspikepulse",
   "purplepulse",
