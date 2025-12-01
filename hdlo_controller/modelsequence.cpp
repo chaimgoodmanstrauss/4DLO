@@ -342,6 +342,13 @@ void modelsequence::update() {
                 registryStartTime = currentTime;  // RESET registry timer
                 stepStartTime = currentTime;
                 inTransition = false;  // No transition between registry entries
+                
+                // Reset audio state for new step
+                audioActive = false;
+                audioFading = false;
+                audioFadeProgress = 0.0;
+                audioLastActiveTime = 0;
+                
                 applyFunctionsToModel();
                 configureAudioSource(steps[currentStep].audioConfig);
                 
@@ -387,6 +394,12 @@ void modelsequence::update() {
             }
             
             stepStartTime = currentTime;
+            
+            // Reset audio state for new step
+            audioActive = false;
+            audioFading = false;
+            audioFadeProgress = 0.0;
+            audioLastActiveTime = 0;
             
             // Start transition if specified
             if(steps[currentStep].transitionType != INSTANT && 
