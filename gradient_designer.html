@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastLED Palette Designer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 10px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { margin-bottom: 10px; font-size: 18px; color: #fff; }
+        
+        .controls {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        button {
+            background: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #5a5a5a; }
+        button.active { background: #0066cc; }
+        
+        input[type="text"] {
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            color: #fff;
+            padding: 5px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            width: 180px;
+        }
+        
+        label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+        
+        .gradient-container {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .gradient-display {
+            position: relative;
+            height: 40px;
+            border-radius: 3px;
+            cursor: crosshair;
+        }
+        
+        .stop {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+            transition: transform 0.1s;
+        }
+        .stop:hover { transform: translate(-50%, -50%) scale(1.2); }
+        .stop:active { cursor: grabbing; }
+        .stop.dragging {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.3);
+            z-index: 100;
+        }
+        
+        .stop .add-btn {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 16px;
+            height: 16px;
+            background: #4a90e2;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 14px;
+            text-align: center;
+            color: white;
+            transition: transform 0.2s;
+        }
+        
+        .stop:hover .add-btn {
+            transform: translateX(-50%) scale(1);
+        }
+        
+        .stop .delete-btn {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 16px;
+            height: 16px;
+            background: #d9534f;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 14px;
+            text-align: center;
+            color: white;
+            transition: transform 0.2s;
+        }
+        
+        .stop:hover .delete-btn {
+            transform: translateX(-50%) scale(1);
+        }
+        
+        .file-buttons {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 3px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status {
+            background: #1a1a1a;
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #888;
+            flex: 1;
+        }
+        .status.success { color: #4caf50; }
+        .status.error { color: #f44336; }
+        
+        #colorPicker {
+            display: none;
+            margin-bottom: 8px;
+            height: 32px;
+            width: 60px;
+            border: 1px solid #4a4a4a;
+            border-radius: 3px;
+            background: #1a1a1a;
+            cursor: pointer;
+        }
+
+        .color-picker-panel {
+            display: none;
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .color-picker-panel.active { display: block; }
+        
+        .picker-mode {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .picker-mode label { cursor: pointer; }
+        
+        .picker-content {
+            display: flex;
+            gap: 12px;
+            position: relative;
+        }
+        
+        .picker-2d {
+            width: 256px;
+            height: 256px;
+            border: 1px solid #4a4a4a;
+            position: relative;
+            cursor: crosshair;
+        }
+        
+        .picker-cursor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 3px rgba(0,0,0,0.8);
+        }
+        
+        .picker-slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .picker-slider {
+            width: 30px;
+            height: 256px;
+            border: 1px solid #4a4a4a;
+            position: relative;
+            cursor: ns-resize;
+        }
+        
+        .slider-handle {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: #fff;
+            left: 0;
+            transform: translateY(-50%);
+            box-shadow: 0 0 3px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        
+        .dimension-select {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+        }
+        
+        .dimension-select label { cursor: pointer; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LED Palette Gradient Designer</h1>
+        
+        <div class="controls">
+            <label>
+                Palette Name:
+                <input type="text" id="paletteName" placeholder="MyCustomPalette" value="CustomGradient">
+            </label>
+            <button id="cyclicalBtn" class="active">Cyclical</button>
+            <button id="clearBtn">Clear</button>
+        </div>
+        
+        <div class="gradient-container">
+            <div class="gradient-display" id="gradientDisplay"></div>
+        </div>
+        
+        <div class="color-picker-panel" id="colorPickerPanel">
+            <div class="picker-mode">
+                <label><input type="radio" name="mode" value="hsb" checked> HSB</label>
+                <label><input type="radio" name="mode" value="rgb"> RGB</label>
+            </div>
+            <div class="picker-content">
+                <div style="position: relative;">
+                    <canvas class="picker-2d" id="picker2D" width="256" height="256"></canvas>
+                    <div class="picker-cursor" id="pickerCursor"></div>
+                </div>
+                <div class="picker-slider-container">
+                    <div style="position: relative;">
+                        <canvas class="picker-slider" id="pickerSlider" width="30" height="256"></canvas>
+                        <div class="slider-handle" id="sliderHandle"></div>
+                    </div>
+                    <div class="dimension-select" id="dimensionSelect"></div>
+                </div>
+            </div>
+        </div>
+        
+        <input type="color" id="colorPicker" value="#ff0000">
+        
+        <div class="file-buttons">
+            <input type="file" id="fileInput" accept=".cpp" style="display: none;">
+            <button id="uploadBtn">Upload paletteregistry.cpp</button>
+            <button id="addPaletteBtn">Add Palette</button>
+            <button id="downloadBtn">Download</button>
+            <div class="status" id="status">No file loaded</div>
+        </div>
+    </div>
+
+    <script>
+        class ColorPicker {
+            constructor(onColorChange) {
+                this.onColorChange = onColorChange;
+                this.mode = 'hsb';
+                this.hsbSlider = 'b'; // Default: brightness on slider
+                this.rgbSlider = 'r'; // Default: red on slider
+                this.h = 0; this.s = 100; this.b = 100;
+                this.r = 255; this.g = 0; this.b_rgb = 0;
+                
+                this.panel = document.getElementById('colorPickerPanel');
+                this.canvas2D = document.getElementById('picker2D');
+                this.ctx2D = this.canvas2D.getContext('2d');
+                this.canvasSlider = document.getElementById('pickerSlider');
+                this.ctxSlider = this.canvasSlider.getContext('2d');
+                this.cursor = document.getElementById('pickerCursor');
+                this.handle = document.getElementById('sliderHandle');
+                this.dimensionSelect = document.getElementById('dimensionSelect');
+                
+                this.initEvents();
+                this.updateDimensionControls();
+                this.render();
+            }
+            
+            initEvents() {
+                document.querySelectorAll('input[name="mode"]').forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        this.mode = radio.value;
+                        this.updateDimensionControls();
+                        this.render();
+                    });
+                });
+                
+                this.canvas2D.addEventListener('mousedown', (e) => this.handle2DClick(e));
+                this.canvasSlider.addEventListener('mousedown', (e) => this.handleSliderClick(e));
+            }
+            
+            updateDimensionControls() {
+                const dims = this.mode === 'hsb' 
+                    ? [['h', 'Hue'], ['s', 'Sat'], ['b', 'Bri']]
+                    : [['r', 'Red'], ['g', 'Grn'], ['b', 'Blu']];
+                const current = this.mode === 'hsb' ? this.hsbSlider : this.rgbSlider;
+                
+                this.dimensionSelect.innerHTML = dims.map(([val, label]) => 
+                    `<label><input type="radio" name="slider" value="${val}" ${val === current ? 'checked' : ''}> ${label}</label>`
+                ).join('');
+                
+                this.dimensionSelect.querySelectorAll('input').forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        if (this.mode === 'hsb') this.hsbSlider = radio.value;
+                        else this.rgbSlider = radio.value;
+                        this.render();
+                    });
+                });
+            }
+            
+            handle2DClick(e) {
+                const update = (e) => {
+                    const rect = this.canvas2D.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(255, (e.clientX - rect.left) * 256 / rect.width));
+                    const y = Math.max(0, Math.min(255, (e.clientY - rect.top) * 256 / rect.height));
+                    this.update2DPosition(x, y);
+                };
+                update(e);
+                const move = (e) => update(e);
+                const up = () => {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            }
+            
+            handleSliderClick(e) {
+                const update = (e) => {
+                    const rect = this.canvasSlider.getBoundingClientRect();
+                    const y = Math.max(0, Math.min(255, (e.clientY - rect.top) * 256 / rect.height));
+                    this.updateSliderPosition(y);
+                };
+                update(e);
+                const move = (e) => update(e);
+                const up = () => {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            }
+            
+            update2DPosition(x, y) {
+                if (this.mode === 'hsb') {
+                    if (this.hsbSlider === 'h') { this.s = x / 255 * 100; this.b = 100 - y / 255 * 100; }
+                    else if (this.hsbSlider === 's') { this.h = x / 255 * 360; this.b = 100 - y / 255 * 100; }
+                    else { this.h = x / 255 * 360; this.s = 100 - y / 255 * 100; }
+                    this.syncRGBFromHSB();
+                } else {
+                    if (this.rgbSlider === 'r') { this.g = x; this.b_rgb = 255 - y; }
+                    else if (this.rgbSlider === 'g') { this.r = x; this.b_rgb = 255 - y; }
+                    else { this.r = x; this.g = 255 - y; }
+                    this.syncHSBFromRGB();
+                }
+                this.render();
+                this.onColorChange(this.r, this.g, this.b_rgb);
+            }
+            
+            updateSliderPosition(y) {
+                const val = 255 - y;
+                if (this.mode === 'hsb') {
+                    if (this.hsbSlider === 'h') this.h = val / 255 * 360;
+                    else if (this.hsbSlider === 's') this.s = val / 255 * 100;
+                    else this.b = val / 255 * 100;
+                    this.syncRGBFromHSB();
+                } else {
+                    if (this.rgbSlider === 'r') this.r = val;
+                    else if (this.rgbSlider === 'g') this.g = val;
+                    else this.b_rgb = val;
+                    this.syncHSBFromRGB();
+                }
+                this.render();
+                this.onColorChange(this.r, this.g, this.b_rgb);
+            }
+            
+            syncRGBFromHSB() {
+                const c = this.b / 100 * this.s / 100;
+                const x = c * (1 - Math.abs((this.h / 60) % 2 - 1));
+                const m = this.b / 100 - c;
+                let r, g, b;
+                if (this.h < 60) [r, g, b] = [c, x, 0];
+                else if (this.h < 120) [r, g, b] = [x, c, 0];
+                else if (this.h < 180) [r, g, b] = [0, c, x];
+                else if (this.h < 240) [r, g, b] = [0, x, c];
+                else if (this.h < 300) [r, g, b] = [x, 0, c];
+                else [r, g, b] = [c, 0, x];
+                this.r = Math.round((r + m) * 255);
+                this.g = Math.round((g + m) * 255);
+                this.b_rgb = Math.round((b + m) * 255);
+            }
+            
+            syncHSBFromRGB() {
+                const r = this.r / 255, g = this.g / 255, b = this.b_rgb / 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                const delta = max - min;
+                this.b = max * 100;
+                this.s = max === 0 ? 0 : (delta / max) * 100;
+                if (delta === 0) this.h = 0;
+                else if (max === r) this.h = 60 * (((g - b) / delta) % 6);
+                else if (max === g) this.h = 60 * ((b - r) / delta + 2);
+                else this.h = 60 * ((r - g) / delta + 4);
+                if (this.h < 0) this.h += 360;
+            }
+            
+            render() {
+                this.render2D();
+                this.renderSlider();
+                this.updateCursorPosition();
+                this.updateHandlePosition();
+            }
+            
+            render2D() {
+                const img = this.ctx2D.createImageData(256, 256);
+                for (let y = 0; y < 256; y++) {
+                    for (let x = 0; x < 256; x++) {
+                        const i = (y * 256 + x) * 4;
+                        const rgb = this.get2DColor(x, y);
+                        img.data[i] = rgb[0]; img.data[i+1] = rgb[1]; img.data[i+2] = rgb[2]; img.data[i+3] = 255;
+                    }
+                }
+                this.ctx2D.putImageData(img, 0, 0);
+            }
+            
+            get2DColor(x, y) {
+                if (this.mode === 'hsb') {
+                    let h, s, b;
+                    if (this.hsbSlider === 'h') { h = this.h; s = x / 255 * 100; b = 100 - y / 255 * 100; }
+                    else if (this.hsbSlider === 's') { h = x / 255 * 360; s = this.s; b = 100 - y / 255 * 100; }
+                    else { h = x / 255 * 360; s = 100 - y / 255 * 100; b = this.b; }
+                    return this.hsbToRGB(h, s, b);
+                } else {
+                    let r, g, b;
+                    if (this.rgbSlider === 'r') { r = this.r; g = x; b = 255 - y; }
+                    else if (this.rgbSlider === 'g') { r = x; g = this.g; b = 255 - y; }
+                    else { r = x; g = 255 - y; b = this.b_rgb; }
+                    return [r, g, b];
+                }
+            }
+            
+            renderSlider() {
+                const img = this.ctxSlider.createImageData(30, 256);
+                for (let y = 0; y < 256; y++) {
+                    const rgb = this.getSliderColor(y);
+                    for (let x = 0; x < 30; x++) {
+                        const i = (y * 30 + x) * 4;
+                        img.data[i] = rgb[0]; img.data[i+1] = rgb[1]; img.data[i+2] = rgb[2]; img.data[i+3] = 255;
+                    }
+                }
+                this.ctxSlider.putImageData(img, 0, 0);
+            }
+            
+            getSliderColor(y) {
+                const val = 255 - y;
+                if (this.mode === 'hsb') {
+                    if (this.hsbSlider === 'h') return this.hsbToRGB(val / 255 * 360, this.s, this.b);
+                    else if (this.hsbSlider === 's') return this.hsbToRGB(this.h, val / 255 * 100, this.b);
+                    else return this.hsbToRGB(this.h, this.s, val / 255 * 100);
+                } else {
+                    if (this.rgbSlider === 'r') return [val, this.g, this.b_rgb];
+                    else if (this.rgbSlider === 'g') return [this.r, val, this.b_rgb];
+                    else return [this.r, this.g, val];
+                }
+            }
+            
+            hsbToRGB(h, s, b) {
+                const c = b / 100 * s / 100;
+                const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                const m = b / 100 - c;
+                let r, g, b_val;
+                if (h < 60) [r, g, b_val] = [c, x, 0];
+                else if (h < 120) [r, g, b_val] = [x, c, 0];
+                else if (h < 180) [r, g, b_val] = [0, c, x];
+                else if (h < 240) [r, g, b_val] = [0, x, c];
+                else if (h < 300) [r, g, b_val] = [x, 0, c];
+                else [r, g, b_val] = [c, 0, x];
+                return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b_val + m) * 255)];
+            }
+            
+            updateCursorPosition() {
+                let x, y;
+                if (this.mode === 'hsb') {
+                    if (this.hsbSlider === 'h') { x = this.s / 100 * 256; y = (100 - this.b) / 100 * 256; }
+                    else if (this.hsbSlider === 's') { x = this.h / 360 * 256; y = (100 - this.b) / 100 * 256; }
+                    else { x = this.h / 360 * 256; y = (100 - this.s) / 100 * 256; }
+                } else {
+                    if (this.rgbSlider === 'r') { x = this.g; y = 255 - this.b_rgb; }
+                    else if (this.rgbSlider === 'g') { x = this.r; y = 255 - this.b_rgb; }
+                    else { x = this.r; y = 255 - this.g; }
+                }
+                const rect = this.canvas2D.getBoundingClientRect();
+                this.cursor.style.left = (x / 256 * rect.width) + 'px';
+                this.cursor.style.top = (y / 256 * rect.height) + 'px';
+            }
+            
+            updateHandlePosition() {
+                let val;
+                if (this.mode === 'hsb') {
+                    if (this.hsbSlider === 'h') val = this.h / 360 * 255;
+                    else if (this.hsbSlider === 's') val = this.s / 100 * 255;
+                    else val = this.b / 100 * 255;
+                } else {
+                    if (this.rgbSlider === 'r') val = this.r;
+                    else if (this.rgbSlider === 'g') val = this.g;
+                    else val = this.b_rgb;
+                }
+                const y = (255 - val) / 256 * this.canvasSlider.getBoundingClientRect().height;
+                this.handle.style.top = y + 'px';
+            }
+            
+            setColor(r, g, b) {
+                this.r = r; this.g = g; this.b_rgb = b;
+                this.syncHSBFromRGB();
+                this.render();
+            }
+            
+            show() { this.panel.classList.add('active'); }
+            hide() { this.panel.classList.remove('active'); }
+        }
+        
+        class GradientDesigner {
+            constructor() {
+                this.stops = [
+                    { pos: 0.0, color: { r: 0, g: 0, b: 0 } },
+                    { pos: 1.0, color: { r: 255, g: 255, b: 255 } }
+                ];
+                this.currentEditStop = null;
+                this.cyclical = true;
+                this.registryContent = null;
+                this.dragging = false;
+                this.lastAddedPalette = null;
+                
+                this.colorPicker = new ColorPicker((r, g, b) => {
+                    if (this.currentEditStop !== null) {
+                        this.stops[this.currentEditStop].color = { r, g, b };
+                        this.render();
+                    }
+                });
+                
+                this.initElements();
+                this.initEvents();
+                this.render();
+            }
+            
+            initElements() {
+                this.gradientDisplay = document.getElementById('gradientDisplay');
+                this.cyclicalBtn = document.getElementById('cyclicalBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.paletteNameInput = document.getElementById('paletteName');
+                this.uploadBtn = document.getElementById('uploadBtn');
+                this.addPaletteBtn = document.getElementById('addPaletteBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.fileInput = document.getElementById('fileInput');
+                this.status = document.getElementById('status');
+            }
+            
+            initEvents() {
+                this.cyclicalBtn.addEventListener('click', () => {
+                    this.cyclical = !this.cyclical;
+                    this.cyclicalBtn.textContent = this.cyclical ? 'Cyclical' : 'Linear';
+                    this.cyclicalBtn.classList.toggle('active', this.cyclical);
+                    this.render();
+                });
+                
+                this.clearBtn.addEventListener('click', () => this.reset());
+                
+                this.gradientDisplay.addEventListener('click', (e) => this.onGradientClick(e));
+                
+                // Hide color picker when clicking outside
+                document.addEventListener('click', (e) => {
+                    const pickerPanel = document.getElementById('colorPickerPanel');
+                    if (!e.target.closest('.stop') && !e.target.closest('.color-picker-panel')) {
+                        this.colorPicker.hide();
+                        this.currentEditStop = null;
+                    }
+                });
+                
+                this.uploadBtn.addEventListener('click', () => this.fileInput.click());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                this.addPaletteBtn.addEventListener('click', () => this.addPaletteToRegistry());
+                this.downloadBtn.addEventListener('click', () => this.downloadRegistry());
+            }
+            
+            reset() {
+                this.stops = [
+                    { pos: 0.0, color: { r: 0, g: 0, b: 0 } },
+                    { pos: 1.0, color: { r: 255, g: 255, b: 255 } }
+                ];
+                this.cyclical = false;
+                this.cyclicalBtn.textContent = 'Linear';
+                this.cyclicalBtn.classList.remove('active');
+                this.currentEditStop = null;
+                this.render();
+            }
+            
+            deleteStop(index) {
+                if (this.stops.length <= 2) return;
+                this.stops.splice(index, 1);
+                this.colorPicker.hide();
+                this.currentEditStop = null;
+                this.render();
+            }
+            
+            addStopNear(index) {
+                const currentPos = this.stops[index].pos;
+                const sortedStops = [...this.stops].sort((a, b) => a.pos - b.pos);
+                const currentIndex = sortedStops.findIndex(s => s.pos === currentPos);
+                
+                let newPos;
+                if (currentIndex < sortedStops.length - 1) {
+                    newPos = (currentPos + sortedStops[currentIndex + 1].pos) / 2;
+                } else if (currentIndex > 0) {
+                    newPos = (sortedStops[currentIndex - 1].pos + currentPos) / 2;
+                } else {
+                    newPos = Math.min(1.0, currentPos + 0.1);
+                }
+                
+                const color = this.getColorAt(newPos);
+                this.stops.push({ pos: newPos, color });
+                this.sortStops();
+                this.render();
+            }
+            
+            sortStops() {
+                this.stops.sort((a, b) => a.pos - b.pos);
+            }
+            
+            onGradientClick(e) {
+                if (e.target.classList.contains('add-btn') || 
+                    e.target.classList.contains('delete-btn') ||
+                    e.target.classList.contains('stop')) {
+                    return;
+                }
+                
+                const rect = this.gradientDisplay.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const pos = clickX / rect.width;
+                const color = this.getColorAt(pos);
+                this.stops.push({ pos, color });
+                this.sortStops();
+                this.render();
+            }
+            
+            getColorAt(pos) {
+                if (!this.cyclical) {
+                    return this.getColorLinear(pos);
+                }
+                
+                const first = this.stops[0];
+                const last = this.stops[this.stops.length - 1];
+                
+                if (pos < first.pos) {
+                    const D = 1 - last.pos + first.pos;
+                    const t = (pos - (last.pos - 1)) / D;
+                    return this.lerpColor(last.color, first.color, t);
+                } else if (pos > last.pos) {
+                    const D = 1 - last.pos + first.pos;
+                    const t = (pos - last.pos) / D;
+                    return this.lerpColor(last.color, first.color, t);
+                } else {
+                    return this.getColorLinear(pos);
+                }
+            }
+            
+            getColorLinear(pos) {
+                if (pos <= this.stops[0].pos) return { ...this.stops[0].color };
+                if (pos >= this.stops[this.stops.length - 1].pos) return { ...this.stops[this.stops.length - 1].color };
+                
+                for (let i = 0; i < this.stops.length - 1; i++) {
+                    if (pos >= this.stops[i].pos && pos <= this.stops[i + 1].pos) {
+                        const t = (pos - this.stops[i].pos) / (this.stops[i + 1].pos - this.stops[i].pos);
+                        return this.lerpColor(this.stops[i].color, this.stops[i + 1].color, t);
+                    }
+                }
+                return { ...this.stops[0].color };
+            }
+            
+            lerpColor(c1, c2, t) {
+                return {
+                    r: Math.round(c1.r + (c2.r - c1.r) * t),
+                    g: Math.round(c1.g + (c2.g - c1.g) * t),
+                    b: Math.round(c1.b + (c2.b - c1.b) * t)
+                };
+            }
+            
+            render() {
+                const samples = 512;
+                let gradientStr = 'linear-gradient(to right';
+                for (let i = 0; i <= samples; i++) {
+                    const pos = i / samples;
+                    const color = this.getColorAt(pos);
+                    const percent = (pos * 100).toFixed(2);
+                    gradientStr += `, rgb(${color.r},${color.g},${color.b}) ${percent}%`;
+                }
+                gradientStr += ')';
+                this.gradientDisplay.style.background = gradientStr;
+                
+                this.gradientDisplay.innerHTML = '';
+                this.stops.forEach((stop, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'stop';
+                    el.style.left = (stop.pos * 100) + '%';
+                    el.style.background = `rgb(${stop.color.r},${stop.color.g},${stop.color.b})`;
+                    
+                    const deleteBtn = document.createElement('div');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteStop(i);
+                    });
+                    el.appendChild(deleteBtn);
+                    
+                    const addBtn = document.createElement('div');
+                    addBtn.className = 'add-btn';
+                    addBtn.innerHTML = '+';
+                    addBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.addStopNear(i);
+                    });
+                    el.appendChild(addBtn);
+                    
+                    el.addEventListener('click', (e) => {
+                        if (e.target === deleteBtn || e.target === addBtn) return;
+                        e.stopPropagation();
+                        this.currentEditStop = i;
+                        this.colorPicker.setColor(stop.color.r, stop.color.g, stop.color.b);
+                        this.colorPicker.show();
+                    });
+                    
+                    let startX, startPos;
+                    el.addEventListener('mousedown', (e) => {
+                        if (e.target === deleteBtn || e.target === addBtn) return;
+                        e.stopPropagation();
+                        this.dragging = true;
+                        this.colorPicker.hide();
+                        this.currentEditStop = null;
+                        startX = e.clientX;
+                        startPos = stop.pos;
+                        el.classList.add('dragging');
+                    });
+                    
+                    const onMouseMove = (e) => {
+                        if (!this.dragging) return;
+                        const rect = this.gradientDisplay.getBoundingClientRect();
+                        const deltaX = e.clientX - startX;
+                        const deltaPos = deltaX / rect.width;
+                        stop.pos = Math.max(0, Math.min(1, startPos + deltaPos));
+                        this.sortStops();
+                        this.render();
+                    };
+                    
+                    const onMouseUp = () => {
+                        this.dragging = false;
+                        el.classList.remove('dragging');
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                    };
+                    
+                    el.addEventListener('mousedown', () => {
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    });
+                    
+                    this.gradientDisplay.appendChild(el);
+                });
+            }
+            
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
+            }
+            
+            rgbToHex(color) {
+                return '#' + [color.r, color.g, color.b].map(x => {
+                    const hex = x.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('');
+            }
+            
+            getCurrentPaletteSignature() {
+                const name = this.paletteNameInput.value.trim() || 'CustomGradient';
+                const safeName = name.replace(/[^a-zA-Z0-9_]/g, '');
+                const stopsStr = JSON.stringify(this.stops);
+                return safeName + '|' + stopsStr;
+            }
+            
+            generatePaletteCode() {
+                const name = this.paletteNameInput.value.trim() || 'CustomGradient';
+                const safeName = name.replace(/[^a-zA-Z0-9_]/g, '');
+                
+                let code = `DEFINE_GRADIENT_PALETTE( ${safeName}_gp ) {\n`;
+                
+                this.stops.forEach((stop, i) => {
+                    const pos = Math.round(stop.pos * 255);
+                    const { r, g, b } = stop.color;
+                    const comment = i === 0 ? '  // Start' : 
+                                   i === this.stops.length - 1 ? '  // End' : '';
+                    code += `    ${pos.toString().padStart(3)}, ${r.toString().padStart(3)}, ${g.toString().padStart(3)}, ${b.toString().padStart(3)}${comment}\n`;
+                    if (i < this.stops.length - 1) code = code.slice(0, -1) + ',\n';
+                });
+                
+                code += '};\n';
+                return { code, name: safeName };
+            }
+            
+            handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.registryContent = e.target.result;
+                    this.status.textContent = `Loaded: ${file.name}`;
+                    this.status.className = 'status success';
+                };
+                reader.readAsText(file);
+            }
+            
+            addPaletteToRegistry() {
+                if (!this.registryContent) {
+                    this.status.textContent = 'Error: Upload paletteregistry.cpp first';
+                    this.status.className = 'status error';
+                    return;
+                }
+                
+                const { code, name } = this.generatePaletteCode();
+                
+                const namespaceEndMatch = this.registryContent.match(/\n} \/\/ anonymous namespace/);
+                if (!namespaceEndMatch) {
+                    this.status.textContent = 'Error: Could not find insertion point';
+                    this.status.className = 'status error';
+                    return;
+                }
+                
+                const insertPos = namespaceEndMatch.index;
+                const before = this.registryContent.substring(0, insertPos);
+                const after = this.registryContent.substring(insertPos);
+                
+                this.registryContent = before + '\n' + code + after;
+                
+                const initMatch = this.registryContent.match(/registerPalette\("magenta".*?\);/);
+                if (initMatch) {
+                    const regInsertPos = initMatch.index + initMatch[0].length;
+                    const regBefore = this.registryContent.substring(0, regInsertPos);
+                    const regAfter = this.registryContent.substring(regInsertPos);
+                    const lowerName = name.toLowerCase().replace(/_/g, '');
+                    this.registryContent = regBefore + `\n    registerPalette("${lowerName}", ${name}_gp);` + regAfter;
+                }
+                
+                this.lastAddedPalette = this.getCurrentPaletteSignature();
+                this.status.textContent = `Added palette: ${name}`;
+                this.status.className = 'status success';
+            }
+            
+            downloadRegistry() {
+                if (!this.registryContent) {
+                    this.status.textContent = 'Error: No registry content to download';
+                    this.status.className = 'status error';
+                    return;
+                }
+                
+                const currentSignature = this.getCurrentPaletteSignature();
+                if (this.lastAddedPalette !== currentSignature) {
+                    const shouldAdd = confirm('Current palette has not been added. Add it before downloading?');
+                    if (shouldAdd) {
+                        this.addPaletteToRegistry();
+                        if (this.status.className === 'status error') {
+                            return;
+                        }
+                    }
+                }
+                
+                const blob = new Blob([this.registryContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'paletteregistry.cpp';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.status.textContent = 'Downloaded: paletteregistry.cpp';
+                this.status.className = 'status success';
+            }
+        }
+        
+        new GradientDesigner();
+    </script>
+</body>
+</html>
