@@ -42,9 +42,10 @@ void cycleswirl(SequenceBuilder& seq, String modelname = "octahedron",
 }*/
 
   void cubeswirl(SequenceBuilder& seq,  String modelname ="cube",float steplength=1,float fadelength=.3){
-  for(int i: {23,23,0,1,2,3,4,5,6,11,
+  for(//int i: {23,23,0,1,2,3,4,5,6,11,
            //13,14,15,16,17,18,19,20,
-            21,22,23}){
+        //    21,22,23}
+        int i = 0;i<24;i++){
     seq.addstep(modelname, cubecellperms[i],steplength,FADE,fadelength);
   }}
 
@@ -113,7 +114,7 @@ void initializeSequences() {
     
     // Background palette - when quiet
     seq.setbackgroundpalette({
-        "dark",
+       // "dark",
     /*    {"perlin", "cloud", 2.0, 30.0,0},
         {"perlin", "cloud", 4.0, 40.0,.1},
         {"perlin", "cloud", 5.0, 20.0,.4},
@@ -166,19 +167,31 @@ void initializeSequences() {
 */
     });
 
-    //seq.applyEdgePermutationSequence("octahedron","octacellperms",1,.3);
-
-  //octaswirl(seq,"octahedron",4,.3);
+    
+  //octaswirl(seq,"octahedron",2,.3);
 
 seq.setbackgroundpalette({
         "dark",
-      {"simplecolor", "rainbow", 1},//"dark","dark","dark","dark","dark","dark",
-   {"simplecolor", "heat", .3},
-   {"simplecolor", "forest", .3},
-   {"simplecolor", "red", .3},{"simplecolor", "white", .3}});
+      {"simplecolor", "ocean", 2},//"dark","dark","dark","dark","dark","dark",
+   {"simplecolor", "ocean", 2},
+   {"simplecolor", "ocean", 2},
+   {"simplecolor", "ocean", 2},{"simplecolor", "white", 2}});
 //seq.addstep("strandsbytype", 1400, FADE, 2);
 
-seq.addstep("cycles", 1400, FADE, 2);
+seq.addstep("cycles", 10, FADE, 4);
+
+seq.addstep("cycles", 15, FADE, 4);
+/*
+seq.setbackgroundpalette({
+        "dark",
+      {"simplecolor", "ocean", 2},//"dark","dark","dark","dark","dark","dark",
+   {"simplecolor", "heat", 2},
+   {"simplecolor", "forest", 2},
+   {"simplecolor", "ocean", 2},{"simplecolor", "white", 2}});
+//seq.addstep("strandsbytype", 1400, FADE, 2);
+*/
+
+seq.addstep("allcycles", 40, FADE, 2);
 
 
 seq.setaudiopalette({{"fftfire", "rainbow", 30.0, 0,fftthreshold},{"fftfire", "rainbow", 30.0, 0,fftthreshold},
@@ -195,7 +208,7 @@ seq.setbackgroundpalette({
    {"simplecolor", "rainbow", .3}});
 
 
-cubeswirl(seq,"cube",2);
+cubeswirl(seq,"cube",1);
 
 
 seq.setaudiopalette({"dark",
