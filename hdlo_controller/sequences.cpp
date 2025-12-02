@@ -169,7 +169,7 @@ seq.setbackgroundpalette({
    {"simplecolor", "rainbow", .3}});
 
 
-//cubeswirl(seq,"cube",1);
+cubeswirl(seq,"cube",1);
 
 
 seq.setaudiopalette({"dark",
