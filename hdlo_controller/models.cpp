@@ -332,6 +332,46 @@ colormodel* colormodel::applyEdgePermutationSequence(const String* permNames, in
   return current;
 }
 
+colormodel* colormodel::applyEdgePermutationSequence(std::initializer_list<String> permNames, String newName, bool mergeWithOriginal) const {
+  // Convert initializer_list to vector for easier iteration
+  std::vector<String> permVector(permNames.begin(), permNames.end());
+  int numPerms = permVector.size();
+  
+  colormodel* current = const_cast<colormodel*>(this);
+  colormodel* temp = nullptr;
+  
+  for(int i = 0; i < numPerms; i++) {
+    EdgePermutation* perm = EdgePermutation::findPermutationByName(permVector[i]);
+    if(perm) {
+      temp = current->applyEdgePermutation(*perm, "", false);
+      if(i > 0 && current != this) {
+        delete current;
+      }
+      current = temp;
+    }
+  }
+  
+  if(newName == "") {
+    newName = modelname + "_sequence";
+  }
+  
+  // Merge with original if requested
+  if(mergeWithOriginal && current != this) {
+    colormodel* merged = mergeModels(current, this, newName);
+    if(current != this) {
+      delete current;
+    }
+    return merged;
+  }
+  
+  if(current != this) {
+    current->modelname = newName;
+    current->registerSelf();
+  }
+  
+  return current;
+}
+
 colormodel* colormodel::applyEdgePermutation(String modelName, const EdgePermutation& perm, String newName) {
   colormodel* model = findModelByName(modelName);
   if(model) {
@@ -368,6 +408,14 @@ colormodel* colormodel::applyEdgePermutationSequence(String modelName, const Str
   colormodel* model = findModelByName(modelName);
   if(model) {
     return model->applyEdgePermutationSequence(permNames, numPerms, newName);
+  }
+  return nullptr;
+}
+
+colormodel* colormodel::applyEdgePermutationSequence(String modelName, std::initializer_list<String> permNames, String newName, bool mergeWithOriginal) {
+  colormodel* model = findModelByName(modelName);
+  if(model) {
+    return model->applyEdgePermutationSequence(permNames, newName, mergeWithOriginal);
   }
   return nullptr;
 }

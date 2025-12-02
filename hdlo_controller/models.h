@@ -85,7 +85,7 @@ private:
     std::array<String, 120> edgePalettes;
     bool shouldRegister;
 
-    static const int MAX_MODELS = 100;
+    static const int MAX_MODELS = 40;
     static colormodel* modelRegistry[MAX_MODELS];
     static String modelNameRegistry[MAX_MODELS];
     static int numRegisteredModels;
@@ -117,11 +117,13 @@ public:
     colormodel* applyEdgePermutation(const EdgePermutation& perm, String newName = "", bool registerModel = true) const;
     colormodel* applyEdgePermutation(const std::array<int, 120>& permArray, String newName = "", bool registerModel = true) const;
     colormodel* applyEdgePermutationSequence(const String* permNames, int numPerms, String newName = "") const;
+    colormodel* applyEdgePermutationSequence(std::initializer_list<String> permNames, String newName = "", bool mergeWithOriginal = false) const;
     
     static colormodel* applyEdgePermutation(String modelName, const EdgePermutation& perm, String newName = "");
     static colormodel* applyEdgePermutation(String modelName, const std::array<int, 120>& permArray, String newName = "");
     static colormodel* applyEdgePermutation(String modelName, String permName, String newName = "");
     static colormodel* applyEdgePermutationSequence(String modelName, const String* permNames, int numPerms, String newName = "");
+    static colormodel* applyEdgePermutationSequence(String modelName, std::initializer_list<String> permNames, String newName = "", bool mergeWithOriginal = false);
     
     static colormodel* mergeModels(const colormodel* model1, const colormodel* model2, String newName);
     static colormodel* mergeModels(String model1Name, String model2Name, String newName);

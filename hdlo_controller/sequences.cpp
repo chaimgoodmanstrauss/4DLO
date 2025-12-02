@@ -2,14 +2,10 @@
 //
 //   sequences.cpp
 //
-// Minimal dual palette implementation
-//
 
 #include "namedpermutations.h"
 #include "modelsequence.h"
 #include "hdlo_models.h"
-
-
 
 // Global sequence object
 modelsequence mainSequence;
@@ -25,6 +21,9 @@ const float AUDIO_PALETTE_SWITCH_THRESHOLD = 0.020; //somehow none of these seem
 // How long (seconds) to wait after audio drops below threshold before fading back to background
 const float AUDIO_TIMEOUT_SECONDS = 2.0;
 
+
+///////////////////////////////////////
+// some scripts 
 
 void octaswirl(SequenceBuilder& seq, String modelname = "octahedron", 
                float steplength = 1.0, float fadelength = 1) {
@@ -75,126 +74,88 @@ void initializeSequences() {
     
     seq.setaudiotimeout(2.0); // I think this is currently blanked out and is a const, easily reset.
 
-    //seq.setaudiosource(AudioSourceConfig::LINE_IN);
-    // Switch to SD card with looping
-    // seq.setaudiosource(AudioSourceConfig::SD_CARD, "music.wav", true);
-    // Switch back to microphone
     seq.setaudiosource(AudioSourceConfig::MICROPHONE);
     
-
-
-    // Audio palette - activated by sound
     seq.setaudiopalette({
-       // "dark",
-        //threshold,  velocity, gravity, size, bounce decay
-      
+        // even unactivated edges (type 0) are colored when audio is present:
         {"fftfire", "rainbow", 30.0, 0,fftthreshold},
         {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
         {"fftspectrum","party",1},
-        {"fftfire", "forest", 30.0, 0,fftthreshold},
-        {"fftballs", "party", 0.001, 0.1, 0.002, 0.01, 0.1},
-         {"fftspectrum","party",1},
-        {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
-        {"simplecolor", "rainbow", 2},
+        {"fftfire", "forest", 30.0, 0,fftthreshold}});
     
-         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
-        {"fftfire", "sunset", 30.0, 0,fftthreshold},
-         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
-     
-     
-
-    /*    {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
-        {"fftballs", "rainbow", 0.002, 0.1, 0.002, 0.01, 0.2},
-        {"fftballs", "rainbow", 0.005, 0.1, 0.002, 0.01, 0.3},
-        {"fftballs", "rainbow", 0.008, 0.1, 0.002, 0.04, 0.2},
-        {"fftballs", "rainbow", 0.01, 0.1, 0.002, 0.025, 0.6},
-        {"fftballs", "rainbow", 0.02, 0.1, 0.002, 0.04, 0.8},*/
-     
-    });
     
-    // Background palette - when quiet
     seq.setbackgroundpalette({
-       // "dark",
-    /*    {"perlin", "cloud", 2.0, 30.0,0},
-        {"perlin", "cloud", 4.0, 40.0,.1},
-        {"perlin", "cloud", 5.0, 20.0,.4},
-        {"perlin", "cloud", 7.0, 20.0,1},
-        {"perlin", "cloud", 15.0, 20.0,1},
-        {"perlin", "cloud", 7.0, 20.0}*/
-        /*{"perlin", "cloud",  2.0,3,.03},
-        {"perlin", "heat",   2,3,.1},
-        {"perlin", "ocean",  2,100,.2},
-        {"perlin", "sunset",  10,3,0},
-        {"perlin", "forest",  10,3,.5},
-        {"perlin", "rainbow",  10,3,.5}*/
-       /* {"dualblobs", "white", 0.05, .5, 0.5},    // Default settings
-    {"dualblobs", "heat", 0.1, 1, 0.8},    // Faster, more particles, more sparkle
-    {"dualblobs", "forest", 0.2, 3, 0.3},  // Slower, fewer particles, less sparkle
-    {"dualblobs", "ocean", 0.02, 1, 1.0},    // Fast, dense, max sparkle
-    {"dualblobs", "party", 0.03, 4, 0.2},   // Very slow drift, minimal sparkle
-    {"dualblobs", "red", 0.012, 10, 0.6}*/
+     "dark", 
+   // {"dualblobs", "rainbow", 0.015, 1, 0.7, 1, 5},
+    {"simplecolor", "rainbow", .3},
+    {"simplecolor", "rainbow", .3},
+    {"simplecolor", "rainbow", .3},
+    {"simplecolor", "ocean", .3},
+    {"simplecolor", "forest", .3},
+});
 
-    // Pure palette colors (randomColors=0)
-   //"dark","dark","dark","dark",
-   {"simplecolor", "rainbow", .3},
-   {"simplecolor", "ocean", .3},
-   {"simplecolor", "forest", .3},
-   {"simplecolor", "rainbow", .3},
-   {"simplecolor", "red", 3},{"simplecolor", "blue", 3},
-  //  {"simplecolor", "blue", 2},
-   // {"simplecolor", "red", 2},
-   {"perlin", "ocean"},
-    //{"perlin", "rainbow", 0.02, 1, 1.0,1,5},
-    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
-    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
-   {"simplecolor", "forest", 1.5},
-   {"simplecolor", "rainbow", 1.5},
-   {"simplecolor", "ocean", .4},
-    {"perlin", "ocean"},//, 0.02, 1, 1,  0,5},
-    
-    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
-    {"simplecolor", "heat", 2},
-    {"perlin", "cloud", 0.02, 1, 5.0,0,20},
-    {"simplecolor", "forest", 4, 1, 1.0,1,20},/*
-    {"dualblobs", "white",   0.010, 2, 0.5, 0, 5},  // Default
-    {"dualblobs", "ocean",   0.020, 1, 1.0, 0, 3},  // Fast, dense, long trails - PURE OCEAN COLORS
-    {"dualblobs", "heat",    0.015, 1, 0.8, 0, 4},  // Quick sparkly fade
-    {"dualblobs", "forest",  0.008, 3, 0.3, 0, 8},  // Slow, long, subtle
-    
-    // Random multi-hue (randomColors=1)
-    {"dualblobs", "rainbow", 0.015, 1, 0.7, 1, 5},  // Sample random rainbow colors
+    cubeswirl(seq,"octahedron",1);
 
-*/
-    });
+  
+seq.setbackgroundpalette({
+        "dark",
+    {"simplecolor", "ocean", 2},
+   {"simplecolor", "ocean", 2,.25},
+   {"simplecolor", "ocean", 2,.5},
+   {"simplecolor", "ocean", 2,.75}});
 
-    
-  //octaswirl(seq,"octahedron",2,.3);
+colormodel::applyEdgePermutation("cycles", "rot4",  "cycles_rot4_1");
+colormodel::applyEdgePermutationSequence("cycles", {"rot4","rot4"}, "cycles_rot4_2");
+colormodel::applyEdgePermutationSequence("cycles", {"rot4","rot4","rot4"}, "cycles_rot4_3");
+
+seq.setbackgroundpalette({
+        "dark",{"simplecolor", "ocean", 2}});
+ 
+seq.addstep("cycles", 3, FADE, 1);
+
+seq.setbackgroundpalette({
+        "dark",{"simplecolor", "forest", 2}});
+
+seq.addstep("cycles_rot4_1", 3, FADE, 1);
+
+seq.setbackgroundpalette({
+        "dark",{"simplecolor", "party", 2}});
+
+seq.addstep("cycles_rot4_2", 3, FADE, 1);
+
+seq.setbackgroundpalette({
+        "dark",{"simplecolor", "heat", 2}});
+seq.addstep("cycles_rot4_3", 3, FADE, 1);
+
 
 seq.setbackgroundpalette({
         "dark",
-      {"simplecolor", "ocean", 2},//"dark","dark","dark","dark","dark","dark",
-   {"simplecolor", "ocean", 2},
-   {"simplecolor", "ocean", 2},
-   {"simplecolor", "ocean", 2},{"simplecolor", "white", 2}});
-//seq.addstep("strandsbytype", 1400, FADE, 2);
+    {"simplecolor", "ocean", 2},
+   {"simplecolor", "ocean", 2,.25},
+   {"simplecolor", "ocean", 2,.5},
+   {"simplecolor", "ocean", 2,.75}});
 
-seq.addstep("cycles", 10, FADE, 4);
+   seq.setbackgroundpalette({
+        "dark",
+    {"simplecolor", "ocean", 2},
+   {"simplecolor", "forest", 2,.25},
+   {"simplecolor", "party", 2,.5},
+   {"simplecolor", "heat", 2,.75}});
 
-seq.addstep("cycles", 15, FADE, 4);
-/*
+seq.addstep("allcycles", 20, FADE, 2);
+
 seq.setbackgroundpalette({
         "dark",
-      {"simplecolor", "ocean", 2},//"dark","dark","dark","dark","dark","dark",
-   {"simplecolor", "heat", 2},
-   {"simplecolor", "forest", 2},
-   {"simplecolor", "ocean", 2},{"simplecolor", "white", 2}});
-//seq.addstep("strandsbytype", 1400, FADE, 2);
-*/
+    {"simplecolor", "ocean", 2},
+   {"simplecolor", "ocean", 2,.25},
+   {"simplecolor", "ocean", 2,.5},
+   {"simplecolor", "ocean", 2,.75}});
 
-seq.addstep("allcycles", 40, FADE, 2);
+   seq.addstep("allcycles", 40, FADE, 10);
 
-
-seq.setaudiopalette({{"fftfire", "rainbow", 30.0, 0,fftthreshold},{"fftfire", "rainbow", 30.0, 0,fftthreshold},
+seq.setaudiopalette({
+  {"fftfire", "rainbow", 30.0, 0,fftthreshold},
+{"fftfire", "rainbow", 30.0, 0,fftthreshold},
 {"fftfire", "rainbow", 30.0, 0,fftthreshold},
  {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
 {"fftfire", "rainbow", 30.0, 0,fftthreshold},
@@ -202,13 +163,13 @@ seq.setaudiopalette({{"fftfire", "rainbow", 30.0, 0,fftthreshold},{"fftfire", "r
 
 seq.setbackgroundpalette({
         "dark",
-{"simplecolor", "rainbow", .3},
+  {"simplecolor", "rainbow", .3},
    {"simplecolor", "rainbow", .3},
    {"simplecolor", "rainbow", .3},
    {"simplecolor", "rainbow", .3}});
 
 
-cubeswirl(seq,"cube",1);
+//cubeswirl(seq,"cube",1);
 
 
 seq.setaudiopalette({"dark",
