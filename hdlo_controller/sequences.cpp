@@ -41,10 +41,11 @@ void cycleswirl(SequenceBuilder& seq, String modelname = "octahedron",
 }*/
 
   void cubeswirl(SequenceBuilder& seq,  String modelname ="cube",float steplength=1,float fadelength=.3){
-  for(//int i: {23,23,0,1,2,3,4,5,6,11,
+  for(int i: {23,23,0,1,2,3,4,5,6,11,
            //13,14,15,16,17,18,19,20,
-        //    21,22,23}
-        int i = 0;i<24;i++){
+           21,22,23}
+       // int i = 0;i<24;i++
+       ){
     seq.addstep(modelname, cubecellperms[i],steplength,FADE,fadelength);
   }}
 
@@ -76,10 +77,15 @@ void initializeSequences() {
 
     seq.setaudiosource(AudioSourceConfig::MICROPHONE);
     
+    seq.setaudiotimeout(10.0); // I think this is currently blanked out and is a const, easily reset.
+
     seq.setaudiopalette({
         // even unactivated edges (type 0) are colored when audio is present:
         {"fftfire", "rainbow", 30.0, 0,fftthreshold},
-        {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
+        //fftballs has parameters: threshhold, velocity, gravity,size, bounce decay
+       // {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    0},
+        {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    .00001},
+        {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    0},
         {"fftspectrum","party",1},
         {"fftfire", "forest", 30.0, 0,fftthreshold}});
     
@@ -94,9 +100,9 @@ void initializeSequences() {
     {"simplecolor", "forest", .3},
 });
 
-    cubeswirl(seq,"octahedron",1);
+ //   cubeswirl(seq,"octahedron",2);
 
-  
+  /*
 seq.setbackgroundpalette({
         "dark",
     {"simplecolor", "ocean", 2},
@@ -116,16 +122,16 @@ seq.addstep("cycles", 3, FADE, 1);
 seq.setbackgroundpalette({
         "dark",{"simplecolor", "forest", 2}});
 
-seq.addstep("cycles_rot4_1", 3, FADE, 1);
+seq.addstep("cycles_rot4_1", 4, FADE, 1);
 
 seq.setbackgroundpalette({
         "dark",{"simplecolor", "party", 2}});
 
-seq.addstep("cycles_rot4_2", 3, FADE, 1);
+seq.addstep("cycles_rot4_2", 4, FADE, 1);
 
 seq.setbackgroundpalette({
         "dark",{"simplecolor", "heat", 2}});
-seq.addstep("cycles_rot4_3", 3, FADE, 1);
+seq.addstep("cycles_rot4_3", 4, FADE, 1);
 
 
 seq.setbackgroundpalette({
@@ -200,33 +206,10 @@ seq.addstep("twentyfourcell", 60, FADE, 6);
 seq.setbackgroundpalette({
     "dark",{"perlin", "heat",10,30}
 });
-   seq.addstep("twentyfourcell", 20, FADE, 2);
-
-
-//seq.setbackgroundpalette({ "dark",{"simplecolor", "rainbow", .3},{"simplecolor", "rainbow", .3},{"simplecolor", "rainbow", .3},{"simplecolor", "rainbow", .3},});
-
-  //  cubeswirl(seq,"cube",4);
-
-  //seq.addstep("strandsbytype", 10000, FADE, 2);
-  //  seq.addstep("tester", 10000, FADE, 2);
-   // seq.addstep("strandsbyindex", 1000, FADE, 2);
-    
-    //seq.addstep("twentyfourcell", 1000, FADE, 2);
-/*
-    seq.addstep("hypercubes", 1000.0, FADE, 2);
-     seq.addstep("cycles", 1000.0, FADE, 2);
-    seq.addstep("allcycles", 10.0, FADE, 2);
-
-    seq.addstep("sixpaths", 10.0, FADE, 2);
-   
-    seq.addstep("hypercubes", 10.0, FADE, 2);
-    
-    seq.addstep("twentyfourcell", 10, FADE, 2);
-    seq.addstep("hypercubes", 10, FADE, 2);
 */
+   seq.addstep("twentyfourcell", 2000, FADE, 2);
 
-
-   // seq.addstep("test", "simpletest", 10.0, FADE, 2.0);   
+ 
     
     mainSequence.endRegistry();
     

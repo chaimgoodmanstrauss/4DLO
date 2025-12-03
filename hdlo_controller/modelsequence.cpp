@@ -151,7 +151,11 @@ modelsequence::modelsequence()
       audioFadeStartTime(0),
       fadingToAudio(false),
       audioCacheValid(false),
-      cachedStepIndex(-1) {
+      cachedStepIndex(-1),
+      sameModelTransition(false) {
+    for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
+        cachedPrevFunctions[i] = nullptr;
+    }
     Serial.print("Steps in EXTMEM at 0x");
     Serial.println((uint32_t)steps, HEX);
 }
@@ -451,6 +455,7 @@ void modelsequence::update() {
         if(elapsed >= steps[currentStep].transitionDuration) {
             inTransition = false;
             transitionProgress = 1.0;
+            sameModelTransition = false;
         } else {
             transitionProgress = (float)elapsed / steps[currentStep].transitionDuration;
         }
@@ -462,18 +467,60 @@ void modelsequence::update() {
         if(elapsed >= steps[currentStep].duration) {
             previousStep = currentStep;
             
+            int nextStep;
             if(currentRegistryIndex >= 0) {
                 int registryEnd = registry[currentRegistryIndex].startStepIndex + 
                                  registry[currentRegistryIndex].numSteps;
-                int nextStep = currentStep + 1;
+                nextStep = currentStep + 1;
                 if(nextStep >= registryEnd) {
                     nextStep = registry[currentRegistryIndex].startStepIndex;
                 }
-                currentStep = nextStep;
             } else {
-                currentStep = (currentStep + 1) % numSteps;
+                nextStep = (currentStep + 1) % numSteps;
             }
             
+            // Check if same-model FADE transition
+            sameModelTransition = false;
+            if(steps[nextStep].transitionType == FADE && 
+               steps[nextStep].transitionDuration > 0 &&
+               steps[currentStep].model != nullptr &&
+               steps[nextStep].model != nullptr &&
+               steps[currentStep].model == steps[nextStep].model) {
+                sameModelTransition = true;
+                Serial.print("Same-model FADE: step ");
+                Serial.print(currentStep);
+                Serial.print(" -> ");
+                Serial.println(nextStep);
+                
+                // Cache current step's background functions for blending
+                const auto& prevStepData = steps[currentStep];
+                int numFuncs = prevStepData.numBackgroundFunctions;
+                Serial.print("  numBackgroundFunctions: ");
+                Serial.println(numFuncs);
+                
+                if(numFuncs < 0 || numFuncs > SEQ_MAX_FUNCTIONS) {
+                    Serial.println("  ERROR: Invalid numBackgroundFunctions!");
+                    sameModelTransition = false;
+                    numFuncs = 0;
+                }
+                
+                for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
+                    cachedPrevFunctions[i] = nullptr;
+                }
+                for(int i = 0; i < numFuncs; i++) {
+                    Serial.print("  Caching func ");
+                    Serial.print(i);
+                    Serial.print(": ");
+                    Serial.println(prevStepData.backgroundPalettes[i].functionName);
+                    cachedPrevFunctions[i] = getCachedFunction(prevStepData.backgroundPalettes[i]);
+                }
+            } else {
+                for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
+                    cachedPrevFunctions[i] = nullptr;
+                }
+            }
+            
+            currentStep = nextStep;
             stepStartTime = currentTime;
             
             audioActive = false;
@@ -499,6 +546,16 @@ void modelsequence::update() {
 void modelsequence::updateCachedFunctions() {
     if(currentStep < 0 || currentStep >= numSteps) return;
     const auto& step = steps[currentStep];
+    
+    // Update cached previous functions during same-model transitions
+    if(inTransition && sameModelTransition) {
+        unsigned long currentTime = millis();
+        for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
+            if(cachedPrevFunctions[i]) {
+                cachedPrevFunctions[i]->updateIfNeeded(currentTime);
+            }
+        }
+    }
     
     if(step.acceptAudio && audioFadeProgress > 0.001f) {
         if(currentStep != cachedStepIndex || !audioCacheValid) {
@@ -578,12 +635,43 @@ CRGB modelsequence::getColor(int edgeindex, float position) {
     }
     
     colormodel* prevModel = steps[previousStep].model;
-    if(!prevModel || prevModel == model) {
+    if(!prevModel) {
         return currentColor;
     }
     
-    CRGB previousColor = prevModel->getcolorfunction(edgeindex, position);
+    CRGB previousColor;
     TransitionType transType = steps[currentStep].transitionType;
+    
+    if(prevModel == model) {
+        // Same model - use cached previous functions for blending
+        if(!sameModelTransition) {
+            return currentColor;
+        }
+        
+        if(edgeindex < 0 || edgeindex >= 120) {
+            return currentColor;
+        }
+        
+        int funcIndex = model->getEdgeFunctionIndex(edgeindex);
+        
+        const auto& edgeModels = model->getEdgeModels();
+        int direction = edgeModels[edgeindex][1];
+        float workingPosition = position;
+        if(direction < 0) workingPosition = 1.0 - workingPosition;
+        if(direction == 0) workingPosition = 2.0 * abs(0.5 - workingPosition);
+        float startPos = edgeModels[edgeindex][2] / 10000.0;
+        float scale = edgeModels[edgeindex][3] / 10000.0;
+        float transformedPosition = startPos + scale * workingPosition;
+        
+        if(funcIndex >= 0 && funcIndex < SEQ_MAX_FUNCTIONS && cachedPrevFunctions[funcIndex]) {
+            previousColor = cachedPrevFunctions[funcIndex]->getColor(transformedPosition);
+        } else {
+            previousColor = CRGB::Black;
+        }
+    } else {
+        // Different model - use model's color function directly
+        previousColor = prevModel->getcolorfunction(edgeindex, position);
+    }
     
     if(transType == FADE) {
         uint8_t blendAmount = (uint8_t)(transitionProgress * 255.0f);
@@ -629,6 +717,10 @@ void modelsequence::reset() {
     previousStep = -1;
     inTransition = false;
     transitionProgress = 0.0;
+    sameModelTransition = false;
+    for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
+        cachedPrevFunctions[i] = nullptr;
+    }
     
     audioActive = false;
     audioLastActiveTime = 0;

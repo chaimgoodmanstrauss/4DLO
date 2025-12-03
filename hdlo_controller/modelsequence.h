@@ -217,6 +217,10 @@ private:
     bool audioCacheValid;
     int cachedStepIndex;
     
+    // Cached functions for same-model FADE transitions
+    std::shared_ptr<StatefulColorFunction> cachedPrevFunctions[SEQ_MAX_FUNCTIONS];
+    bool sameModelTransition;
+    
     std::shared_ptr<StatefulColorFunction> getCachedFunction(const FunctionWithPalette& func);
     
     void applyFunctionsToModel();
