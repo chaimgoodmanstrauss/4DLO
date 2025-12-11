@@ -13,6 +13,16 @@ forest
 
 
 
+//////// REMOVE
+
+audiocylon -- just start over
+vumeter
+beatdetector 
+vocals
+particles
+
+////////////////////
+
 seq.addpalette({
     "dark",
     {"perlin", "heat",  7.0,20},
@@ -107,6 +117,34 @@ currently averages over 60 bins.
 
 
 
+ {"fftballs", "party", 0.001, 0.1, 0.002, 0.01, 0.1},
+ {"fftspectrum","party",1},
+        {"fftballs", "rainbow", 0.001, 0.1, 0.002, 0.01, 0.1},
+        {"simplecolor", "rainbow", 2},
+         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
+        {"fftfire", "sunset", 30.0, 0,fftthreshold},
+         {"fftfire", "rainbow", 30.0, 0,fftthreshold},  
+
+ {"simplecolor", "rainbow", .3},
+    {"simplecolor", "red", 3},{"simplecolor", "blue", 3},
+    {"perlin", "ocean"},
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
+   {"simplecolor", "forest", 1.5},
+   {"simplecolor", "rainbow", 1.5},
+   {"simplecolor", "ocean", .4},
+    {"perlin", "ocean"},
+    {"perlin", "rainbow", 0.02, 1, 1.0,1,5},
+    {"simplecolor", "heat", 2},
+    {"perlin", "cloud", 0.02, 1, 5.0,0,20},
+    {"simplecolor", "forest", 4, 1, 1.0,1,20},  // Sample random rainbow colors
+
+
+
+
+
+
+
 ////// Broken or useless
 
 audiocylon -- just start over
@@ -117,6 +155,8 @@ particles
 
 
 not so useful 
+
+
 
 plasma
 cloud

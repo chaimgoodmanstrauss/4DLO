@@ -1,0 +1,29 @@
+FFTBalls reaches some sort of dead state. When a ball is trapped it needs to disappear; when balls coincide, they need to merges.
+
+
+Refactor the code in the project files in a very significant manner: Replace the string-based encoding in sequences.cpp -- models, colorfunctions, named permutations, palettes etc etc, with a global integer encoding. Removing all of the "'s in sequences.cpp should be a readable file, with variable names that are the same as the strings from before. In fact, provide this file with the rest, and make sure it works.  (No string based management should remain) 
+
+No namespaces etc should be used -- each variable name should be uniquely parsable (perhaps audiofunctions get 10000+index, palettes 20000+index, models such and such etc)  and therefore parsable just  from its name. (Resolve conflicts such as with rainbow and party by simply eliminating the colorpalette functions -- they are redundant with simplecolor and the color palettes.) Do not change the variable names -- use the strings; do not add prefixes, suffixes etc, keep them exactly the same. 
+
+Braces are parsable -- as they were before the refactor. Sequences.cpp should look THE SAME as it did before the refactor, just with quote marks removed (replacing strings with unique identifying variable names, using THE SAME naming conventions as before. In fact, replace all the strings with variable names in sequences.cpp -- this should be functional, and this should look just the same to the user, just with "'s removed. 
+Are there memory leaks? Evaluate the overall memory usage vs the old way. ALSO, EXPLAIN how to add new effects, models, palettes etc, updating the index registry
+
+Provide all of the updated files, compressing this conversation as needed. 
+
+ replace each "foo" with a unique globally available const int  foo. Ensure this is consistent within the color function palette and palette registry systems, as well as the modelsequence architecture.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Add comments at the beginning of the palette, modelseq, model and color function header files, addressed to an LLM, explaining how to add and register new palette, model and color functions,  making future work quicker) 
+
+Are permutations and models in this system?

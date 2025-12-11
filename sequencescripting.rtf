@@ -37,6 +37,7 @@
 \pard\pardeftab720\partightenfactor0
 
 \f1\b0\fs26 \cf0 seq.setaudiopalette(\{...\});        // Functions shown when audio detected\
+\
 seq.setbackgroundpalette(\{...\});   // Functions shown when quiet\
 \
 \pard\pardeftab720\sa298\partightenfactor0
@@ -48,11 +49,14 @@ seq.setbackgroundpalette(\{...\});   // Functions shown when quiet\
 \pard\pardeftab720\partightenfactor0
 
 \f1\b0\fs26 \cf0 seq.addstep(modelName, duration in seconds, transition type, \outl0\strokewidth0 transition \outl0\strokewidth0 \strokec2 speed, acceptAudio, audioThreshold, audioTimeout);\
-\
+// audioTimeout is currently turned off and set to a constant 2 seconds; for audio functions with a long decay, this is too short. \
 \
 \pard\pardeftab720\sa280\partightenfactor0
 
 \f0\b\fs28 \cf0 Step with Named Permutation\
+
+\f2\b0 In order to move a model in the geometry of the 24-cell, apply a permutation by its name (rot4, oneTozzzpPerm, etc)
+\f0\b \
 \pard\pardeftab720\partightenfactor0
 
 \f1\b0\fs26 \cf0 seq.addstep(modelName, permutationName, duration, transition, speed, acceptAudio);\

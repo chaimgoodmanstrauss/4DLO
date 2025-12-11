@@ -32,6 +32,16 @@ void octaswirl(SequenceBuilder& seq, String modelname = "octahedron",
     }
 }
 
+void swirl(SequenceBuilder& seq, String modelname = "octahedron",float steplength = 1.0, float fadelength = 1,
+        std::initializer_list<int> indices =
+        {  0, 1, 2, 3, 4, 5, 6,7,
+           8, 9,10,11,12,13,14,15,
+          16,17,18,19,20,21,22,23}){
+            for(int i:indices){
+              seq.addstep(modelname, octacellperms[i],steplength,FADE,fadelength);
+            }
+          }
+
 /*
 void cycleswirl(SequenceBuilder& seq, String modelname = "octahedron", 
                float steplength = 1.0, float fadelength = 1) {
@@ -41,10 +51,10 @@ void cycleswirl(SequenceBuilder& seq, String modelname = "octahedron",
 }*/
 
   void cubeswirl(SequenceBuilder& seq,  String modelname ="cube",float steplength=1,float fadelength=.3){
-  for(int i: {23,23,0,1,2,3,4,5,6,11,
+  for(//int i: {23,23,0,1,2,3,4,5,6,11,
            //13,14,15,16,17,18,19,20,
-           21,22,23}
-       // int i = 0;i<24;i++
+       //    21,22,23}
+       int i = 0;i<24;i++
        ){
     seq.addstep(modelname, cubecellperms[i],steplength,FADE,fadelength);
   }}
@@ -76,17 +86,22 @@ void initializeSequences() {
     seq.setaudiotimeout(2.0); // I think this is currently blanked out and is a const, easily reset.
 
     seq.setaudiosource(AudioSourceConfig::MICROPHONE);
-    
-    seq.setaudiotimeout(10.0); // I think this is currently blanked out and is a const, easily reset.
+    //seq.setaudiosource(AudioSourceConfig(AudioSourceConfig::SD_CARD, "guitar.m4a", true));
 
     seq.setaudiopalette({
         // even unactivated edges (type 0) are colored when audio is present:
         {"fftfire", "rainbow", 30.0, 0,fftthreshold},
+        {"fftfire", "party", 30.0, 0,fftthreshold},
+        {"fftfire", "forest", 30.0, 0,fftthreshold},
+        {"fftfire", "ocean", 30.0, 0,fftthreshold},
+        {"fftfire", "heat", 30.0, 0,fftthreshold},
+        {"fftfire", "rainbow", 30.0, 0,fftthreshold},
+      
         //fftballs has parameters: threshhold, velocity, gravity,size, bounce decay
        // {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    0},
-        {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    .00001},
-        {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    0},
-        {"fftspectrum","party",1},
+       // {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    .00001},
+       // {"fftballs", "rainbow", fftthreshold,   .5,        .001,     .01,    0},
+       // {"fftspectrum","party",1},
         {"fftfire", "forest", 30.0, 0,fftthreshold}});
     
     
@@ -100,9 +115,17 @@ void initializeSequences() {
     {"simplecolor", "forest", .3},
 });
 
- //   cubeswirl(seq,"octahedron",2);
 
-  /*
+//seq.setbackgroundpalette({"dark", {"simplecolor", "forest",.9}});
+
+//seq.addstep("twentyfourcell", 6000, FADE, 6);
+   //octaswirl(seq,"octahedron",4,.3);
+
+//seq.addstep("quarters", 30000, FADE, 3);
+seq.addstep("octahedron", 3, FADE, 3);
+   cubeswirl(seq,"octahedron",2);
+
+
 seq.setbackgroundpalette({
         "dark",
     {"simplecolor", "ocean", 2},
@@ -115,39 +138,33 @@ colormodel::applyEdgePermutationSequence("cycles", {"rot4","rot4"}, "cycles_rot4
 colormodel::applyEdgePermutationSequence("cycles", {"rot4","rot4","rot4"}, "cycles_rot4_3");
 
 seq.setbackgroundpalette({
-        "dark",{"simplecolor", "ocean", 2}});
+        "dark",{"simplecolor", "green", 2}});
  
 seq.addstep("cycles", 3, FADE, 1);
 
 seq.setbackgroundpalette({
-        "dark",{"simplecolor", "forest", 2}});
+        "dark",{"simplecolor", "red", 2}});
 
 seq.addstep("cycles_rot4_1", 4, FADE, 1);
 
 seq.setbackgroundpalette({
-        "dark",{"simplecolor", "party", 2}});
+        "dark",{"simplecolor", "yellow", 2}});
 
 seq.addstep("cycles_rot4_2", 4, FADE, 1);
 
 seq.setbackgroundpalette({
-        "dark",{"simplecolor", "heat", 2}});
+        "dark",{"simplecolor", "blue", 2}});
 seq.addstep("cycles_rot4_3", 4, FADE, 1);
 
 
 seq.setbackgroundpalette({
         "dark",
-    {"simplecolor", "ocean", 2},
-   {"simplecolor", "ocean", 2,.25},
-   {"simplecolor", "ocean", 2,.5},
-   {"simplecolor", "ocean", 2,.75}});
+    {"simplecolor", "green", 2},
+   {"simplecolor", "red", 2,.25},
+   {"simplecolor", "yellow", 2,.5},
+   {"simplecolor", "blue", 2,.75}});
 
-   seq.setbackgroundpalette({
-        "dark",
-    {"simplecolor", "ocean", 2},
-   {"simplecolor", "forest", 2,.25},
-   {"simplecolor", "party", 2,.5},
-   {"simplecolor", "heat", 2,.75}});
-
+   
 seq.addstep("allcycles", 20, FADE, 2);
 
 seq.setbackgroundpalette({
@@ -174,7 +191,7 @@ seq.setbackgroundpalette({
    {"simplecolor", "rainbow", .3},
    {"simplecolor", "rainbow", .3}});
 
-
+seq.addstep("cube", 3, FADE, 3);
 cubeswirl(seq,"cube",1);
 
 
@@ -206,8 +223,8 @@ seq.addstep("twentyfourcell", 60, FADE, 6);
 seq.setbackgroundpalette({
     "dark",{"perlin", "heat",10,30}
 });
-*/
-   seq.addstep("twentyfourcell", 2000, FADE, 2);
+
+   seq.addstep("twentyfourcell", 20, FADE, 2);
 
  
     
