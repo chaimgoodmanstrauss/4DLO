@@ -24,11 +24,12 @@ extern std::array<std::array<int, 6>, 120> graycodesdata;
 extern std::array<std::array<int, 6>, 120> sixpathsdata;
 extern std::array<std::array<int, 6>, 120> octahedrondata;
 extern std::array<std::array<int, 6>, 120> cubedata;
+extern std::array<std::array<int, 6>, 120> vertsdata;
 // array of pointers
-const int nummodels = 16;
-extern colormodel* ourcolormodels[16];
+const int nummodels = 17;
+extern colormodel* ourcolormodels[17];
 
-extern String modelNames[16]; // Model names matching ourcolormodels order
+extern String modelNames[17]; // Model names matching ourcolormodels order
 void initializemodels();
 class modelsequence; // Forward declaration;
 void initializeSequences(modelsequence* seq);

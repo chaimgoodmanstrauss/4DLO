@@ -1235,6 +1235,130 @@ std::array<std::array<int, 6>, 120> testerdata={{
   {{0,1,0,10000}}, // vertex 23 (line 119)
 }};//end of testerdata
 
+
+std::array<std::array<int, 6>, 120> vertsdata={{
+  {{0,0,0,10000}},   // edge 0
+  {{0,1,0,10000}},   // edge 1
+  {{0,1,0,10000}},   // edge 2
+  {{0,1,0,10000}},   // edge 3
+  {{0,1,0,10000}},   // edge 4
+  {{0,1,0,10000}},   // edge 5
+  {{0,1,0,10000}},   // edge 6
+  {{0,1,0,10000}},   // edge 7
+  {{0,1,0,10000}},   // edge 8
+  {{0,1,0,10000}},   // edge 9
+  {{0,1,0,10000}},   // edge 10
+  {{0,1,0,10000}},   // edge 11
+  {{0,1,0,10000}},   // edge 12 of verts
+  {{0,1,0,10000}},   // edge 13
+  {{0,1,0,10000}},   // edge 14
+  {{0,1,0,10000}},   // edge 15
+  {{0,1,0,10000}},   // edge 16
+  {{0,1,0,10000}},   // edge 17
+  {{0,1,0,10000}},   // edge 18
+  {{0,1,0,10000}},   // edge 19
+  {{0,1,0,10000}},   // edge 20
+  {{0,1,0,10000}},   // edge 21
+  {{0,1,0,10000}},   // edge 22
+  {{0,1,0,10000}},   // edge 23
+  {{0,1,0,10000}},   // edge 24
+  {{0,1,0,10000}},   // edge 25
+  {{0,1,0,10000}},   // edge 26
+  {{0,1,0,10000}},   // edge 27
+  {{0,1,0,10000}},   // edge 28
+  {{0,1,0,10000}},   // edge 29
+  {{0,1,0,10000}},   // edge 30
+  {{0,1,0,10000}},   // edge 31
+  {{0,1,0,10000}},   // edge 32
+  {{0,1,0,10000}},   // edge 33
+  {{0,1,0,10000}},   // edge 34
+  {{0,1,0,10000}},   // edge 35
+  {{0,1,0,10000}},   // edge 36 of verts
+  {{0,1,0,10000}},   // edge 37
+  {{0,1,0,10000}},   // edge 38
+  {{0,1,0,10000}},   // edge 39
+  {{0,1,0,10000}},   // edge 40
+  {{0,1,0,10000}},   // edge 41
+  {{0,1,0,10000}},   // edge 42
+  {{0,1,0,10000}},   // edge 43
+  {{0,1,0,10000}},   // edge 44
+  {{0,1,0,10000}},   // edge 45
+  {{0,1,0,10000}},   // edge 46
+  {{0,1,0,10000}},   // edge 47
+  {{0,1,0,10000}},   // edge 48
+  {{0,1,0,10000}},   // edge 49
+  {{0,1,0,10000}},   // edge 50
+  {{0,1,0,10000}},   // edge 51
+  {{0,1,0,10000}},   // edge 52
+  {{0,1,0,10000}},   // edge 53
+  {{0,1,0,10000}},   // edge 54
+  {{0,1,0,10000}},   // edge 55
+  {{0,1,0,10000}},   // edge 56
+  {{0,1,0,10000}},   // edge 57
+  {{0,1,0,10000}},   // edge 58
+  {{0,1,0,10000}},   // edge 59
+  {{0,1,0,10000}},   // edge 60 of verts
+  {{0,1,0,10000}},   // edge 61
+  {{0,1,0,10000}},   // edge 62
+  {{0,1,0,10000}},   // edge 63
+  {{0,1,0,10000}},   // edge 64
+  {{0,1,0,10000}},   // edge 65
+  {{0,1,0,10000}},   // edge 66
+  {{0,1,0,10000}},   // edge 67
+  {{0,1,0,10000}},   // edge 68
+  {{0,1,0,10000}},   // edge 69
+  {{0,1,0,10000}},   // edge 70
+  {{0,1,0,10000}},   // edge 71
+  {{0,1,0,10000}},   // edge 72
+  {{0,1,0,10000}},   // edge 73
+  {{0,1,0,10000}},   // edge 74
+  {{0,1,0,10000}},   // edge 75
+  {{0,1,0,10000}},   // edge 76
+  {{0,1,0,10000}},   // edge 77
+  {{0,1,0,10000}},   // edge 78
+  {{0,1,0,10000}},   // edge 79
+  {{0,1,0,10000}},   // edge 80
+  {{0,1,0,10000}},   // edge 81
+  {{0,1,0,10000}},   // edge 82
+  {{0,1,0,10000}},   // edge 83
+  {{0,1,0,10000}},   // edge 84 of verts
+  {{0,1,0,10000}},   // edge 85
+  {{0,1,0,10000}},   // edge 86
+  {{0,1,0,10000}},   // edge 87
+  {{0,1,0,10000}},   // edge 88
+  {{0,1,0,10000}},   // edge 89
+  {{0,1,0,10000}},   // edge 90
+  {{0,1,0,10000}},   // edge 91
+  {{0,1,0,10000}},   // edge 92
+  {{0,1,0,10000}},   // edge 93
+  {{0,1,0,10000}},   // edge 94
+  {{0,1,0,10000}},   // edge 95
+  {{5,1,0,10000}}, // vertex 0 (line 96)
+  {{5,1,0,10000}}, // vertex 1 (line 97)
+  {{5,1,0,10000}}, // vertex 2 (line 98)
+  {{5,1,0,10000}}, // vertex 3 (line 99)
+  {{5,1,0,10000}}, // vertex 4 (line 100)
+  {{5,1,0,10000}}, // vertex 5 (line 101)
+  {{0,1,0,10000}}, // vertex 6 (line 102)
+  {{0,1,0,10000}}, // vertex 7 (line 103)
+  {{0,1,0,10000}}, // vertex 8 (line 104)
+  {{0,1,0,10000}}, // vertex 9 (line 105)
+  {{0,1,0,10000}}, // vertex 10 (line 106)
+  {{0,1,0,10000}}, // vertex 11 (line 107)
+  {{0,1,0,10000}}, // vertex 12 (line 108)
+  {{0,1,0,10000}}, // vertex 13 (line 109)
+  {{0,1,0,10000}}, // vertex 14 (line 110)
+  {{0,1,0,10000}}, // vertex 15 (line 111)
+  {{0,1,0,10000}}, // vertex 16 (line 112)
+  {{0,1,0,10000}}, // vertex 17 (line 113)
+  {{0,1,0,10000}}, // vertex 18 (line 114)
+  {{0,1,0,10000}}, // vertex 19 (line 115)
+  {{0,1,0,10000}}, // vertex 20 (line 116)
+  {{0,1,0,10000}}, // vertex 21 (line 117)
+  {{0,1,0,10000}}, // vertex 22 (line 118)
+  {{0,1,0,10000}}, // vertex 23 (line 119)
+}};//end of vertsdata
+
 /*std::array<std::array<int, 6>, 120> cyclesdata={{
   {{0,-1,0,10000}},   // edge 0
   {{0,1,0,10000}},   // edge 1
@@ -2100,7 +2224,7 @@ std::array<std::array<int, 6>, 120> cubedata={{
 }};//end of cubedata
 
 
-colormodel* ourcolormodels[16];
+colormodel* ourcolormodels[17];
 
 void initializemodels(){
   ourcolormodels[0] = new colormodel(strandsbytypedata, "strandsbytype");
@@ -2119,9 +2243,10 @@ void initializemodels(){
   ourcolormodels[13] = new colormodel(sixpathsdata, "sixpaths");
   ourcolormodels[14] = new colormodel(octahedrondata, "octahedron");
   ourcolormodels[15] = new colormodel(cubedata, "cube");
+  ourcolormodels[16] = new colormodel(vertsdata, "verts");
 }
 
-String modelNames[16] ={
+String modelNames[17] ={
 "strandsbytype",
 "strandsegmentlights",
 "quarters",
@@ -2137,6 +2262,6 @@ String modelNames[16] ={
 "graycodes",
 "sixpaths",
 "octahedron",
-"cube",
+"cube","verts"
 };
 

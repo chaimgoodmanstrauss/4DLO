@@ -272,8 +272,8 @@ void constructstrandtable(){
     // may be more than the number we _do_ need. In C, the remaining entries 
     // are zeroed out -- we check for this: 
   
-    Serial.print("strand number: ");
-    Serial.print(strandnumber);
+   // Serial.print("strand number: ");
+    //Serial.print(strandnumber);
     //if(stranddata[strandnumber][0][0]!=0)
     {
       
@@ -284,7 +284,7 @@ void constructstrandtable(){
         // now we go through the segments, again discarding those that are zeroed out:
         if(stranddata[strandnumber][segmentnumber][0]!=0){
           // we proceed, otherwise, nothing happens for this strandnumber
-      Serial.print("From ");
+     /* Serial.print("From ");
       Serial.print(lengthofprevioussegments);
       Serial.print(" On strand # ");
       Serial.println(strandnumber);
@@ -297,7 +297,7 @@ void constructstrandtable(){
       Serial.print(", ");
       Serial.print(stranddata[strandnumber][segmentnumber][2]);
       Serial.println(" ");
-      
+      */
 
 
 
@@ -336,7 +336,7 @@ void constructstrandtable(){
           }
           lengthofprevioussegments+=stranddata[strandnumber][segmentnumber][0];
         }// else there's no segment here
-      else{  Serial.print("Skipping # ");
+      else{ /* Serial.print("Skipping # ");
         Serial.print(strandnumber);
         Serial.print(", ");
         Serial.print(segmentnumber);
@@ -347,7 +347,7 @@ void constructstrandtable(){
         Serial.print(", ");
         Serial.print(stranddata[strandnumber][segmentnumber][2]);
         Serial.println(" ");
-        }
+     */   }
       }
 
 
@@ -376,7 +376,7 @@ void initedgedata(){
   
   //let's take a look at what we've got:
 
-   for(int i = 0; i<numberofpins; i++){
+  /* for(int i = 0; i<numberofpins; i++){
      
      for(int j = 0; j<ledsperstrip;j++){
       Serial.print("pin # "+String(i)+"/ "+String(pinList[i])+":");
@@ -384,6 +384,6 @@ void initedgedata(){
         String(strandtable[i*ledsperstrip+j][0])+" on edge "+
         String(strandtable[i*ledsperstrip+j][1]));
      }
-   }
+   }*/
      
 }

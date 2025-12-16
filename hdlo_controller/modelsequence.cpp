@@ -435,10 +435,26 @@ void modelsequence::update() {
                 stepStartTime = currentTime;
                 inTransition = false;
                 
-                audioActive = false;
-                audioFading = false;
-                audioFadeProgress = 0.0;
-                audioLastActiveTime = 0;
+                // Preserve audio state if audio is currently active above threshold
+                if(steps[currentStep].acceptAudio && AudioSystem::isInitialized()) {
+                    float audioLevel = AudioSystem::getMaxBand();
+                    if(audioLevel > steps[currentStep].audioThreshold && audioActive) {
+                        audioLastActiveTime = currentTime;
+                        Serial.println(">>> Audio preserved across registry transition");
+                    } else {
+                        audioActive = false;
+                        audioFading = false;
+                        audioFadeProgress = 0.0;
+                        audioLastActiveTime = 0;
+                    }
+                } else {
+                    audioActive = false;
+                    audioFading = false;
+                    audioFadeProgress = 0.0;
+                    audioLastActiveTime = 0;
+                }
+                
+                audioCacheValid = false;
                 
                 applyFunctionsToModel();
                 configureAudioSource(steps[currentStep].audioConfig);
@@ -523,10 +539,32 @@ void modelsequence::update() {
             currentStep = nextStep;
             stepStartTime = currentTime;
             
-            audioActive = false;
-            audioFading = false;
-            audioFadeProgress = 0.0;
-            audioLastActiveTime = 0;
+            // Preserve audio state if audio is currently active above threshold
+            // This prevents jarring palette resets during step transitions
+            if(steps[nextStep].acceptAudio && AudioSystem::isInitialized()) {
+                float audioLevel = AudioSystem::getMaxBand();
+                if(audioLevel > steps[nextStep].audioThreshold && audioActive) {
+                    // Keep audio active, just refresh the timestamp
+                    audioLastActiveTime = currentTime;
+                    // Don't reset audioFadeProgress - maintain current blend
+                    Serial.println(">>> Audio preserved across step transition");
+                } else {
+                    // No active audio or new step doesn't accept audio - reset
+                    audioActive = false;
+                    audioFading = false;
+                    audioFadeProgress = 0.0;
+                    audioLastActiveTime = 0;
+                }
+            } else {
+                // New step doesn't accept audio - reset
+                audioActive = false;
+                audioFading = false;
+                audioFadeProgress = 0.0;
+                audioLastActiveTime = 0;
+            }
+            
+            // Invalidate cache for new step
+            audioCacheValid = false;
             
             if(steps[currentStep].transitionType != INSTANT && 
                steps[currentStep].transitionDuration > 0) {
