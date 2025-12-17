@@ -3,7 +3,7 @@
 //   paletteregistry.h
 //
 // Centralized palette registry system
-// Automatically manages and provides access to all palettes
+// Uses integer IDs for efficient lookup
 //
 
 #ifndef PALETTEREGISTRY_H
@@ -11,23 +11,22 @@
 
 #include <FastLED.h>
 #include <Arduino.h>
+#include "globalids.h"
 
-// Maximum number of registered palettes
 const int MAX_PALETTES = 50;
 
 /////////////////////////////////////////
 // PALETTE REGISTRY CLASS
 //
-
 class PaletteRegistry {
 private:
     struct PaletteEntry {
-        String name;
+        int id;
         CRGBPalette16 palette;
         bool registered;
         
-        PaletteEntry() : name(""), registered(false) {}
-        PaletteEntry(String n, CRGBPalette16 p) : name(n), palette(p), registered(true) {}
+        PaletteEntry() : id(0), registered(false) {}
+        PaletteEntry(int i, CRGBPalette16 p) : id(i), palette(p), registered(true) {}
     };
     
     static PaletteEntry registry[MAX_PALETTES];
@@ -35,52 +34,45 @@ private:
     static bool initialized;
     
 public:
-    // Initialize the registry with default palettes
     static void initialize();
     
-    // Register a new palette
-    static bool registerPalette(String name, CRGBPalette16 palette) {
+    static bool registerPalette(int id, CRGBPalette16 palette) {
         if(numRegistered >= MAX_PALETTES) {
             Serial.println("Error: Palette registry full");
             return false;
         }
         
-        // Check for duplicate names
         for(int i = 0; i < numRegistered; i++) {
-            if(registry[i].name.equalsIgnoreCase(name)) {
-                Serial.println("Warning: Palette '" + name + "' already registered");
+            if(registry[i].id == id) {
+                Serial.print("Warning: Palette ID ");
+                Serial.print(id);
+                Serial.println(" already registered");
                 return false;
             }
         }
         
-        registry[numRegistered] = PaletteEntry(name, palette);
+        registry[numRegistered] = PaletteEntry(id, palette);
         numRegistered++;
-        
-        Serial.println("Registered palette: " + name);
         return true;
     }
     
-    // Find palette by name
-    static CRGBPalette16* findByName(String name) {
+    static CRGBPalette16* findById(int id) {
         for(int i = 0; i < numRegistered; i++) {
-            if(registry[i].name.equalsIgnoreCase(name)) {
+            if(registry[i].id == id) {
                 return &registry[i].palette;
             }
         }
         return nullptr;
     }
     
-    // Get palette (alias for findByName for convenience)
-    static CRGBPalette16 getPalette(String name) {
-        CRGBPalette16* pal = findByName(name);
+    static CRGBPalette16 getPalette(int id) {
+        CRGBPalette16* pal = findById(id);
         if(pal) {
             return *pal;
         }
-        // Return default rainbow palette if not found
         return RainbowColors_p;
     }
     
-    // Get palette by index
     static CRGBPalette16* getByIndex(int index) {
         if(index >= 0 && index < numRegistered) {
             return &registry[index].palette;
@@ -88,35 +80,34 @@ public:
         return nullptr;
     }
     
-    // Get palette name by index
-    static String getNameByIndex(int index) {
+    static int getIdByIndex(int index) {
         if(index >= 0 && index < numRegistered) {
-            return registry[index].name;
+            return registry[index].id;
         }
-        return "";
+        return 0;
     }
     
-    // Get number of registered palettes
     static int getCount() { return numRegistered; }
     
-    // Print all registered palettes
     static void printRegistry() {
         Serial.println("=== Palette Registry ===");
-        Serial.println("Total palettes: " + String(numRegistered));
+        Serial.print("Total palettes: ");
+        Serial.println(numRegistered);
         for(int i = 0; i < numRegistered; i++) {
-            Serial.println("  [" + String(i) + "] " + registry[i].name);
+            Serial.print("  [");
+            Serial.print(i);
+            Serial.print("] ID=");
+            Serial.println(registry[i].id);
         }
         Serial.println("========================");
     }
     
-    // Get random palette
     static CRGBPalette16* getRandom() {
         if(numRegistered == 0) return nullptr;
         int index = random(numRegistered);
         return &registry[index].palette;
     }
     
-    // Cycle through palettes
     static CRGBPalette16* getNext(int& currentIndex) {
         if(numRegistered == 0) return nullptr;
         currentIndex = (currentIndex + 1) % numRegistered;

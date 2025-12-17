@@ -2,12 +2,12 @@
 //
 //   models.h
 //
-// Color function and model system with factory pattern
+// Color function and model system with integer ID lookup
 //
 #ifndef MODELS_H
 #define MODELS_H
 
- const bool AUDIODEBUGGING = false; // this is just upstream of everything else.
+const bool AUDIODEBUGGING = false;
 
 #include <FastLED.h>
 #include <array>
@@ -15,22 +15,21 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include "globalids.h"
 
 // Forward declarations
-struct FunctionParameter;  // Full definition in colorfunctions.h
+struct FunctionParameter;
 class StatefulColorFunction;
 class ColorFunctionFactory;
 class EdgePermutation;
 
 /////////////////////////////////////////
-// COLOR FUNCTION FACTORY with caching
-// Manages shared instances of color functions to reduce memory fragmentation
-// and ensure consistency (e.g., Perlin noise looks the same across all segments)
+// COLOR FUNCTION FACTORY with integer ID lookup
 //
 class ColorFunctionFactory {
 private:
-    std::map<String, std::function<StatefulColorFunction*()>> creators;
-    std::map<String, std::shared_ptr<StatefulColorFunction>> cache;  // Shared instance cache
+    std::map<int, std::function<StatefulColorFunction*()>> creators;
+    std::map<uint32_t, std::shared_ptr<StatefulColorFunction>> cache;
     static ColorFunctionFactory* instance;
     
     ColorFunctionFactory() {}
@@ -43,30 +42,24 @@ public:
         return *instance;
     }
     
-    void registerFunction(const String& name, std::function<StatefulColorFunction*()> creator) {
-        creators[name] = creator;
+    void registerFunction(int id, std::function<StatefulColorFunction*()> creator) {
+        creators[id] = creator;
     }
     
-    // Get or create a shared instance from cache (by function name only - deprecated)
-    std::shared_ptr<StatefulColorFunction> getShared(const String& name);
+    std::shared_ptr<StatefulColorFunction> getShared(int id);
     
-    // Get or create a shared instance with full configuration (PREFERRED)
     std::shared_ptr<StatefulColorFunction> getSharedConfigured(
-        const String& name,
-        const String& paletteName = "",
+        int functionId,
+        int paletteId = 0,
         const std::vector<FunctionParameter>& params = {});
     
-    // Legacy method - creates unique instance (for backwards compatibility)
-    StatefulColorFunction* create(const String& name);
+    StatefulColorFunction* create(int id);
     
-    // Clear all cached instances (useful for memory management)
     void clearCache();
+    void clearFunction(int id);
     
-    // Clear specific function from cache
-    void clearFunction(const String& name);
-    
-    bool hasFunction(const String& name) const {
-        return creators.find(name) != creators.end();
+    bool hasFunction(int id) const {
+        return creators.find(id) != creators.end();
     }
     
     void listFunctions();
@@ -75,24 +68,24 @@ public:
 
 ////////////////////////////////////
 //
-// colormodel class
+// colormodel class with integer ID lookup
 //
 class colormodel {
 private: 
     std::array<std::array<int, 6>, 120> edgemodels;
-    String modelname;
-    std::array<std::shared_ptr<StatefulColorFunction>, 120> edgeFunctions;  // Changed to shared_ptr
-    std::array<String, 120> edgePalettes;
+    int modelId;
+    std::array<std::shared_ptr<StatefulColorFunction>, 120> edgeFunctions;
+    std::array<int, 120> edgePalettes;
     bool shouldRegister;
 
     static const int MAX_MODELS = 40;
     static colormodel* modelRegistry[MAX_MODELS];
-    static String modelNameRegistry[MAX_MODELS];
+    static int modelIdRegistry[MAX_MODELS];
     static int numRegisteredModels;
 
 public:
     colormodel(std::array<std::array<int, 6>, 120> importedgemodels, 
-               String importname, bool registerModel = true);
+               int importId, bool registerModel = true);
     
     colormodel(const colormodel& other);
     
@@ -100,11 +93,14 @@ public:
     
     CRGB getcolorfunction(int edgeindex, float position);
     
-    void setColorFunction(int edgeindex, const String& functionName, 
-                         const String& paletteName = "",
+    void setColorFunction(int edgeindex, int functionId, 
+                         int paletteId = 0,
                          const std::vector<FunctionParameter>& params = {});
     
-    String getModelName() const { return modelname; }
+    int getModelId() const { return modelId; }
+    
+    // Backward compatibility - returns string representation of ID
+    String getModelName() const { return String(modelId); }
     
     int getEdgeFunctionIndex(int edgeindex) const {
         if(edgeindex >= 0 && edgeindex < 120) {
@@ -114,30 +110,29 @@ public:
     }
     
     // Edge permutation methods
-    colormodel* applyEdgePermutation(const EdgePermutation& perm, String newName = "", bool registerModel = true) const;
-    colormodel* applyEdgePermutation(const std::array<int, 120>& permArray, String newName = "", bool registerModel = true) const;
-    colormodel* applyEdgePermutationSequence(const String* permNames, int numPerms, String newName = "") const;
-    colormodel* applyEdgePermutationSequence(std::initializer_list<String> permNames, String newName = "", bool mergeWithOriginal = false) const;
+    colormodel* applyEdgePermutation(const EdgePermutation& perm, int newId = 0, bool registerModel = true) const;
+    colormodel* applyEdgePermutation(const std::array<int, 120>& permArray, int newId = 0, bool registerModel = true) const;
+    colormodel* applyEdgePermutationSequence(const int* permIds, int numPerms, int newId = 0) const;
+    colormodel* applyEdgePermutationSequence(std::initializer_list<int> permIds, int newId = 0, bool mergeWithOriginal = false) const;
     
-    static colormodel* applyEdgePermutation(String modelName, const EdgePermutation& perm, String newName = "");
-    static colormodel* applyEdgePermutation(String modelName, const std::array<int, 120>& permArray, String newName = "");
-    static colormodel* applyEdgePermutation(String modelName, String permName, String newName = "");
-    static colormodel* applyEdgePermutationSequence(String modelName, const String* permNames, int numPerms, String newName = "");
-    static colormodel* applyEdgePermutationSequence(String modelName, std::initializer_list<String> permNames, String newName = "", bool mergeWithOriginal = false);
+    static colormodel* applyEdgePermutation(int modelId, const EdgePermutation& perm, int newId = 0);
+    static colormodel* applyEdgePermutation(int modelId, const std::array<int, 120>& permArray, int newId = 0);
+    static colormodel* applyEdgePermutation(int modelId, int permId, int newId = 0);
+    static colormodel* applyEdgePermutationSequence(int modelId, const int* permIds, int numPerms, int newId = 0);
+    static colormodel* applyEdgePermutationSequence(int modelId, std::initializer_list<int> permIds, int newId = 0, bool mergeWithOriginal = false);
     
-    static colormodel* mergeModels(const colormodel* model1, const colormodel* model2, String newName);
-    static colormodel* mergeModels(String model1Name, String model2Name, String newName);
+    static colormodel* mergeModels(const colormodel* model1, const colormodel* model2, int newId);
+    static colormodel* mergeModels(int model1Id, int model2Id, int newId);
     
     const std::array<std::array<int, 6>, 120>& getEdgeModels() const { return edgemodels; }
     
     static colormodel** getModelRegistry() { return modelRegistry; }
-    static String* getModelNameRegistry() { return modelNameRegistry; }
+    static int* getModelIdRegistry() { return modelIdRegistry; }
     static int getNumRegisteredModels() { return numRegisteredModels; }
-    static colormodel* findModelByName(String name);
+    static colormodel* findModelById(int id);
     static void printRegistry();
 };
 
-// Initialize fancy model variations using edge permutations
 void initializefancymodels();
 
 #endif // MODELS_H

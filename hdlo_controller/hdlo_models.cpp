@@ -4,6 +4,7 @@
 // define the data:
 
 #include "hdlo_models.h"
+#include "globalids.h"
 
 std::array<std::array<int, 6>, 120> strandsbytypedata={{
   {{6,1,5000,5000}},   // edge 0
@@ -2227,41 +2228,22 @@ std::array<std::array<int, 6>, 120> cubedata={{
 colormodel* ourcolormodels[17];
 
 void initializemodels(){
-  ourcolormodels[0] = new colormodel(strandsbytypedata, "strandsbytype");
-  ourcolormodels[1] = new colormodel(strandsegmentlightsdata, "strandsegmentlights");
-  ourcolormodels[2] = new colormodel(quartersdata, "quarters");
-  ourcolormodels[3] = new colormodel(eighthsdata, "eighths");
-  ourcolormodels[4] = new colormodel(strandsbyindexdata, "strandsbyindex");
-  ourcolormodels[5] = new colormodel(hypercubedata, "hypercube");
-  ourcolormodels[6] = new colormodel(rotatedhypercubedata, "rotatedhypercube");
-  ourcolormodels[7] = new colormodel(hypercubesdata, "hypercubes");
-  ourcolormodels[8] = new colormodel(twentyfourcelldata, "twentyfourcell");
-  ourcolormodels[9] = new colormodel(testerdata, "tester");
-  ourcolormodels[10] = new colormodel(cyclesdata, "cycles");
-  ourcolormodels[11] = new colormodel(allcyclesdata, "allcycles");
-  ourcolormodels[12] = new colormodel(graycodesdata, "graycodes");
-  ourcolormodels[13] = new colormodel(sixpathsdata, "sixpaths");
-  ourcolormodels[14] = new colormodel(octahedrondata, "octahedron");
-  ourcolormodels[15] = new colormodel(cubedata, "cube");
-  ourcolormodels[16] = new colormodel(vertsdata, "verts");
+  ourcolormodels[0] = new colormodel(strandsbytypedata, strandsbytype);
+  ourcolormodels[1] = new colormodel(strandsegmentlightsdata, strandsegmentlights);
+  ourcolormodels[2] = new colormodel(quartersdata, quarters);
+  ourcolormodels[3] = new colormodel(eighthsdata, eighths);
+  ourcolormodels[4] = new colormodel(strandsbyindexdata, strandsbyindex);
+  ourcolormodels[5] = new colormodel(hypercubedata, hypercube);
+  ourcolormodels[6] = new colormodel(rotatedhypercubedata, rotatedhypercube);
+  ourcolormodels[7] = new colormodel(hypercubesdata, hypercubes);
+  ourcolormodels[8] = new colormodel(twentyfourcelldata, twentyfourcell);
+  ourcolormodels[9] = new colormodel(testerdata, tester);
+  ourcolormodels[10] = new colormodel(cyclesdata, cycles);
+  ourcolormodels[11] = new colormodel(allcyclesdata, allcycles);
+  ourcolormodels[12] = new colormodel(graycodesdata, graycodes);
+  ourcolormodels[13] = new colormodel(sixpathsdata, sixpaths);
+  ourcolormodels[14] = new colormodel(octahedrondata, octahedron);
+  ourcolormodels[15] = new colormodel(cubedata, cube);
+  ourcolormodels[16] = new colormodel(vertsdata, verts);
 }
-
-String modelNames[17] ={
-"strandsbytype",
-"strandsegmentlights",
-"quarters",
-"eighths",
-"strandsbyindex",
-"hypercube",
-"rotatedhypercube",
-"hypercubes",
-"twentyfourcell",
-"tester",
-"cycles",
-"allcycles",
-"graycodes",
-"sixpaths",
-"octahedron",
-"cube","verts"
-};
 

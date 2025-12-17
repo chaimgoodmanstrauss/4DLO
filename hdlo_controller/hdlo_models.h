@@ -7,6 +7,7 @@
 #define HDLO_MODELS_H
 #include <array>
 #include "models.h"
+#include "globalids.h"
 
 extern std::array<std::array<int, 6>, 120> strandsbytypedata;
 extern std::array<std::array<int, 6>, 120> strandsegmentlightsdata;
@@ -29,7 +30,6 @@ extern std::array<std::array<int, 6>, 120> vertsdata;
 const int nummodels = 17;
 extern colormodel* ourcolormodels[17];
 
-extern String modelNames[17]; // Model names matching ourcolormodels order
 void initializemodels();
 class modelsequence; // Forward declaration;
 void initializeSequences(modelsequence* seq);

@@ -1,16 +1,15 @@
 /////////////////////////////////
-// a helpful list of vert perms
-inline const char* octacellperms[24] = {"oneTozzzp","oneTozzzm","oneTozzpz","oneTozzmz","oneTozpzz","oneTozmzz","oneTommmm","oneTopppp","oneTommmp","oneTopppm","oneTommpm","oneToppmp","oneTommpp","oneToppmm","oneTompmm","oneTopmpp","oneTompmp","oneTopmpm","oneTomppm","oneTopmmp","oneTomppp","oneTopmmm","oneTomzzz","oneTopzzz",};
-inline const char* cubecellperms[24] = {"i1Tozzpp","i1Tozzmm","i1Tozzpm","i1Tozzmp","i1Tompzz","i1Topmzz","i1Tozmmz","i1Tozppz","i1Tozmzp","i1Tozpzm","i1Tozmzm","i1Tozpzp","i1Tozmpz","i1Tozpmz","i1Tomzmz","i1Topzpz","i1Tomzzp","i1Topzzm","i1Tomzzm","i1Topzzp","i1Tomzpz","i1Topzmz","i1Tommzz","i1Toppzz",};
-
-////// Named Permutations
+// Named Permutations with integer IDs
+//
 
 #ifndef NAMEDPERMUTATIONS_H
 #define NAMEDPERMUTATIONS_H
 
 #include "edgepermutations.h"
+#include "globalids.h"
 
-//// define each permutation:
+//// Permutation data arrays
+
 static inline std::array<int, 120> oneTozzzpPerm = {{
 95,94,93,92,88,89,90,91,71,70,69,68,32,33,34,35,31,30,29,28,72,73,74,75,87,86,85,84,16,17,18,19,15,14,13,12,48,49,50,51,55,54,53,52,64,65,66,67,39,38,37,36,40,41,42,43,63,62,61,60,56,57,58,59,47,46,45,44,8,9,10,11,23,22,21,20,80,81,82,83,79,78,77,76,24,25,26,27,7,6,5,4,0,1,2,3,119,118,100,101,99,98,108,109,111,110,116,117,103,102,104,105,115,114,112,113,107,106,96,97}};
 
@@ -83,6 +82,7 @@ static inline std::array<int, 120> oneTomzzzPerm = {{
 static inline std::array<int, 120> oneTopzzzPerm = {{
 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119}};
 
+// Cube permutations
 static inline std::array<int, 120> i1TozzppPerm = {{
 95,94,93,92,88,89,90,91,71,70,69,68,32,33,34,35,31,30,29,28,72,73,74,75,87,86,85,84,16,17,18,19,15,14,13,12,48,49,50,51,55,54,53,52,64,65,66,67,39,38,37,36,40,41,42,43,63,62,61,60,56,57,58,59,47,46,45,44,8,9,10,11,23,22,21,20,80,81,82,83,79,78,77,76,24,25,26,27,7,6,5,4,0,1,2,3,119,118,100,101,99,98,108,109,111,110,116,117,103,102,104,105,115,114,112,113,107,106,96,97}};
 
@@ -155,6 +155,7 @@ static inline std::array<int, 120> i1TommzzPerm = {{
 static inline std::array<int, 120> i1ToppzzPerm = {{
 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119}};
 
+// Other permutations
 static inline std::array<int, 120> rightWPerm = {{
 51,-72,-75,48,18,-93,-94,17,78,-34,-33,77,63,-24,-27,60,21,-38,-37,22,5,-65,-66,6,70,-54,-53,69,74,-49,-50,73,59,-87,-84,56,64,-4,-7,67,32,-76,-79,35,0,-28,-31,3,47,-88,-91,44,12,-83,-80,15,43,-11,-8,40,55,-71,-68,52,95,-16,-19,92,81,-14,-13,82,89,-46,-45,90,85,-57,-58,86,25,-62,-61,26,9,-41,-42,10,29,-1,-2,30,39,-20,-23,36,109,108,115,114,113,112,116,117,100,101,96,97,107,106,98,99,105,104,111,110,119,118,103,102}};
 
@@ -173,66 +174,71 @@ static inline std::array<int, 120> simpletestPerm = {{1,2,3,4,5,0,
 static inline std::array<int, 120> simpletest2Perm = {{2,4,0,-1,-3,-5,
 6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119}};
 
-
-// Function to register all named permutations - call from setup()
+// Register all permutations using integer IDs
 inline void registerNamedPermutations() {
     static bool registered = false;    
     if(registered) return;     
-     registered = true; 
-static EdgePermutation oneTozzzpPermutation("oneTozzzp", oneTozzzpPerm);
-static EdgePermutation oneTozzzmPermutation("oneTozzzm", oneTozzzmPerm);
-static EdgePermutation oneTozzpzPermutation("oneTozzpz", oneTozzpzPerm);
-static EdgePermutation oneTozzmzPermutation("oneTozzmz", oneTozzmzPerm);
-static EdgePermutation oneTozpzzPermutation("oneTozpzz", oneTozpzzPerm);
-static EdgePermutation oneTozmzzPermutation("oneTozmzz", oneTozmzzPerm);
-static EdgePermutation oneTommmmPermutation("oneTommmm", oneTommmmPerm);
-static EdgePermutation oneToppppPermutation("oneTopppp", oneToppppPerm);
-static EdgePermutation oneTommmpPermutation("oneTommmp", oneTommmpPerm);
-static EdgePermutation oneTopppmPermutation("oneTopppm", oneTopppmPerm);
-static EdgePermutation oneTommpmPermutation("oneTommpm", oneTommpmPerm);
-static EdgePermutation oneToppmpPermutation("oneToppmp", oneToppmpPerm);
-static EdgePermutation oneTommppPermutation("oneTommpp", oneTommppPerm);
-static EdgePermutation oneToppmmPermutation("oneToppmm", oneToppmmPerm);
-static EdgePermutation oneTompmmPermutation("oneTompmm", oneTompmmPerm);
-static EdgePermutation oneTopmppPermutation("oneTopmpp", oneTopmppPerm);
-static EdgePermutation oneTompmpPermutation("oneTompmp", oneTompmpPerm);
-static EdgePermutation oneTopmpmPermutation("oneTopmpm", oneTopmpmPerm);
-static EdgePermutation oneTomppmPermutation("oneTomppm", oneTomppmPerm);
-static EdgePermutation oneTopmmpPermutation("oneTopmmp", oneTopmmpPerm);
-static EdgePermutation oneTompppPermutation("oneTomppp", oneTompppPerm);
-static EdgePermutation oneTopmmmPermutation("oneTopmmm", oneTopmmmPerm);
-static EdgePermutation oneTomzzzPermutation("oneTomzzz", oneTomzzzPerm);
-static EdgePermutation oneTopzzzPermutation("oneTopzzz", oneTopzzzPerm);
-static EdgePermutation i1TozzppPermutation("i1Tozzpp", i1TozzppPerm);
-static EdgePermutation i1TozzmmPermutation("i1Tozzmm", i1TozzmmPerm);
-static EdgePermutation i1TozzpmPermutation("i1Tozzpm", i1TozzpmPerm);
-static EdgePermutation i1TozzmpPermutation("i1Tozzmp", i1TozzmpPerm);
-static EdgePermutation i1TompzzPermutation("i1Tompzz", i1TompzzPerm);
-static EdgePermutation i1TopmzzPermutation("i1Topmzz", i1TopmzzPerm);
-static EdgePermutation i1TozmmzPermutation("i1Tozmmz", i1TozmmzPerm);
-static EdgePermutation i1TozppzPermutation("i1Tozppz", i1TozppzPerm);
-static EdgePermutation i1TozmzpPermutation("i1Tozmzp", i1TozmzpPerm);
-static EdgePermutation i1TozpzmPermutation("i1Tozpzm", i1TozpzmPerm);
-static EdgePermutation i1TozmzmPermutation("i1Tozmzm", i1TozmzmPerm);
-static EdgePermutation i1TozpzpPermutation("i1Tozpzp", i1TozpzpPerm);
-static EdgePermutation i1TozmpzPermutation("i1Tozmpz", i1TozmpzPerm);
-static EdgePermutation i1TozpmzPermutation("i1Tozpmz", i1TozpmzPerm);
-static EdgePermutation i1TomzmzPermutation("i1Tomzmz", i1TomzmzPerm);
-static EdgePermutation i1TopzpzPermutation("i1Topzpz", i1TopzpzPerm);
-static EdgePermutation i1TomzzpPermutation("i1Tomzzp", i1TomzzpPerm);
-static EdgePermutation i1TopzzmPermutation("i1Topzzm", i1TopzzmPerm);
-static EdgePermutation i1TomzzmPermutation("i1Tomzzm", i1TomzzmPerm);
-static EdgePermutation i1TopzzpPermutation("i1Topzzp", i1TopzzpPerm);
-static EdgePermutation i1TomzpzPermutation("i1Tomzpz", i1TomzpzPerm);
-static EdgePermutation i1TopzmzPermutation("i1Topzmz", i1TopzmzPerm);
-static EdgePermutation i1TommzzPermutation("i1Tommzz", i1TommzzPerm);
-static EdgePermutation i1ToppzzPermutation("i1Toppzz", i1ToppzzPerm);
-static EdgePermutation rightWPermutation("rightW", rightWPerm);
-static EdgePermutation rot4Permutation("rot4", rot4Perm);
-static EdgePermutation rot3Permutation("rot3", rot3Perm);
-static EdgePermutation onetoiPermutation("onetoi", onetoiPerm);
-static  EdgePermutation simpletestPermutation("simpletest", simpletestPerm);
-static  EdgePermutation simpletest2Permutation("simpletest2", simpletest2Perm);
+    registered = true; 
+
+    // Octahedron permutations
+    static EdgePermutation p0(oneTozzzp, oneTozzzpPerm);
+    static EdgePermutation p1(oneTozzzm, oneTozzzmPerm);
+    static EdgePermutation p2(oneTozzpz, oneTozzpzPerm);
+    static EdgePermutation p3(oneTozzmz, oneTozzmzPerm);
+    static EdgePermutation p4(oneTozpzz, oneTozpzzPerm);
+    static EdgePermutation p5(oneTozmzz, oneTozmzzPerm);
+    static EdgePermutation p6(oneTommmm, oneTommmmPerm);
+    static EdgePermutation p7(oneTopppp, oneToppppPerm);
+    static EdgePermutation p8(oneTommmp, oneTommmpPerm);
+    static EdgePermutation p9(oneTopppm, oneTopppmPerm);
+    static EdgePermutation p10(oneTommpm, oneTommpmPerm);
+    static EdgePermutation p11(oneToppmp, oneToppmpPerm);
+    static EdgePermutation p12(oneTommpp, oneTommppPerm);
+    static EdgePermutation p13(oneToppmm, oneToppmmPerm);
+    static EdgePermutation p14(oneTompmm, oneTompmmPerm);
+    static EdgePermutation p15(oneTopmpp, oneTopmppPerm);
+    static EdgePermutation p16(oneTompmp, oneTompmpPerm);
+    static EdgePermutation p17(oneTopmpm, oneTopmpmPerm);
+    static EdgePermutation p18(oneTomppm, oneTomppmPerm);
+    static EdgePermutation p19(oneTopmmp, oneTopmmpPerm);
+    static EdgePermutation p20(oneTomppp, oneTompppPerm);
+    static EdgePermutation p21(oneTopmmm, oneTopmmmPerm);
+    static EdgePermutation p22(oneTomzzz, oneTomzzzPerm);
+    static EdgePermutation p23(oneTopzzz, oneTopzzzPerm);
+
+    // Cube permutations
+    static EdgePermutation c0(i1Tozzpp, i1TozzppPerm);
+    static EdgePermutation c1(i1Tozzmm, i1TozzmmPerm);
+    static EdgePermutation c2(i1Tozzpm, i1TozzpmPerm);
+    static EdgePermutation c3(i1Tozzmp, i1TozzmpPerm);
+    static EdgePermutation c4(i1Tompzz, i1TompzzPerm);
+    static EdgePermutation c5(i1Topmzz, i1TopmzzPerm);
+    static EdgePermutation c6(i1Tozmmz, i1TozmmzPerm);
+    static EdgePermutation c7(i1Tozppz, i1TozppzPerm);
+    static EdgePermutation c8(i1Tozmzp, i1TozmzpPerm);
+    static EdgePermutation c9(i1Tozpzm, i1TozpzmPerm);
+    static EdgePermutation c10(i1Tozmzm, i1TozmzmPerm);
+    static EdgePermutation c11(i1Tozpzp, i1TozpzpPerm);
+    static EdgePermutation c12(i1Tozmpz, i1TozmpzPerm);
+    static EdgePermutation c13(i1Tozpmz, i1TozpmzPerm);
+    static EdgePermutation c14(i1Tomzmz, i1TomzmzPerm);
+    static EdgePermutation c15(i1Topzpz, i1TopzpzPerm);
+    static EdgePermutation c16(i1Tomzzp, i1TomzzpPerm);
+    static EdgePermutation c17(i1Topzzm, i1TopzzmPerm);
+    static EdgePermutation c18(i1Tomzzm, i1TomzzmPerm);
+    static EdgePermutation c19(i1Topzzp, i1TopzzpPerm);
+    static EdgePermutation c20(i1Tomzpz, i1TomzpzPerm);
+    static EdgePermutation c21(i1Topzmz, i1TopzmzPerm);
+    static EdgePermutation c22(i1Tommzz, i1TommzzPerm);
+    static EdgePermutation c23(i1Toppzz, i1ToppzzPerm);
+
+    // Other permutations
+    static EdgePermutation pRightW(rightW, rightWPerm);
+    static EdgePermutation pRot4(rot4, rot4Perm);
+    static EdgePermutation pRot3(rot3, rot3Perm);
+    static EdgePermutation pOnetoi(onetoi, onetoiPerm);
+    static EdgePermutation pSimpletest(simpletest, simpletestPerm);
+    static EdgePermutation pSimpletest2(simpletest2, simpletest2Perm);
 }
 
 #endif // NAMEDPERMUTATIONS_H

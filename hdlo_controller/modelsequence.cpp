@@ -2,11 +2,12 @@
 //
 //   modelsequence.cpp
 //
-// Sequence implementation - simplified fixed-size version
+// Sequence implementation with integer ID lookups
 //
 
 #include "modelsequence.h"
 #include "audiosystem.h"
+#include "globalids.h"
 #include <FastLED.h>
 
 extern unsigned long _heap_start;
@@ -101,26 +102,26 @@ SequenceStep::SequenceStep(colormodel* m,
 }
 
 void SequenceStep::initializeDefaultPalettes() {
-    audioPalettes[0] = FunctionWithPalette("dark", "");
+    audioPalettes[0] = FunctionWithPalette(dark, 0);
     for(int i = 1; i < 7; i++) {
-        audioPalettes[i] = FunctionWithPalette("fftfire", "");
+        audioPalettes[i] = FunctionWithPalette(fftfire, 0);
     }
     numAudioFunctions = 7;
     
-    backgroundPalettes[0] = FunctionWithPalette("breathing", "");
-    backgroundPalettes[1] = FunctionWithPalette("perlin", "heat");
-    backgroundPalettes[2] = FunctionWithPalette("perlin", "cloud");
-    backgroundPalettes[3] = FunctionWithPalette("perlin", "forest");
-    backgroundPalettes[4] = FunctionWithPalette("perlin", "rainbow");
-    backgroundPalettes[5] = FunctionWithPalette("perlin", "sunset");
-    backgroundPalettes[6] = FunctionWithPalette("perlin", "ocean_builtin");
+    backgroundPalettes[0] = FunctionWithPalette(breathing, 0);
+    backgroundPalettes[1] = FunctionWithPalette(perlin, heat);
+    backgroundPalettes[2] = FunctionWithPalette(perlin, cloud);
+    backgroundPalettes[3] = FunctionWithPalette(perlin, forest);
+    backgroundPalettes[4] = FunctionWithPalette(perlin, rainbow);
+    backgroundPalettes[5] = FunctionWithPalette(perlin, sunset);
+    backgroundPalettes[6] = FunctionWithPalette(perlin, ocean);
     numBackgroundFunctions = 7;
 }
 
 void SequenceStep::initializeDefaultAudioPalette() {
-    audioPalettes[0] = FunctionWithPalette("dark", "");
+    audioPalettes[0] = FunctionWithPalette(dark, 0);
     for(int i = 1; i < 7; i++) {
-        audioPalettes[i] = FunctionWithPalette("fftfire", "");
+        audioPalettes[i] = FunctionWithPalette(fftfire, 0);
     }
     numAudioFunctions = 7;
 }
@@ -128,7 +129,6 @@ void SequenceStep::initializeDefaultAudioPalette() {
 ////////////////////////////////////
 // modelsequence implementation
 
-// Steps array in EXTMEM (8MB PSRAM)
 EXTMEM SequenceStep extmemSteps[SEQ_MAX_STEPS];
 
 modelsequence::modelsequence()
@@ -166,13 +166,8 @@ void modelsequence::addStep(const SequenceStep& step) {
         Serial.print("Added step ");
         Serial.print(numSteps);
         Serial.print(": model=");
-        Serial.print(step.model ? step.model->getModelName() : "NULL");
-        Serial.print(", transition=");
-        Serial.print(step.transitionType == INSTANT ? "INSTANT" : 
-                    (step.transitionType == FADE ? "FADE" : "WIPE"));
-        Serial.print(", duration=");
-        Serial.print(step.transitionDuration);
-        Serial.println("ms");
+        Serial.print(step.model ? step.model->getModelId() : 0);
+        Serial.println();
         numSteps++;
     } else {
         Serial.println("ERROR: MAX_STEPS exceeded!");
@@ -202,27 +197,10 @@ void modelsequence::endRegistry() {
     }
 }
 
-// Hash function for cache key - no allocation
 static uint32_t hashFunctionKey(const FunctionWithPalette& func) {
-    uint32_t hash = 5381;
-    
-    const char* p = func.functionName;
-    while(*p) hash = ((hash << 5) + hash) + *p++;
-    
-    hash = ((hash << 5) + hash) + ':';
-    
-    p = func.paletteName;
-    while(*p) hash = ((hash << 5) + hash) + *p++;
-    
-    for(int i = 0; i < func.numParams; i++) {
-        uint32_t* fp = (uint32_t*)&func.params[i];
-        hash = ((hash << 5) + hash) + *fp;
-    }
-    
-    return hash;
+    return func.functionId * 100000 + func.paletteId * 100 + func.numParams;
 }
 
-// Pre-allocated buffer for parameter passing
 static std::vector<FunctionParameter> staticParamBuffer;
 static bool staticParamBufferInit = false;
 
@@ -239,11 +217,11 @@ std::shared_ptr<StatefulColorFunction> modelsequence::getCachedFunction(const Fu
         return it->second;
     }
     
-    StatefulColorFunction* rawPtr = ColorFunctionFactory::getInstance().create(func.functionName);
+    StatefulColorFunction* rawPtr = ColorFunctionFactory::getInstance().create(func.functionId);
     if(!rawPtr) return nullptr;
     
-    if(func.paletteName[0] != '\0') {
-        rawPtr->setPalette(func.paletteName);
+    if(func.paletteId != 0) {
+        rawPtr->setPalette(func.paletteId);
     }
     if(func.numParams > 0) {
         staticParamBuffer.clear();
@@ -256,8 +234,8 @@ std::shared_ptr<StatefulColorFunction> modelsequence::getCachedFunction(const Fu
     std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
     sequenceFunctionCache[hash] = sharedPtr;
     
-    Serial.print("Cache: ");
-    Serial.println(func.functionName);
+    Serial.print("Cache func: ");
+    Serial.println(func.functionId);
     
     return sharedPtr;
 }
@@ -275,18 +253,6 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
     unsigned long currentTime = millis();
     float audioLevel = AudioSystem::getMaxBand();
     
-    static unsigned long lastMemoryReport = 0;
-    if(currentTime - lastMemoryReport > 60000) {
-        int freeRam = getFreeRam();
-        Serial.print("FREE RAM: ");
-        Serial.print(freeRam);
-        Serial.print(" bytes, uptime: ");
-        Serial.print(currentTime / 1000);
-        Serial.print("s, steps: ");
-        Serial.println(numSteps);
-        lastMemoryReport = currentTime;
-    }
-    
     if(audioLevel > step.audioThreshold) {
         audioLastActiveTime = currentTime;
         
@@ -296,7 +262,6 @@ void modelsequence::updateAudioFade(const SequenceStep& step) {
             fadingToAudio = true;
             audioFadeStartProgress = audioFadeProgress;
             audioFadeStartTime = currentTime;
-            Serial.println(">>> AUDIO ON");
         } else if(audioFading && !fadingToAudio) {
             fadingToAudio = true;
             audioFadeStartProgress = audioFadeProgress;
@@ -359,10 +324,7 @@ void modelsequence::updateAudioFadeCache() {
 }
 
 void modelsequence::applyFunctionsToModel() {
-    if(currentStep < 0 || currentStep >= numSteps || !steps[currentStep].model) {
-        Serial.println("applyFunctionsToModel: Invalid step or null model");
-        return;
-    }
+    if(currentStep < 0 || currentStep >= numSteps || !steps[currentStep].model) return;
     
     if(!staticParamBufferInit) {
         staticParamBuffer.reserve(SEQ_MAX_PARAMS);
@@ -376,13 +338,6 @@ void modelsequence::applyFunctionsToModel() {
     
     bool useAudioPalette = (audioFadeProgress > 0.5f);
     int numFunctions = useAudioPalette ? step.numAudioFunctions : step.numBackgroundFunctions;
-    
-    Serial.print("Applying ");
-    Serial.print(numFunctions);
-    Serial.print(" functions, audio=");
-    Serial.println(audioFadeProgress, 2);
-    
-    int appliedCount = 0;
     
     for(int edge = 0; edge < 120; edge++) {
         int funcIndex = model->getEdgeFunctionIndex(edge);
@@ -398,17 +353,13 @@ void modelsequence::applyFunctionsToModel() {
                 for(int i = 0; i < func.numParams; i++) {
                     staticParamBuffer.push_back(FunctionParameter(func.params[i]));
                 }
-                model->setColorFunction(edge, func.functionName, func.paletteName, staticParamBuffer);
-                appliedCount++;
+                model->setColorFunction(edge, func.functionId, func.paletteId, staticParamBuffer);
             }
         } else {
             staticParamBuffer.clear();
-            model->setColorFunction(edge, "dark", "", staticParamBuffer);
+            model->setColorFunction(edge, dark, 0, staticParamBuffer);
         }
     }
-    
-    Serial.print("Applied: ");
-    Serial.println(appliedCount);
 }
 
 void modelsequence::update() {
@@ -418,7 +369,6 @@ void modelsequence::update() {
         updateAudioFade(steps[currentStep]);
     }
     
-    // Check registry switch
     if(currentRegistryIndex >= 0 && currentRegistryIndex < numRegistryEntries) {
         unsigned long registryElapsed = currentTime - registryStartTime;
         if(registryElapsed >= registry[currentRegistryIndex].duration) {
@@ -434,38 +384,13 @@ void modelsequence::update() {
                 registryStartTime = currentTime;
                 stepStartTime = currentTime;
                 inTransition = false;
-                
-                // Preserve audio state if audio is currently active above threshold
-                if(steps[currentStep].acceptAudio && AudioSystem::isInitialized()) {
-                    float audioLevel = AudioSystem::getMaxBand();
-                    if(audioLevel > steps[currentStep].audioThreshold && audioActive) {
-                        audioLastActiveTime = currentTime;
-                        Serial.println(">>> Audio preserved across registry transition");
-                    } else {
-                        audioActive = false;
-                        audioFading = false;
-                        audioFadeProgress = 0.0;
-                        audioLastActiveTime = 0;
-                    }
-                } else {
-                    audioActive = false;
-                    audioFading = false;
-                    audioFadeProgress = 0.0;
-                    audioLastActiveTime = 0;
-                }
-                
                 audioCacheValid = false;
-                
                 applyFunctionsToModel();
                 configureAudioSource(steps[currentStep].audioConfig);
-                
-                Serial.print("Registry: ");
-                Serial.println(registry[currentRegistryIndex].name);
             }
         }
     }
     
-    // Handle transitions
     if(inTransition) {
         unsigned long elapsed = currentTime - transitionStartTime;
         if(elapsed >= steps[currentStep].transitionDuration) {
@@ -477,7 +402,6 @@ void modelsequence::update() {
         }
     }
     
-    // Check step advance
     if(currentStep >= 0 && currentStep < numSteps) {
         unsigned long elapsed = currentTime - stepStartTime;
         if(elapsed >= steps[currentStep].duration) {
@@ -495,119 +419,27 @@ void modelsequence::update() {
                 nextStep = (currentStep + 1) % numSteps;
             }
             
-            // Check if same-model FADE transition
             sameModelTransition = false;
             if(steps[nextStep].transitionType == FADE && 
-               steps[nextStep].transitionDuration > 0 &&
-               steps[currentStep].model != nullptr &&
-               steps[nextStep].model != nullptr &&
-               steps[currentStep].model == steps[nextStep].model) {
+               steps[previousStep].model == steps[nextStep].model) {
                 sameModelTransition = true;
-                Serial.print("Same-model FADE: step ");
-                Serial.print(currentStep);
-                Serial.print(" -> ");
-                Serial.println(nextStep);
-                
-                // Cache current step's background functions for blending
-                const auto& prevStepData = steps[currentStep];
-                int numFuncs = prevStepData.numBackgroundFunctions;
-                Serial.print("  numBackgroundFunctions: ");
-                Serial.println(numFuncs);
-                
-                if(numFuncs < 0 || numFuncs > SEQ_MAX_FUNCTIONS) {
-                    Serial.println("  ERROR: Invalid numBackgroundFunctions!");
-                    sameModelTransition = false;
-                    numFuncs = 0;
-                }
-                
                 for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
-                    cachedPrevFunctions[i] = nullptr;
-                }
-                for(int i = 0; i < numFuncs; i++) {
-                    Serial.print("  Caching func ");
-                    Serial.print(i);
-                    Serial.print(": ");
-                    Serial.println(prevStepData.backgroundPalettes[i].functionName);
-                    cachedPrevFunctions[i] = getCachedFunction(prevStepData.backgroundPalettes[i]);
-                }
-            } else {
-                for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
-                    cachedPrevFunctions[i] = nullptr;
+                    cachedPrevFunctions[i] = cachedBgFunctions[i];
                 }
             }
             
             currentStep = nextStep;
             stepStartTime = currentTime;
             
-            // Preserve audio state if audio is currently active above threshold
-            // This prevents jarring palette resets during step transitions
-            if(steps[nextStep].acceptAudio && AudioSystem::isInitialized()) {
-                float audioLevel = AudioSystem::getMaxBand();
-                if(audioLevel > steps[nextStep].audioThreshold && audioActive) {
-                    // Keep audio active, just refresh the timestamp
-                    audioLastActiveTime = currentTime;
-                    // Don't reset audioFadeProgress - maintain current blend
-                    Serial.println(">>> Audio preserved across step transition");
-                } else {
-                    // No active audio or new step doesn't accept audio - reset
-                    audioActive = false;
-                    audioFading = false;
-                    audioFadeProgress = 0.0;
-                    audioLastActiveTime = 0;
-                }
-            } else {
-                // New step doesn't accept audio - reset
-                audioActive = false;
-                audioFading = false;
-                audioFadeProgress = 0.0;
-                audioLastActiveTime = 0;
-            }
-            
-            // Invalidate cache for new step
-            audioCacheValid = false;
-            
-            if(steps[currentStep].transitionType != INSTANT && 
-               steps[currentStep].transitionDuration > 0) {
+            if(steps[currentStep].transitionType != INSTANT) {
                 inTransition = true;
                 transitionStartTime = currentTime;
                 transitionProgress = 0.0;
-            } else {
-                inTransition = false;
             }
             
+            audioCacheValid = false;
             applyFunctionsToModel();
             configureAudioSource(steps[currentStep].audioConfig);
-        }
-    }
-}
-
-void modelsequence::updateCachedFunctions() {
-    if(currentStep < 0 || currentStep >= numSteps) return;
-    const auto& step = steps[currentStep];
-    
-    // Update cached previous functions during same-model transitions
-    if(inTransition && sameModelTransition) {
-        unsigned long currentTime = millis();
-        for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
-            if(cachedPrevFunctions[i]) {
-                cachedPrevFunctions[i]->updateIfNeeded(currentTime);
-            }
-        }
-    }
-    
-    if(step.acceptAudio && audioFadeProgress > 0.001f) {
-        if(currentStep != cachedStepIndex || !audioCacheValid) {
-            updateAudioFadeCache();
-        }
-        
-        unsigned long currentTime = millis();
-        for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
-            if(cachedBgFunctions[i]) {
-                cachedBgFunctions[i]->updateIfNeeded(currentTime);
-            }
-            if(cachedAudioFunctions[i]) {
-                cachedAudioFunctions[i]->updateIfNeeded(currentTime);
-            }
         }
     }
 }
@@ -619,187 +451,96 @@ colormodel* modelsequence::getCurrentModel() {
     return nullptr;
 }
 
-CRGB modelsequence::getColor(int edgeindex, float position) {
-    colormodel* model = getCurrentModel();
-    if(!model) return CRGB::Black;
-    
-    const auto& step = steps[currentStep];
-    CRGB currentColor;
-    
-    if(step.acceptAudio && audioFadeProgress > 0.001f) {
-        if(currentStep != cachedStepIndex || !audioCacheValid) {
-            updateAudioFadeCache();
-        }
-        
-        if(edgeindex < 0 || edgeindex >= 120) return CRGB::Black;
-        
-        int funcIndex = model->getEdgeFunctionIndex(edgeindex);
-        
-        const auto& edgeModels = model->getEdgeModels();
-        int direction = edgeModels[edgeindex][1];
-        float workingPosition = position;
-        if(direction < 0) workingPosition = 1.0 - workingPosition;
-        if(direction == 0) workingPosition = 2.0 * abs(0.5 - workingPosition);
-        float startPos = edgeModels[edgeindex][2] / 10000.0;
-        float scale = edgeModels[edgeindex][3] / 10000.0;
-        float transformedPosition = startPos + scale * workingPosition;
-        
-        if(audioFadeProgress < 0.999f) {
-            CRGB bgColor = CRGB::Black;
-            if(funcIndex >= 0 && funcIndex < step.numBackgroundFunctions && cachedBgFunctions[funcIndex]) {
-                bgColor = cachedBgFunctions[funcIndex]->getColor(transformedPosition);
-            }
-            
-            CRGB audioColor = CRGB::Black;
-            if(funcIndex >= 0 && funcIndex < step.numAudioFunctions && cachedAudioFunctions[funcIndex]) {
-                audioColor = cachedAudioFunctions[funcIndex]->getColor(transformedPosition);
-            }
-            
-            uint8_t blendAmount = (uint8_t)(audioFadeProgress * 255);
-            currentColor = blend(bgColor, audioColor, blendAmount);
-        } else {
-            if(funcIndex >= 0 && funcIndex < step.numAudioFunctions && cachedAudioFunctions[funcIndex]) {
-                currentColor = cachedAudioFunctions[funcIndex]->getColor(transformedPosition);
-            } else {
-                currentColor = CRGB::Black;
-            }
-        }
-    } else {
-        currentColor = model->getcolorfunction(edgeindex, position);
-    }
-    
-    if(!inTransition || previousStep < 0 || previousStep >= numSteps) {
-        return currentColor;
-    }
-    
-    colormodel* prevModel = steps[previousStep].model;
-    if(!prevModel) {
-        return currentColor;
-    }
-    
-    CRGB previousColor;
-    TransitionType transType = steps[currentStep].transitionType;
-    
-    if(prevModel == model) {
-        // Same model - use cached previous functions for blending
-        if(!sameModelTransition) {
-            return currentColor;
-        }
-        
-        if(edgeindex < 0 || edgeindex >= 120) {
-            return currentColor;
-        }
-        
-        int funcIndex = model->getEdgeFunctionIndex(edgeindex);
-        
-        const auto& edgeModels = model->getEdgeModels();
-        int direction = edgeModels[edgeindex][1];
-        float workingPosition = position;
-        if(direction < 0) workingPosition = 1.0 - workingPosition;
-        if(direction == 0) workingPosition = 2.0 * abs(0.5 - workingPosition);
-        float startPos = edgeModels[edgeindex][2] / 10000.0;
-        float scale = edgeModels[edgeindex][3] / 10000.0;
-        float transformedPosition = startPos + scale * workingPosition;
-        
-        if(funcIndex >= 0 && funcIndex < SEQ_MAX_FUNCTIONS && cachedPrevFunctions[funcIndex]) {
-            previousColor = cachedPrevFunctions[funcIndex]->getColor(transformedPosition);
-        } else {
-            previousColor = CRGB::Black;
-        }
-    } else {
-        // Different model - use model's color function directly
-        previousColor = prevModel->getcolorfunction(edgeindex, position);
-    }
-    
-    if(transType == FADE) {
-        uint8_t blendAmount = (uint8_t)(transitionProgress * 255.0f);
-        return blend(previousColor, currentColor, blendAmount);
-    } else if(transType == WIPE) {
-        float edgeTransitionPoint = edgeindex / 119.0f;
-        const float transitionWidth = 0.05f;
-        float edgeProgress = (transitionProgress - edgeTransitionPoint) / transitionWidth;
-        
-        if(edgeProgress <= 0.0f) return previousColor;
-        if(edgeProgress >= 1.0f) return currentColor;
-        
-        uint8_t blendAmount = (uint8_t)(edgeProgress * 255.0f);
-        return blend(previousColor, currentColor, blendAmount);
-    }
-    
-    return currentColor;
-}
-
 int modelsequence::getCurrentStep() const {
-    if(currentRegistryIndex >= 0) {
-        return currentStep - registry[currentRegistryIndex].startStepIndex;
-    }
     return currentStep;
 }
 
 float modelsequence::getProgress() const {
-    if(currentStep < 0 || currentStep >= numSteps) return 0.0;
-    unsigned long elapsed = millis() - stepStartTime;
-    return (float)elapsed / steps[currentStep].duration;
+    if(currentStep >= 0 && currentStep < numSteps) {
+        unsigned long elapsed = millis() - stepStartTime;
+        return (float)elapsed / steps[currentStep].duration;
+    }
+    return 0.0;
+}
+
+void modelsequence::updateCachedFunctions() {
+    updateAudioFadeCache();
+}
+
+CRGB modelsequence::getColor(int edgeindex, float position) {
+    if(currentStep < 0 || currentStep >= numSteps) return CRGB::Black;
+    
+    colormodel* model = steps[currentStep].model;
+    if(!model) return CRGB::Black;
+    
+    updateAudioFadeCache();
+    
+    const auto& step = steps[currentStep];
+    int funcIndex = model->getEdgeFunctionIndex(edgeindex);
+    
+    if(funcIndex < 0) return CRGB::Black;
+    
+    CRGB bgColor = CRGB::Black;
+    CRGB audioColor = CRGB::Black;
+    
+    int bgIndex = funcIndex % step.numBackgroundFunctions;
+    if(cachedBgFunctions[bgIndex]) {
+        cachedBgFunctions[bgIndex]->updateIfNeeded(millis());
+        bgColor = cachedBgFunctions[bgIndex]->getColor(position);
+    }
+    
+    if(audioFadeProgress > 0.0f && step.acceptAudio) {
+        int audioIndex = funcIndex % step.numAudioFunctions;
+        if(cachedAudioFunctions[audioIndex]) {
+            cachedAudioFunctions[audioIndex]->updateIfNeeded(millis());
+            audioColor = cachedAudioFunctions[audioIndex]->getColor(position);
+        }
+        
+        return blend(bgColor, audioColor, audioFadeProgress * 255);
+    }
+    
+    if(inTransition && sameModelTransition && transitionProgress < 1.0f) {
+        CRGB prevColor = CRGB::Black;
+        int prevIndex = funcIndex % step.numBackgroundFunctions;
+        if(cachedPrevFunctions[prevIndex]) {
+            cachedPrevFunctions[prevIndex]->updateIfNeeded(millis());
+            prevColor = cachedPrevFunctions[prevIndex]->getColor(position);
+        }
+        return blend(prevColor, bgColor, transitionProgress * 255);
+    }
+    
+    return bgColor;
 }
 
 void modelsequence::reset() {
-    if(numRegistryEntries > 0) {
-        currentRegistryIndex = 0;
-        currentStep = registry[0].startStepIndex;
-        registryStartTime = millis();
-    } else if(numSteps > 0) {
-        currentStep = 0;
-    }
-    
-    stepStartTime = millis();
+    currentStep = 0;
     previousStep = -1;
+    stepStartTime = millis();
     inTransition = false;
     transitionProgress = 0.0;
-    sameModelTransition = false;
-    for(int i = 0; i < SEQ_MAX_FUNCTIONS; i++) {
-        cachedPrevFunctions[i] = nullptr;
-    }
-    
     audioActive = false;
-    audioLastActiveTime = 0;
     audioFading = false;
     audioFadeProgress = 0.0;
-    audioFadeStartTime = 0;
-    fadingToAudio = false;
+    audioCacheValid = false;
     
-    applyFunctionsToModel();
-    if(currentStep >= 0 && currentStep < numSteps) {
+    if(numRegistryEntries > 0) {
+        currentRegistryIndex = 0;
+        registryStartTime = millis();
+        currentStep = registry[0].startStepIndex;
+    }
+    
+    if(numSteps > 0 && steps[currentStep].model) {
+        applyFunctionsToModel();
         configureAudioSource(steps[currentStep].audioConfig);
     }
 }
 
 void modelsequence::printSequenceInfo() {
     Serial.println("\n=== Sequence Info ===");
-    Serial.print("Total steps: ");
+    Serial.print("Steps: ");
     Serial.println(numSteps);
-    Serial.print("Max steps: ");
-    Serial.println(SEQ_MAX_STEPS);
-    Serial.print("Current step: ");
+    Serial.print("Current: ");
     Serial.println(currentStep);
-    Serial.print("Registry entries: ");
-    Serial.println(numRegistryEntries);
-    
-    if(currentRegistryIndex >= 0) {
-        Serial.print("Current registry: ");
-        Serial.print(registry[currentRegistryIndex].name);
-        Serial.print(" (");
-        Serial.print(getCurrentStep());
-        Serial.print("/");
-        Serial.print(registry[currentRegistryIndex].numSteps);
-        Serial.println(")");
-    }
-    
-    Serial.print("Step struct size: ");
-    Serial.println(sizeof(SequenceStep));
-    Serial.print("Total step storage: ");
-    Serial.print(sizeof(steps));
-    Serial.println(" bytes");
-    
     Serial.println("=====================\n");
 }
 
@@ -814,33 +555,26 @@ void modelsequence::configureAudioSource(const AudioSourceConfig& config) {
     switch(config.type) {
         case AudioSourceConfig::MICROPHONE:
             AudioSystem::useMicrophone();
-            Serial.println("Audio: Microphone");
             break;
         case AudioSourceConfig::LINE_IN:
             AudioSystem::useLineIn();
             AudioSystem::setLineInLevel(0.8);
-            Serial.println("Audio: Line in");
             break;
         case AudioSourceConfig::SD_CARD:
             if(AudioSystem::useSDCard(config.filename)) {
                 AudioSystem::setLooping(config.loop);
-                Serial.print("Audio: ");
-                Serial.println(config.filename);
             }
             break;
     }
 }
 
 void modelsequence::printCacheStats() {
-    Serial.println("\n=== Function Cache ===");
-    Serial.print("Cached: ");
+    Serial.print("Function cache size: ");
     Serial.println(sequenceFunctionCache.size());
-    Serial.println("======================\n");
 }
 
 void modelsequence::clearFunctionCache() {
     sequenceFunctionCache.clear();
-    Serial.println("Cache cleared");
 }
 
 ////////////////////////////////////
@@ -889,7 +623,7 @@ void SequenceBuilder::clearpalettes() {
 }
 
 FunctionWithPalette SequenceBuilder::buildFunctionWithPalette(const FunctionDef& def) {
-    FunctionWithPalette result(def.functionName, def.paletteName);
+    FunctionWithPalette result(def.functionId, def.paletteId);
     result.numParams = min((int)def.params.size(), SEQ_MAX_PARAMS);
     for(int i = 0; i < result.numParams; i++) {
         result.params[i] = def.params[i];
@@ -897,11 +631,13 @@ FunctionWithPalette SequenceBuilder::buildFunctionWithPalette(const FunctionDef&
     return result;
 }
 
-void SequenceBuilder::addstep(String modelName, float durationSeconds, 
+void SequenceBuilder::addstep(int modelId, float durationSeconds, 
                                TransitionType transition, float speed, bool acceptAudio) {
-    colormodel* model = colormodel::findModelByName(modelName);
+    colormodel* model = colormodel::findModelById(modelId);
     if(!model) {
-        Serial.println("Error: Model '" + modelName + "' not found");
+        Serial.print("Error: Model ID ");
+        Serial.print(modelId);
+        Serial.println(" not found");
         return;
     }
     
@@ -936,18 +672,23 @@ void SequenceBuilder::addstep(String modelName, float durationSeconds,
     }
 }
 
-void SequenceBuilder::addstep(String modelName, String permName, float durationSeconds, 
+void SequenceBuilder::addstep(int modelId, int permId, float durationSeconds, 
                                TransitionType transition, float speed, bool acceptAudio) {
-    String cacheKey = modelName + "_" + permName;
+    uint32_t cacheKey = modelId * 10000 + permId;
     colormodel* permutedModel = nullptr;
     
     auto it = permutedModelCache.find(cacheKey);
     if(it != permutedModelCache.end()) {
         permutedModel = it->second;
     } else {
-        permutedModel = colormodel::applyEdgePermutation(modelName, permName, cacheKey);
+        // Create new ID for permuted model (dynamic range 5000+)
+        static int dynamicModelId = 5000;
+        permutedModel = colormodel::applyEdgePermutation(modelId, permId, dynamicModelId++);
         if(!permutedModel) {
-            Serial.println("Error: Failed to create '" + cacheKey + "'");
+            Serial.print("Error: Failed to create permuted model ");
+            Serial.print(modelId);
+            Serial.print(" + ");
+            Serial.println(permId);
             return;
         }
         permutedModelCache[cacheKey] = permutedModel;
@@ -984,10 +725,12 @@ void SequenceBuilder::addstep(String modelName, String permName, float durationS
     }
 }
 
-void SequenceBuilder::add(String modelName, std::initializer_list<FunctionDef> funcDefs, float durationSeconds) {
-    colormodel* model = colormodel::findModelByName(modelName);
+void SequenceBuilder::add(int modelId, std::initializer_list<FunctionDef> funcDefs, float durationSeconds) {
+    colormodel* model = colormodel::findModelById(modelId);
     if(!model) {
-        Serial.println("Error: Model '" + modelName + "' not found");
+        Serial.print("Error: Model ID ");
+        Serial.print(modelId);
+        Serial.println(" not found");
         return;
     }
     

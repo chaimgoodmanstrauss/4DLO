@@ -2,508 +2,316 @@
 //
 //   models.cpp
 //
-// Model implementation with IColorFunction instance storage
+// Implementation of colormodel and ColorFunctionFactory
 //
 
 #include "models.h"
 #include "colorfunctions.h"
 #include "edgepermutations.h"
+#include "paletteregistry.h"
+#include "globalids.h"
+
+// Static member initialization
+ColorFunctionFactory* ColorFunctionFactory::instance = nullptr;
+colormodel* colormodel::modelRegistry[colormodel::MAX_MODELS];
+int colormodel::modelIdRegistry[colormodel::MAX_MODELS];
+int colormodel::numRegisteredModels = 0;
 
 ////////////////////////////////////
-//
 // ColorFunctionFactory implementation
-//
 
-ColorFunctionFactory* ColorFunctionFactory::instance = nullptr;
-
-// Get or create shared instance from cache (by name only)
-std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getShared(const String& name) {
-    // Check if already cached
-    auto cacheIt = cache.find(name);
-    if (cacheIt != cache.end()) {
-        return cacheIt->second;
+std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getShared(int id) {
+    auto it = cache.find(id);
+    if(it != cache.end()) {
+        return it->second;
     }
     
-    // Create new instance
-    auto creatorIt = creators.find(name);
-    if (creatorIt != creators.end()) {
-        StatefulColorFunction* rawPtr = creatorIt->second();
-        if (rawPtr) {
-            std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
-            cache[name] = sharedPtr;
-            Serial.println("ColorFunctionFactory: Cached new instance of '" + name + "'");
-            return sharedPtr;
-        }
-    }
+    StatefulColorFunction* raw = create(id);
+    if(!raw) return nullptr;
     
-    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
-    return nullptr;
+    std::shared_ptr<StatefulColorFunction> shared(raw);
+    cache[id] = shared;
+    return shared;
 }
 
-// Get or create shared instance with full configuration
 std::shared_ptr<StatefulColorFunction> ColorFunctionFactory::getSharedConfigured(
-    const String& name,
-    const String& paletteName,
-    const std::vector<FunctionParameter>& params) {
+    int functionId, int paletteId, const std::vector<FunctionParameter>& params) {
     
-    // Generate cache key: "functionName:paletteName:param1,param2,..."
-    String cacheKey = name + ":" + paletteName;
-    if(params.size() > 0) {
-        cacheKey += ":";
-        for(size_t i = 0; i < params.size(); i++) {
-            if(i > 0) cacheKey += ",";
-            cacheKey += String(params[i].value, 3);  // 3 decimal places
-        }
+    uint32_t hash = functionId * 10000 + paletteId;
+    for(size_t i = 0; i < params.size() && i < 4; i++) {
+        uint32_t* fp = (uint32_t*)&params[i].value;
+        hash ^= (*fp << (i * 8));
     }
     
-    // Check if already cached
-    auto cacheIt = cache.find(cacheKey);
-    if (cacheIt != cache.end()) {
-        return cacheIt->second;
+    auto it = cache.find(hash);
+    if(it != cache.end()) {
+        return it->second;
     }
     
-    // Create new instance
-    auto creatorIt = creators.find(name);
-    if (creatorIt != creators.end()) {
-        StatefulColorFunction* rawPtr = creatorIt->second();
-        if (rawPtr) {
-            // Configure the instance
-            if(paletteName.length() > 0) {
-                rawPtr->setPalette(paletteName);
-            }
-            if(params.size() > 0) {
-                rawPtr->setParameters(params);
-            }
-            
-            // Cache and return
-            std::shared_ptr<StatefulColorFunction> sharedPtr(rawPtr);
-            cache[cacheKey] = sharedPtr;
-            Serial.println("ColorFunctionFactory: Cached new instance '" + cacheKey + "'");
-            return sharedPtr;
-        }
+    StatefulColorFunction* raw = create(functionId);
+    if(!raw) return nullptr;
+    
+    if(paletteId != 0) {
+        raw->setPalette(paletteId);
+    }
+    if(!params.empty()) {
+        raw->setParameters(params);
     }
     
-    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
-    return nullptr;
+    std::shared_ptr<StatefulColorFunction> shared(raw);
+    cache[hash] = shared;
+    return shared;
 }
 
-// Legacy create method - creates unique instance (not cached)
-StatefulColorFunction* ColorFunctionFactory::create(const String& name) {
-    auto it = creators.find(name);
-    if (it != creators.end()) {
+StatefulColorFunction* ColorFunctionFactory::create(int id) {
+    auto it = creators.find(id);
+    if(it != creators.end()) {
         return it->second();
     }
-    Serial.println("Warning: Unknown function '" + name + "', returning nullptr");
+    Serial.print("Error: Function ID ");
+    Serial.print(id);
+    Serial.println(" not found");
     return nullptr;
 }
 
 void ColorFunctionFactory::clearCache() {
     cache.clear();
-    Serial.println("ColorFunctionFactory: Cache cleared");
 }
 
-void ColorFunctionFactory::clearFunction(const String& name) {
-    auto it = cache.find(name);
-    if (it != cache.end()) {
+void ColorFunctionFactory::clearFunction(int id) {
+    auto it = cache.find(id);
+    if(it != cache.end()) {
         cache.erase(it);
-        Serial.println("ColorFunctionFactory: Cleared '" + name + "' from cache");
     }
 }
 
 void ColorFunctionFactory::listFunctions() {
-    Serial.println("Registered color functions:");
-    for (auto& pair : creators) {
-        Serial.println("  - " + pair.first);
+    Serial.println("\n=== Registered Functions ===");
+    for(const auto& pair : creators) {
+        Serial.print("  ID: ");
+        Serial.println(pair.first);
     }
+    Serial.println("============================\n");
 }
 
 void ColorFunctionFactory::printCacheStats() {
-    Serial.println("\n=== Color Function Cache Stats ===");
-    Serial.print("Total cached instances: ");
+    Serial.println("\n=== Function Cache ===");
+    Serial.print("Cached: ");
     Serial.println(cache.size());
-    
-    for (auto& pair : cache) {
-        Serial.print("  ");
-        Serial.print(pair.first);
-        Serial.print(": ref_count = ");
-        Serial.println(pair.second.use_count());
-    }
-    Serial.println("==================================\n");
+    Serial.println("======================\n");
 }
 
 ////////////////////////////////////
-//
 // colormodel implementation
-//
-
-// Initialize static members
-colormodel* colormodel::modelRegistry[MAX_MODELS] = {nullptr};
-String colormodel::modelNameRegistry[MAX_MODELS] = {""};
-int colormodel::numRegisteredModels = 0;
 
 colormodel::colormodel(std::array<std::array<int, 6>, 120> importedgemodels, 
-                       String importname, bool registerModel)
-  : edgemodels(importedgemodels), modelname(importname), shouldRegister(registerModel) {
-  
-  // Initialize all edge functions to dark
-  for(int i = 0; i < 120; i++) {
-    edgeFunctions[i] = nullptr;
-    edgePalettes[i] = "";
-  }
-  
-  if(shouldRegister) {
-    registerSelf();
-  }
+                       int importId, bool registerModel)
+    : edgemodels(importedgemodels), modelId(importId), shouldRegister(registerModel) {
+    
+    for(int i = 0; i < 120; i++) {
+        edgeFunctions[i] = nullptr;
+        edgePalettes[i] = 0;
+    }
+    
+    if(shouldRegister) {
+        registerSelf();
+    }
 }
 
-// Copy constructor - shared_ptr handles reference counting automatically
 colormodel::colormodel(const colormodel& other)
-  : edgemodels(other.edgemodels),
-    modelname(other.modelname),
-    edgeFunctions(other.edgeFunctions),  // Shallow copy - shares instances
-    edgePalettes(other.edgePalettes),
-    shouldRegister(other.shouldRegister) {
-  // No deep copy needed - shared_ptr automatically manages references
+    : edgemodels(other.edgemodels), modelId(other.modelId), shouldRegister(false) {
+    
+    for(int i = 0; i < 120; i++) {
+        edgeFunctions[i] = other.edgeFunctions[i];
+        edgePalettes[i] = other.edgePalettes[i];
+    }
 }
 
 void colormodel::registerSelf() {
-  if(numRegisteredModels >= MAX_MODELS) {
-    Serial.println("ERROR: Model registry full! Cannot register: " + modelname);
-    return;
-  }
-  
-  // Check for duplicates
-  for(int i = 0; i < numRegisteredModels; i++) {
-    if(modelNameRegistry[i].equals(modelname)) {
-      Serial.println("Warning: Model name '" + modelname + "' already registered. Skipping duplicate.");
-      return;
+    if(numRegisteredModels >= MAX_MODELS) {
+        Serial.println("Error: Model registry full");
+        return;
     }
-  }
-  
-  modelRegistry[numRegisteredModels] = this;
-  modelNameRegistry[numRegisteredModels] = modelname;
-  numRegisteredModels++;
-  
-  Serial.print("Registered model: ");
-  Serial.print(modelname);
-  Serial.print(" (index ");
-  Serial.print(numRegisteredModels - 1);
-  Serial.println(")");
+    
+    for(int i = 0; i < numRegisteredModels; i++) {
+        if(modelIdRegistry[i] == modelId) {
+            Serial.print("Warning: Model ID ");
+            Serial.print(modelId);
+            Serial.println(" already registered");
+            return;
+        }
+    }
+    
+    modelRegistry[numRegisteredModels] = this;
+    modelIdRegistry[numRegisteredModels] = modelId;
+    numRegisteredModels++;
+    
+    Serial.print("Registered model ID: ");
+    Serial.println(modelId);
+}
+
+colormodel* colormodel::findModelById(int id) {
+    for(int i = 0; i < numRegisteredModels; i++) {
+        if(modelIdRegistry[i] == id) {
+            return modelRegistry[i];
+        }
+    }
+    return nullptr;
 }
 
 CRGB colormodel::getcolorfunction(int edgeindex, float position) {
-  if(edgeindex < 0 || edgeindex >= 120) {
-    return CRGB::Black;
-  }
-
-  // Do not remove this code!
-  // Apply direction reversal if needed
-  int direction = edgemodels[edgeindex][1];
-  if(direction < 0) {
-    position = 1.0 - position;
-  }
-
-  if(direction==0){
-    position = 2.0*abs(.5-position);
-  }
-  
-  
-  // Get the base position transformation from edge data
-  float startPos = edgemodels[edgeindex][2] / 10000.0;
-  float scale = edgemodels[edgeindex][3] / 10000.0;
-  float transformedPosition = startPos + scale * position;
-  
-  // Call the edge's color function
-  if(edgeFunctions[edgeindex]) {
-    edgeFunctions[edgeindex]->updateIfNeeded(millis());
-    return edgeFunctions[edgeindex]->getColor(transformedPosition);
-  }
-  
-  return CRGB::Black;
-}
-
-void colormodel::setColorFunction(int edgeindex, const String& functionName, 
-                                   const String& paletteName,
-                                   const std::vector<FunctionParameter>& params) {
-  if(edgeindex < 0 || edgeindex >= 120) {
-    return;
-  }
-  
-  // Get shared instance from factory cache with full configuration
-  std::shared_ptr<StatefulColorFunction> sharedFunc = 
-      ColorFunctionFactory::getInstance().getSharedConfigured(functionName, paletteName, params);
-  
-  if(sharedFunc) {
-    // Store shared_ptr (automatically manages reference counting)
-    edgeFunctions[edgeindex] = sharedFunc;
-    edgePalettes[edgeindex] = paletteName;
-  }
-}
-
-colormodel* colormodel::applyEdgePermutation(const EdgePermutation& perm, String newName, bool registerModel) const {
-  std::array<int, 120> permArray;
-  for(int i = 0; i < 120; i++) {
-    permArray[i] = perm.getPermutation(i);
-  }
-  return applyEdgePermutation(permArray, newName, registerModel);
-}
-
-colormodel* colormodel::applyEdgePermutation(const std::array<int, 120>& permArray, String newName, bool registerModel) const {
-  std::array<std::array<int, 6>, 120> newEdgeModels;
-  
-  Serial.println("Applying permutation to model: " + modelname);
-  
-  for(int i = 0; i < 120; i++) {
-    int sourceIndex = permArray[i];
-    bool flip = (sourceIndex < 0);
-    int absIndex = abs(sourceIndex);
+    if(edgeindex < 0 || edgeindex >= 120) {
+        return CRGB::Black;
+    }
     
-    if(absIndex >= 0 && absIndex < 120) {
-      newEdgeModels[i] = edgemodels[absIndex];
-      
-      if(flip) {
-        newEdgeModels[i][1]=- edgemodels[absIndex][1];        // Reverse direction
-      }
-      
-      // Debug first 7 edges
-      if(i < 7 ) {
-        Serial.print("  Edge ");
-        Serial.print(i);
-        Serial.print(" from Edge ");
-        Serial.print(absIndex);
-        if(flip) Serial.print(" (flipped)");
-        Serial.print(" ");
-        Serial.print(newEdgeModels[i][0]);
-        Serial.print(" ");
-        Serial.print(newEdgeModels[i][1]);
-        Serial.print(" ");
-        Serial.print(newEdgeModels[i][2]);
-        Serial.print(" ");
-        Serial.print(newEdgeModels[i][3]);
-        Serial.println(" ");
-      }
-    } else {
-      newEdgeModels[i] = edgemodels[i];
+    if(edgeFunctions[edgeindex]) {
+        edgeFunctions[edgeindex]->updateIfNeeded(millis());
+        return edgeFunctions[edgeindex]->getColor(position);
     }
-  }
-  
-  if(newName == "") {
-    newName = modelname + "_permuted";
-  }
-  
-  colormodel* result = new colormodel(newEdgeModels, newName, registerModel);
-  
-  // Copy shared pointers (no cloning needed - instances are shared)
-  for(int i = 0; i < 120; i++) {
-    int sourceIndex = permArray[i];
-    if(sourceIndex >= 0 && sourceIndex < 120 && edgeFunctions[sourceIndex]) {
-      result->edgeFunctions[i] = edgeFunctions[sourceIndex];  // Share the instance
-      result->edgePalettes[i] = edgePalettes[sourceIndex];
+    
+    return CRGB::Black;
+}
+
+void colormodel::setColorFunction(int edgeindex, int functionId, 
+                                   int paletteId,
+                                   const std::vector<FunctionParameter>& params) {
+    if(edgeindex < 0 || edgeindex >= 120) return;
+    
+    auto& factory = ColorFunctionFactory::getInstance();
+    auto func = factory.getSharedConfigured(functionId, paletteId, params);
+    
+    if(func) {
+        edgeFunctions[edgeindex] = func;
+        edgePalettes[edgeindex] = paletteId;
     }
-  }
-  
-  return result;
 }
 
-colormodel* colormodel::applyEdgePermutationSequence(const String* permNames, int numPerms, String newName) const {
-  colormodel* current = const_cast<colormodel*>(this);
-  colormodel* temp = nullptr;
-  
-  for(int i = 0; i < numPerms; i++) {
-    EdgePermutation* perm = EdgePermutation::findPermutationByName(permNames[i]);
-    if(perm) {
-      temp = current->applyEdgePermutation(*perm, "", false);
-      if(i > 0 && current != this) {
-        delete current;
-      }
-      current = temp;
+colormodel* colormodel::applyEdgePermutation(const EdgePermutation& perm, int newId, bool registerModel) const {
+    std::array<std::array<int, 6>, 120> newEdgeModels;
+    
+    for(int i = 0; i < 120; i++) {
+        int sourceIndex = perm.getPermutation(i);
+        bool flipDirection = false;
+        
+        if(sourceIndex < 0) {
+            sourceIndex = abs(sourceIndex);
+            flipDirection = true;
+        }
+        
+        if(sourceIndex >= 0 && sourceIndex < 120) {
+            newEdgeModels[i] = edgemodels[sourceIndex];
+            if(flipDirection) {
+                newEdgeModels[i][1] *= -1;
+            }
+        } else {
+            newEdgeModels[i] = {{0, 1, 0, 10000}};
+        }
     }
-  }
-  
-  if(newName == "") {
-    newName = modelname + "_sequence";
-  }
-  
-  if(current != this) {
-    current->modelname = newName;
-    current->registerSelf();
-  }
-  
-  return current;
+    
+    return new colormodel(newEdgeModels, newId, registerModel);
 }
 
-colormodel* colormodel::applyEdgePermutationSequence(std::initializer_list<String> permNames, String newName, bool mergeWithOriginal) const {
-  // Convert initializer_list to vector for easier iteration
-  std::vector<String> permVector(permNames.begin(), permNames.end());
-  int numPerms = permVector.size();
-  
-  colormodel* current = const_cast<colormodel*>(this);
-  colormodel* temp = nullptr;
-  
-  for(int i = 0; i < numPerms; i++) {
-    EdgePermutation* perm = EdgePermutation::findPermutationByName(permVector[i]);
-    if(perm) {
-      temp = current->applyEdgePermutation(*perm, "", false);
-      if(i > 0 && current != this) {
-        delete current;
-      }
-      current = temp;
+colormodel* colormodel::applyEdgePermutation(const std::array<int, 120>& permArray, int newId, bool registerModel) const {
+    EdgePermutation tempPerm(0, permArray, false);
+    return applyEdgePermutation(tempPerm, newId, registerModel);
+}
+
+colormodel* colormodel::applyEdgePermutationSequence(const int* permIds, int numPerms, int newId) const {
+    EdgePermutation composed = EdgePermutation::composeById(permIds, numPerms, 0, false);
+    return applyEdgePermutation(composed, newId, true);
+}
+
+colormodel* colormodel::applyEdgePermutationSequence(std::initializer_list<int> permIds, int newId, bool mergeWithOriginal) const {
+    std::vector<int> idVec(permIds);
+    return applyEdgePermutationSequence(idVec.data(), idVec.size(), newId);
+}
+
+colormodel* colormodel::applyEdgePermutation(int modelId, const EdgePermutation& perm, int newId) {
+    colormodel* model = findModelById(modelId);
+    if(!model) {
+        Serial.print("Error: Model ID ");
+        Serial.print(modelId);
+        Serial.println(" not found");
+        return nullptr;
     }
-  }
-  
-  if(newName == "") {
-    newName = modelname + "_sequence";
-  }
-  
-  // Merge with original if requested
-  if(mergeWithOriginal && current != this) {
-    colormodel* merged = mergeModels(current, this, newName);
-    if(current != this) {
-      delete current;
+    return model->applyEdgePermutation(perm, newId, true);
+}
+
+colormodel* colormodel::applyEdgePermutation(int modelId, const std::array<int, 120>& permArray, int newId) {
+    colormodel* model = findModelById(modelId);
+    if(!model) return nullptr;
+    return model->applyEdgePermutation(permArray, newId, true);
+}
+
+colormodel* colormodel::applyEdgePermutation(int modelId, int permId, int newId) {
+    colormodel* model = findModelById(modelId);
+    if(!model) {
+        Serial.print("Error: Model ID ");
+        Serial.print(modelId);
+        Serial.println(" not found");
+        return nullptr;
     }
-    return merged;
-  }
-  
-  if(current != this) {
-    current->modelname = newName;
-    current->registerSelf();
-  }
-  
-  return current;
-}
-
-colormodel* colormodel::applyEdgePermutation(String modelName, const EdgePermutation& perm, String newName) {
-  colormodel* model = findModelByName(modelName);
-  if(model) {
-    return model->applyEdgePermutation(perm, newName);
-  }
-  return nullptr;
-}
-
-colormodel* colormodel::applyEdgePermutation(String modelName, const std::array<int, 120>& permArray, String newName) {
-  colormodel* model = findModelByName(modelName);
-  if(model) {
-    return model->applyEdgePermutation(permArray, newName);
-  }
-  return nullptr;
-}
-
-colormodel* colormodel::applyEdgePermutation(String modelName, String permName, String newName) {
-  colormodel* model = findModelByName(modelName);
-  if(!model) {
-    Serial.println("Error: Model '" + modelName + "' not found");
-    return nullptr;
-  }
-  
-  EdgePermutation* perm = EdgePermutation::findPermutationByName(permName);
-  if(!perm) {
-    Serial.println("Error: Permutation '" + permName + "' not found");
-    return nullptr;
-  }
-  
-  return model->applyEdgePermutation(*perm, newName);
-}
-
-colormodel* colormodel::applyEdgePermutationSequence(String modelName, const String* permNames, int numPerms, String newName) {
-  colormodel* model = findModelByName(modelName);
-  if(model) {
-    return model->applyEdgePermutationSequence(permNames, numPerms, newName);
-  }
-  return nullptr;
-}
-
-colormodel* colormodel::applyEdgePermutationSequence(String modelName, std::initializer_list<String> permNames, String newName, bool mergeWithOriginal) {
-  colormodel* model = findModelByName(modelName);
-  if(model) {
-    return model->applyEdgePermutationSequence(permNames, newName, mergeWithOriginal);
-  }
-  return nullptr;
-}
-
-colormodel* colormodel::mergeModels(const colormodel* model1, const colormodel* model2, String newName) {
-  std::array<std::array<int, 6>, 120> mergedEdgeModels;
-  
-  Serial.println("Merging models: " + model1->modelname + " + " + model2->modelname);
-  
-  for(int i = 0; i < 120; i++) {
-    // Use model1's edge unless it's dark (function index 0), then use model2's
-    if(model1->edgemodels[i][0] != 0) {
-      mergedEdgeModels[i] = model1->edgemodels[i];
-    } else {
-      mergedEdgeModels[i] = model2->edgemodels[i];
+    
+    EdgePermutation* perm = EdgePermutation::findPermutationById(permId);
+    if(!perm) {
+        Serial.print("Error: Permutation ID ");
+        Serial.print(permId);
+        Serial.println(" not found");
+        return nullptr;
     }
-  }
-  
-  if(newName == "") {
-    newName = model1->modelname + "_" + model2->modelname;
-  }
-  
-  colormodel* result = new colormodel(mergedEdgeModels, newName, true);
-  
-  // Copy shared pointers - model1 takes priority, model2 fills in blanks
-  for(int i = 0; i < 120; i++) {
-    if(model1->edgemodels[i][0] != 0 && model1->edgeFunctions[i]) {
-      result->edgeFunctions[i] = model1->edgeFunctions[i];  // Share the instance
-      result->edgePalettes[i] = model1->edgePalettes[i];
-    } else if(model2->edgeFunctions[i]) {
-      result->edgeFunctions[i] = model2->edgeFunctions[i];  // Share the instance
-      result->edgePalettes[i] = model2->edgePalettes[i];
-    }
-  }
-  
-  Serial.println("Merge complete: " + result->modelname);
-  
-  return result;
+    
+    return model->applyEdgePermutation(*perm, newId, true);
 }
 
-colormodel* colormodel::mergeModels(String model1Name, String model2Name, String newName) {
-  colormodel* model1 = findModelByName(model1Name);
-  colormodel* model2 = findModelByName(model2Name);
-  
-  if(model1 && model2) {
-    return mergeModels(model1, model2, newName);
-  }
-  return nullptr;
+colormodel* colormodel::applyEdgePermutationSequence(int modelId, const int* permIds, int numPerms, int newId) {
+    colormodel* model = findModelById(modelId);
+    if(!model) return nullptr;
+    return model->applyEdgePermutationSequence(permIds, numPerms, newId);
 }
 
-colormodel* colormodel::findModelByName(String name) {
-  for(int i = 0; i < numRegisteredModels; i++) {
-    if(modelNameRegistry[i].equals(name)) {
-      return modelRegistry[i];
+colormodel* colormodel::applyEdgePermutationSequence(int modelId, std::initializer_list<int> permIds, int newId, bool mergeWithOriginal) {
+    colormodel* model = findModelById(modelId);
+    if(!model) return nullptr;
+    return model->applyEdgePermutationSequence(permIds, newId, mergeWithOriginal);
+}
+
+colormodel* colormodel::mergeModels(const colormodel* model1, const colormodel* model2, int newId) {
+    if(!model1 || !model2) return nullptr;
+    
+    std::array<std::array<int, 6>, 120> merged;
+    
+    for(int i = 0; i < 120; i++) {
+        if(model1->edgemodels[i][0] > 0) {
+            merged[i] = model1->edgemodels[i];
+        } else if(model2->edgemodels[i][0] > 0) {
+            merged[i] = model2->edgemodels[i];
+        } else {
+            merged[i] = {{0, 1, 0, 10000}};
+        }
     }
-  }
-  return nullptr;
+    
+    return new colormodel(merged, newId, true);
+}
+
+colormodel* colormodel::mergeModels(int model1Id, int model2Id, int newId) {
+    colormodel* m1 = findModelById(model1Id);
+    colormodel* m2 = findModelById(model2Id);
+    return mergeModels(m1, m2, newId);
 }
 
 void colormodel::printRegistry() {
-  Serial.println("\n=== Model Registry ===");
-  Serial.print("Total registered models: ");
-  Serial.println(numRegisteredModels);
-  
-  for(int i = 0; i < numRegisteredModels; i++) {
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.println(modelNameRegistry[i]);
-  }
-  Serial.println("======================\n");
+    Serial.println("\n=== Model Registry ===");
+    Serial.print("Registered: ");
+    Serial.println(numRegisteredModels);
+    for(int i = 0; i < numRegisteredModels; i++) {
+        Serial.print("  [");
+        Serial.print(i);
+        Serial.print("] ID=");
+        Serial.println(modelIdRegistry[i]);
+    }
+    Serial.println("======================\n");
 }
-
-////////////////////////////////////
-//
-// Initialize fancy model variations
-//
 
 void initializefancymodels() {
-    Serial.println("\n=== Creating Fancy Models ===");
-    /*
-    // Create test_permed model
-    colormodel* result = colormodel::applyEdgePermutation("test", "simpletest", "test_permed");
-    if(result) {
-        Serial.print("Successfully created model: ");
-        Serial.println(result->getModelName());
-    } else {
-        Serial.println("ERROR: Failed to create test_permed");
-    }*/
-   
+    // Placeholder for fancy model initialization
 }
-

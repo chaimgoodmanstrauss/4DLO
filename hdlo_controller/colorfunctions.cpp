@@ -2,10 +2,11 @@
 //
 // colorfunctions.cpp
 //
-// Implementation file for color functions
-// Static member initialization only
+// Color function registration with integer IDs
+// Rainbow and Plasma functions removed
 //
 #include "colorfunctions.h"
+#include "globalids.h"
 
 // Initialize static member
 unsigned long StatefulColorFunction::globalFrameNumber = 0;
@@ -18,82 +19,78 @@ void registerAllColorFunctions() {
     auto& factory = ColorFunctionFactory::getInstance();
     
     // Simple functions
-    factory.registerFunction("dark", []() {
+    factory.registerFunction(dark, []() {
         return new DarkColorFunction();
     });
     
-    factory.registerFunction("rainbow", []() {
-        return new RainbowColorFunction();
-    });
+    // Rainbow REMOVED
     
-    factory.registerFunction("breathing", []() {
+    factory.registerFunction(breathing, []() {
         return new BreathingColorFunction();
     });
     
     // Complex stateful functions
-    factory.registerFunction("fire2012", []() {
+    factory.registerFunction(fire2012, []() {
         return new Fire2012ColorFunction();
     });
     
-    factory.registerFunction("audio", []() {
+    factory.registerFunction(audio, []() {
         return new AudioReactiveColorFunction();
     });
     
-    factory.registerFunction("audio2", []() {
+    factory.registerFunction(audio2, []() {
         return new AudioReactiveColorFunction2();
     });
     
-    factory.registerFunction("vumeter", []() {
+    factory.registerFunction(vumeter, []() {
         return new VUMeterColorFunction();
     });
     
-    factory.registerFunction("plasma", []() {
-        return new PlasmaColorFunction();
-    });
+    // Plasma REMOVED
     
-    factory.registerFunction("particles", []() {
+    factory.registerFunction(particles, []() {
         return new ParticleColorFunction();
     });
     
-    factory.registerFunction("cylon", []() {
+    factory.registerFunction(cylon, []() {
         return new CylonEffect();
     });
     
-    factory.registerFunction("audiocylon", []() {
+    factory.registerFunction(audiocylon, []() {
         return new AudioCylonEffect();
     });
     
-    factory.registerFunction("beatdetect", []() {
+    factory.registerFunction(beatdetect, []() {
         return new BeatDetector();
     });
     
-    factory.registerFunction("vocals", []() {
+    factory.registerFunction(vocals, []() {
         return new VocalHighlighter();
     });
     
-    factory.registerFunction("fftfire", []() {
+    factory.registerFunction(fftfire, []() {
         return new FFTFireColorFunction();
     });
     
-    factory.registerFunction("fftspectrum", []() {
+    factory.registerFunction(fftspectrum, []() {
         return new FFTSpectrumColorFunction();
     });
     
-    factory.registerFunction("perlin", []() {
+    factory.registerFunction(perlin, []() {
         return new PerlinColorFunction();
     });
     
-    factory.registerFunction("simplecolor", []() {
+    factory.registerFunction(simplecolor, []() {
         return new SimpleColorViewer();
     });
     
-    factory.registerFunction("dualblobs", []() {
+    factory.registerFunction(dualblobs, []() {
         return new DualBlobsColorFunction();
     });
     
-    factory.registerFunction("fftballs", []() {
+    factory.registerFunction(fftballs, []() {
         return new FFTBouncingBallsColorFunction();
     });
     
-    Serial.println("Registered 19 color functions");
+    Serial.println("Registered 17 color functions (rainbow/plasma removed)");
 }

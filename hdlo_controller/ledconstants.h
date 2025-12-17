@@ -53,7 +53,8 @@ const int maxedgesperstrand = 12;
 /// Here is where we work out how the pins correspond to specific edges in the 24-cell: 
 const int stranddata[numberofpins][maxedgesperstrand][10] = 
 {// Strand 0 in quarter 1
-{{0, 103, 1}, {133, 39, -1}, {0, 116, 1}, {187, 71, 1}, {0, 96, 1}, {103, 29, 1}, {0, 103, 1}, {81, 87, 1}, {0, 107, 1}},
+{{32,1,1},{32,2,1}},
+//{{0, 103, 1}, {133, 39, -1}, {0, 116, 1}, {187, 71, 1}, {0, 96, 1}, {103, 29, 1}, {0, 103, 1}, {81, 87, 1}, {0, 107, 1}},
 // Strand 1 in quarter 1
 {{0, 111, 1}, {133, 57, 1}, {0, 108, 1}, {187, 80, -1}, {0, 101, 1}, {103, 90, -1}, {0, 111, 1}, {81, 63, 1}, {0, 115, 1}},
 // Strand 2 in quarter 1

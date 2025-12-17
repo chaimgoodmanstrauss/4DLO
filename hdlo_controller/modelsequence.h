@@ -3,31 +3,30 @@
 //   modelsequence.h
 //
 // Sequence management system for HDLO controller
-// Refactored: Fixed-size structures to avoid heap fragmentation
+// Uses integer IDs for all named entities
 //
 #ifndef MODELSEQUENCE_H
 #define MODELSEQUENCE_H
 
 #include "models.h"
 #include "colorfunctions.h"
+#include "globalids.h"
 #include <array>
 #include <vector>
 #include <map>
 
-// Limits - tuned for Teensy 4.x memory
-// FunctionWithPalette: 20+20+24+4 = 68 bytes
-// SequenceStep: ~1600 bytes, 150 steps = ~240KB (fits in 512KB RAM)
+// Limits
 static const int SEQ_MAX_STEPS = 150;
 static const int SEQ_MAX_REGISTRY = 20;
-static const int SEQ_MAX_FUNCTIONS = 11;  // Must match model edge function indices
+static const int SEQ_MAX_FUNCTIONS = 11;
 static const int SEQ_MAX_PARAMS = 6;
-static const int SEQ_MAX_NAME_LEN = 20;   // Enough for "ocean_builtin" etc
+static const int SEQ_MAX_NAME_LEN = 20;
 
-// Audio switching thresholds (defined in sequences.cpp)
+// Audio switching thresholds
 extern const float AUDIO_PALETTE_SWITCH_THRESHOLD;
 extern const float AUDIO_TIMEOUT_SECONDS;
 
-// Audio source configuration - fixed size
+// Audio source configuration
 struct AudioSourceConfig {
     enum SourceType { MICROPHONE, SD_CARD, LINE_IN };
     SourceType type;
@@ -49,54 +48,36 @@ struct AudioSourceConfig {
     }
 };
 
-// Transition types
 enum TransitionType {
     INSTANT,
     FADE,
     WIPE
 };
 
-// Function with palette - FIXED SIZE, no heap allocation
+// Function with palette - uses integer IDs
 struct FunctionWithPalette {
-    char functionName[SEQ_MAX_NAME_LEN];
-    char paletteName[SEQ_MAX_NAME_LEN];
+    int functionId;
+    int paletteId;
     float params[SEQ_MAX_PARAMS];
     uint8_t numParams;
     
-    FunctionWithPalette() : numParams(0) {
-        strcpy(functionName, "breathing");
-        paletteName[0] = '\0';
+    FunctionWithPalette() : functionId(breathing), paletteId(0), numParams(0) {
         memset(params, 0, sizeof(params));
     }
     
-    FunctionWithPalette(const char* fn, const char* pn = "") : numParams(0) {
-        strncpy(functionName, fn ? fn : "breathing", SEQ_MAX_NAME_LEN - 1);
-        functionName[SEQ_MAX_NAME_LEN - 1] = '\0';
-        strncpy(paletteName, pn ? pn : "", SEQ_MAX_NAME_LEN - 1);
-        paletteName[SEQ_MAX_NAME_LEN - 1] = '\0';
+    FunctionWithPalette(int funcId, int palId = 0) 
+        : functionId(funcId), paletteId(palId), numParams(0) {
         memset(params, 0, sizeof(params));
     }
     
-    FunctionWithPalette(const String& fn, const String& pn = "") : numParams(0) {
-        strncpy(functionName, fn.c_str(), SEQ_MAX_NAME_LEN - 1);
-        functionName[SEQ_MAX_NAME_LEN - 1] = '\0';
-        strncpy(paletteName, pn.c_str(), SEQ_MAX_NAME_LEN - 1);
-        paletteName[SEQ_MAX_NAME_LEN - 1] = '\0';
-        memset(params, 0, sizeof(params));
-    }
-    
-    FunctionWithPalette(const String& fn, const String& pn, std::initializer_list<float> p) : numParams(0) {
-        strncpy(functionName, fn.c_str(), SEQ_MAX_NAME_LEN - 1);
-        functionName[SEQ_MAX_NAME_LEN - 1] = '\0';
-        strncpy(paletteName, pn.c_str(), SEQ_MAX_NAME_LEN - 1);
-        paletteName[SEQ_MAX_NAME_LEN - 1] = '\0';
+    FunctionWithPalette(int funcId, int palId, std::initializer_list<float> p) 
+        : functionId(funcId), paletteId(palId), numParams(0) {
         memset(params, 0, sizeof(params));
         for(float v : p) {
             if(numParams < SEQ_MAX_PARAMS) params[numParams++] = v;
         }
     }
     
-    // Build FunctionParameter vector on-demand (for API compatibility)
     std::vector<FunctionParameter> getParameters() const {
         std::vector<FunctionParameter> result;
         result.reserve(numParams);
@@ -107,19 +88,17 @@ struct FunctionWithPalette {
     }
 };
 
-// Sequence step structure - FIXED SIZE
+// Sequence step structure
 struct SequenceStep {
     static const int MAX_FUNCTIONS = SEQ_MAX_FUNCTIONS;
     
     colormodel* model;
     
-    // Dual palette system - fixed arrays
     std::array<FunctionWithPalette, SEQ_MAX_FUNCTIONS> audioPalettes;
     std::array<FunctionWithPalette, SEQ_MAX_FUNCTIONS> backgroundPalettes;
     int numAudioFunctions;
     int numBackgroundFunctions;
     
-    // Audio control
     bool acceptAudio;
     float audioThreshold;
     float audioTimeout;
@@ -132,7 +111,6 @@ struct SequenceStep {
     
     SequenceStep();
     
-    // Legacy constructor
     SequenceStep(colormodel* m,
                  const std::vector<FunctionWithPalette>& funcs,
                  unsigned long dur,
@@ -141,7 +119,6 @@ struct SequenceStep {
                  unsigned long transDur = 0,
                  AudioSourceConfig audio = AudioSourceConfig());
     
-    // Dual palette constructor
     SequenceStep(colormodel* m,
                  const std::vector<FunctionWithPalette>& audioFuncs,
                  const std::vector<FunctionWithPalette>& backgroundFuncs,
@@ -158,7 +135,7 @@ private:
     void initializeDefaultAudioPalette();
 };
 
-// Sequence registry entry - FIXED SIZE
+// Sequence registry entry
 struct SequenceRegistryEntry {
     int startStepIndex;
     int numSteps;
@@ -181,15 +158,13 @@ struct SequenceRegistryEntry {
 // Main sequence class
 class modelsequence {
 private:
-    // Large arrays stored in EXTMEM (8MB PSRAM on Teensy 4.1)
-    // Declare as pointers, allocate in constructor
-    SequenceStep* steps;  // Allocated in EXTMEM
+    SequenceStep* steps;
     int numSteps;
     int currentStep;
     int previousStep;
     unsigned long stepStartTime;
     
-    SequenceRegistryEntry registry[SEQ_MAX_REGISTRY];  // Small, stays in RAM1
+    SequenceRegistryEntry registry[SEQ_MAX_REGISTRY];
     int numRegistryEntries;
     int currentRegistryIndex;
     unsigned long registryStartTime;
@@ -198,7 +173,6 @@ private:
     unsigned long transitionStartTime;
     float transitionProgress;
     
-    // Audio palette fading state
     bool audioActive;
     unsigned long audioLastActiveTime;
     bool audioFading;
@@ -208,16 +182,13 @@ private:
     bool fadingToAudio;
     static constexpr float AUDIO_FADE_IN_TIME = 0.2f;
     
-    // Sequence-level function cache (hash-based to avoid String allocation on lookup)
     std::map<uint32_t, std::shared_ptr<StatefulColorFunction>> sequenceFunctionCache;
     
-    // Cached color functions for audio fade blending
     std::shared_ptr<StatefulColorFunction> cachedBgFunctions[SEQ_MAX_FUNCTIONS];
     std::shared_ptr<StatefulColorFunction> cachedAudioFunctions[SEQ_MAX_FUNCTIONS];
     bool audioCacheValid;
     int cachedStepIndex;
     
-    // Cached functions for same-model FADE transitions
     std::shared_ptr<StatefulColorFunction> cachedPrevFunctions[SEQ_MAX_FUNCTIONS];
     bool sameModelTransition;
     
@@ -231,23 +202,19 @@ private:
 public:
     modelsequence();
     
-    // Step management
     void addStep(const SequenceStep& step);
     void clearSteps();
     
-    // Registry management
     void beginRegistry(String name, float durationSeconds = 60.0, bool enabled = true);
     void endRegistry();
     int getNumRegistryEntries() const { return numRegistryEntries; }
     const char* getCurrentRegistryName() const;
     
-    // Playback control
     void update();
     void updateCachedFunctions();
     colormodel* getCurrentModel();
     CRGB getColor(int edgeindex, float position);
     
-    // Status
     int getCurrentStep() const;
     int getNumSteps() const { return numSteps; }
     float getProgress() const;
@@ -262,27 +229,32 @@ public:
 
 ////////////////////////////////////
 // SEQUENCE BUILDER HELPER
+// Uses integer IDs for functions, palettes, models, permutations
 
 struct FunctionDef {
-    String functionName;
-    String paletteName;
+    int functionId;
+    int paletteId;
     std::vector<float> params;
     
-    FunctionDef(const char* fn) : functionName(fn), paletteName("") {}
-    FunctionDef(const String& fn) : functionName(fn), paletteName("") {}
-    FunctionDef(const String& fn, const String& pn) : functionName(fn), paletteName(pn) {}
-    FunctionDef(const String& fn, const String& pn, float p1) 
-        : functionName(fn), paletteName(pn), params{p1} {}
-    FunctionDef(const String& fn, const String& pn, float p1, float p2) 
-        : functionName(fn), paletteName(pn), params{p1, p2} {}
-    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3) 
-        : functionName(fn), paletteName(pn), params{p1, p2, p3} {}
-    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4) 
-        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4} {}
-    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4, float p5) 
-        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4, p5} {}
-    FunctionDef(const String& fn, const String& pn, float p1, float p2, float p3, float p4, float p5, float p6) 
-        : functionName(fn), paletteName(pn), params{p1, p2, p3, p4, p5, p6} {}
+    // Single ID (function only, e.g., "dark")
+    FunctionDef(int funcId) : functionId(funcId), paletteId(0) {}
+    
+    // Function + palette
+    FunctionDef(int funcId, int palId) : functionId(funcId), paletteId(palId) {}
+    
+    // Function + palette + params
+    FunctionDef(int funcId, int palId, float p1) 
+        : functionId(funcId), paletteId(palId), params{p1} {}
+    FunctionDef(int funcId, int palId, float p1, float p2) 
+        : functionId(funcId), paletteId(palId), params{p1, p2} {}
+    FunctionDef(int funcId, int palId, float p1, float p2, float p3) 
+        : functionId(funcId), paletteId(palId), params{p1, p2, p3} {}
+    FunctionDef(int funcId, int palId, float p1, float p2, float p3, float p4) 
+        : functionId(funcId), paletteId(palId), params{p1, p2, p3, p4} {}
+    FunctionDef(int funcId, int palId, float p1, float p2, float p3, float p4, float p5) 
+        : functionId(funcId), paletteId(palId), params{p1, p2, p3, p4, p5} {}
+    FunctionDef(int funcId, int palId, float p1, float p2, float p3, float p4, float p5, float p6) 
+        : functionId(funcId), paletteId(palId), params{p1, p2, p3, p4, p5, p6} {}
 };
 
 class SequenceBuilder {
@@ -296,7 +268,7 @@ private:
     float audioTimeoutSeconds;
     AudioSourceConfig currentAudioSource;
     
-    std::map<String, colormodel*> permutedModelCache;
+    std::map<uint32_t, colormodel*> permutedModelCache;  // Hash-based cache
     
     FunctionWithPalette buildFunctionWithPalette(const FunctionDef& def);
     
@@ -311,16 +283,17 @@ public:
     void addpalette(std::initializer_list<FunctionDef> funcs);
     void clearpalettes();
     
-    // duration in SECONDS
-    void addstep(String modelName, float durationSeconds, 
+    // Model by ID, duration in seconds
+    void addstep(int modelId, float durationSeconds, 
                  TransitionType transition = INSTANT, float speed = 1.0,
                  bool acceptAudio = true);
     
-    void addstep(String modelName, String permName, float durationSeconds, 
+    // Model by ID + permutation by ID
+    void addstep(int modelId, int permId, float durationSeconds, 
                  TransitionType transition = INSTANT, float speed = 1.0,
                  bool acceptAudio = true);
     
-    void add(String modelName, std::initializer_list<FunctionDef> funcDefs, float durationSeconds);
+    void add(int modelId, std::initializer_list<FunctionDef> funcDefs, float durationSeconds);
 };
 
 #endif // MODELSEQUENCE_H
